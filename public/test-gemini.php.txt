@@ -1,0 +1,74 @@
+<?php
+$apiKey = "AIzaSyCURPqiDtPhpTnAttrKfGtwtcPWiwUzZCA";
+
+echo "<h1>Testing Gemini API Key</h1>";
+
+// Test the models list endpoint
+$url = "https://generativelanguage.googleapis.com/v1beta/models?key=" . $apiKey;
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+echo "HTTP Status: " . $httpCode . "<br>";
+
+$data = json_decode($response, true);
+
+if ($httpCode === 200) {
+    echo "<span style='color:green'>✅ API Key is VALID!</span><br>";
+    
+    if (isset($data['models'])) {
+        echo "Available models:<br><ul>";
+        foreach ($data['models'] as $model) {
+            echo "<li>" . $model['name'] . "</li>";
+        }
+        echo "</ul>";
+    }
+    
+    // Try to generate content
+    echo "<h2>Testing Content Generation:</h2>";
+    
+    $genUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" . $apiKey;
+    
+    $postData = [
+        'contents' => [
+            [
+                'parts' => [
+                    ['text' => 'Say "Hello! I am working properly!"']
+                ]
+            ]
+        ]
+    ];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $genUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    $response2 = curl_exec($ch);
+    $httpCode2 = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    echo "Generation Status: " . $httpCode2 . "<br>";
+    
+    if ($httpCode2 === 200) {
+        $result = json_decode($response2, true);
+        $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'No text';
+        echo "<span style='color:green'>✅ Response: " . htmlspecialchars($text) . "</span>";
+    } else {
+        echo "<span style='color:red'>Error: " . htmlspecialchars($response2) . "</span>";
+    }
+    
+} else {
+    echo "<span style='color:red'>❌ API Key Error!</span><br>";
+    echo "Error details: <pre>";
+    print_r($data);
+    echo "</pre>";
+}
+?>
