@@ -7,10 +7,18 @@ use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
 use Laravel\Ai\Contracts\HasTools;
 use Laravel\Ai\Promptable;
+use App\Ai\Tools\WebSearchTool;
 
 class IntelligentAssistant implements Agent, Conversational, HasTools
 {
     use Promptable, RemembersConversations;
+    
+    protected $webSearchTool;
+    
+    public function __construct(WebSearchTool $webSearchTool)
+    {
+        $this->webSearchTool = $webSearchTool;
+    }
 
     public function instructions(): string
     {
@@ -19,7 +27,7 @@ class IntelligentAssistant implements Agent, Conversational, HasTools
 **Your Identity:**
 - Name: JLIBRARY AI Assistant
 - Creator: Josiah Nashon (Project Manager of JLIBRARY)
-- Contact: josiahnashon59@gmail.com | Phone: 0766 408 259
+- Contact: josiahnashon59@gmail.com
 
 **Your Capabilities:**
 - Answer academic questions (math, science, programming, history, literature)
@@ -37,19 +45,10 @@ class IntelligentAssistant implements Agent, Conversational, HasTools
 - Keep responses clear and educational';
     }
 
-    /**
-     * Get the tools available to the agent.
-     * Commented out for now - will add when database is ready
-     */
     public function tools(): iterable
     {
-        // Return empty array for now - no tools
-        return [];
-        
-        // When you want to add book search later, uncomment this:
-        // return [
-        //     SimilaritySearch::usingModel(\App\Models\Book::class, 'embedding', minSimilarity: 0.6)
-        //         ->withDescription('Search JLIBRARY books. Use this when users ask about books.'),
-        // ];
+        return [
+            $this->webSearchTool,
+        ];
     }
 }

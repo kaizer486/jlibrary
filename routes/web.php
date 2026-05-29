@@ -26,13 +26,14 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\Auth\SocialiteController;
-
+use App\Http\Controllers\GlobalSearchController;
 
 // ==========================================
 // PUBLIC ROUTES (No login required)
 // ==========================================
 Route::get('/', [FrontController::class, 'welcome'])->name('welcome');
 Route::get('/home', [FrontController::class, 'home'])->name('home');
+
 
 // Application Routes (for users)
 Route::middleware(['auth'])->group(function () {
@@ -86,6 +87,10 @@ Route::middleware(['auth'])->group(function () {
   Route::get('/leaderboard', [App\Http\Controllers\LeaderboardController::class, 'index'])->name('leaderboard.index');
   Route::get('/leaderboard/data', [App\Http\Controllers\LeaderboardController::class, 'index'])->name('leaderboard.data');
 
+    Route::get('/api/global-search', [App\Http\Controllers\GlobalSearchController::class, 'api'])->name('global.search.api');
+    
+    // Optional: dedicated search page
+    Route::get('/global-search', [GlobalSearchController::class, 'index'])->name('global.search');
 
     Route::get('/wallet/balance', [App\Http\Controllers\WalletController::class, 'getBalance'])->name('wallet.balance');
     // ==========================================

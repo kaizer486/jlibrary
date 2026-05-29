@@ -2,42 +2,43 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\GeminiService;
+use App\Services\GeminiNativeService;
 use App\Models\ChatSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AIController extends Controller
 {
     protected $gemini;
     
-    public function __construct(GeminiService $gemini)
+    public function __construct(GeminiNativeService $gemini)
     {
         $this->gemini = $gemini;
     }
     
-  public function index(Request $request)
-{
-    // Get all sessions for sidebar
-    $sessions = ChatSession::where('user_id', Auth::id())
-        ->orderBy('updated_at', 'desc')
-        ->get();
-    
-    $currentSession = null;
-    
-    if ($request->chat_session) {
-        $currentSession = ChatSession::where('user_id', Auth::id())
-            ->where('id', $request->chat_session)
-            ->first();
+    // ✅ ADD THIS METHOD IF MISSING
+    public function index(Request $request)
+    {
+        $sessions = ChatSession::where('user_id', Auth::id())
+            ->orderBy('updated_at', 'desc')
+            ->get();
+        
+        $currentSession = null;
+        
+        if ($request->chat_session) {
+            $currentSession = ChatSession::where('user_id', Auth::id())
+                ->where('id', $request->chat_session)
+                ->first();
+        }
+        
+        if (!$currentSession && $sessions->isNotEmpty()) {
+            $currentSession = $sessions->first();
+        }
+        
+        return view('ai.chat', compact('sessions', 'currentSession'));
     }
     
-    // If no current session but has sessions, get the first one
-    if (!$currentSession && $sessions->isNotEmpty()) {
-        $currentSession = $sessions->first();
-    }
-    
-    return view('ai.chat', compact('sessions', 'currentSession'));
-}
     public function sendMessage(Request $request)
     {
         $request->validate([
@@ -45,28 +46,26 @@ class AIController extends Controller
             'session_id' => 'nullable|exists:chat_sessions,id'
         ]);
         
-        // Get or create session
-        $session = null;
-        if ($request->session_id) {
-            $session = ChatSession::where('user_id', Auth::id())
-                ->where('id', $request->session_id)
-                ->first();
-        }
-        
-        if (!$session) {
-            $session = ChatSession::create([
-                'user_id' => Auth::id(),
-                'title' => substr($request->message, 0, 50),
-                'messages' => []
-            ]);
-        }
-        
-        // Get AI response
-        $result = $this->gemini->chat($request->message);
-        
-        if ($result['success']) {
-            // Save messages
+        try {
+            $session = null;
+            if ($request->session_id) {
+                $session = ChatSession::where('user_id', Auth::id())
+                    ->where('id', $request->session_id)
+                    ->first();
+            }
+            
+            if (!$session) {
+                $session = ChatSession::create([
+                    'user_id' => Auth::id(),
+                    'title' => substr($request->message, 0, 50),
+                    'messages' => []
+                ]);
+            }
+            
             $messages = $session->messages ?? [];
+            
+            $result = $this->gemini->chat($request->message, $messages);
+            
             $messages[] = [
                 'role' => 'user',
                 'content' => $request->message,
@@ -78,17 +77,29 @@ class AIController extends Controller
                 'timestamp' => now()->toIso8601String()
             ];
             
+            if (count($messages) <= 2) {
+                $title = substr($request->message, 0, 40) . (strlen($request->message) > 40 ? '...' : '');
+                $session->title = $title;
+            }
+            
             $session->update([
                 'messages' => $messages,
                 'updated_at' => now()
             ]);
+            
+            return response()->json([
+                'success' => true,
+                'response' => $result['response'],
+                'session_id' => $session->id
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('AI Chat Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'response' => 'Sorry, something went wrong. Please try again.'
+            ], 500);
         }
-        
-        return response()->json([
-            'success' => $result['success'],
-            'response' => $result['response'],
-            'session_id' => $session->id
-        ]);
     }
     
     public function newSession()

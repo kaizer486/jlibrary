@@ -75,6 +75,13 @@
         .animate-ring {
             animation: ring 0.5s ease-in-out;
         }
+        @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+}
+.animate-float {
+    animation: float 4s ease-in-out infinite;
+}
     </style>
 </head>
 <body class="bg-gray-100">
@@ -133,64 +140,152 @@
                             </div>
                         </div>
                     
-<!-- Search Bar -->
+<!-- Global Search Bar - Replaces old book search -->
 <div class="hidden md:flex items-center relative">
     <i class="ti ti-search absolute left-3 text-gray-400"></i>
-    <input type="text" id="live-search" placeholder="Search books..." 
-           class="pl-9 pr-4 py-2 w-64 bg-gray-100 border-0 rounded-full text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none">
-    <div id="live-search-results" class="hidden absolute top-full left-0 mt-2 w-80 bg-white rounded-xl shadow-lg z-50 max-h-96 overflow-y-auto"></div>
+    <input type="text" 
+           id="global-search" 
+           placeholder="global search" 
+           autocomplete="off"
+           class="pl-9 pr-4 py-2 w-80 bg-gray-100 border-0 rounded-full text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none focus:bg-white transition">
+    <div id="global-search-results" class="hidden absolute top-full left-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 max-h-96 overflow-y-auto"></div>
 </div>
 
-<script>
-    // Live search functionality
-    const searchInput = document.getElementById('live-search');
-    const resultsDiv = document.getElementById('live-search-results');
-    let searchTimeout;
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            const query = this.value.trim();
-            
-            if (query.length < 2) {
-                resultsDiv.classList.add('hidden');
-                return;
-            }
-            
-            searchTimeout = setTimeout(() => {
-                fetch(`/search/live?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.length > 0) {
-                            resultsDiv.innerHTML = data.map(book => `
-                                <a href="/library/${book.id}" class="flex items-center gap-3 p-3 hover:bg-gray-50 border-b last:border-0 transition">
-                                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                        <i class="ti ti-book text-purple-600"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-sm font-medium text-gray-800">${book.title}</p>
-                                        <p class="text-xs text-gray-500">${book.author}</p>
-                                    </div>
-                                    <i class="ti ti-arrow-right text-gray-400"></i>
-                                </a>
-                            `).join('');
-                            resultsDiv.classList.remove('hidden');
-                        } else {
-                            resultsDiv.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No books found</div>';
-                            resultsDiv.classList.remove('hidden');
-                        }
-                    });
-            }, 300);
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!searchInput?.contains(e.target) && !resultsDiv?.contains(e.target)) {
-                resultsDiv.classList.add('hidden');
-            }
-        });
-    }
-</script>
+                        <script>
+// Global Search Functionality
+const globalSearchInput = document.getElementById('global-search');
+const globalResultsDiv = document.getElementById('global-search-results');
+let globalSearchTimeout;
 
+if (globalSearchInput) {
+    globalSearchInput.addEventListener('input', function() {
+        clearTimeout(globalSearchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            globalResultsDiv.classList.add('hidden');
+            return;
+        }
+        
+        globalSearchTimeout = setTimeout(() => performGlobalSearch(query), 300);
+    });
+    
+    globalSearchInput.addEventListener('focus', function() {
+        if (this.value.trim().length >= 2) {
+            globalResultsDiv.classList.remove('hidden');
+        }
+    });
+}
+
+async function performGlobalSearch(query) {
+    try {
+        const response = await fetch(`/api/global-search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (!data.results || data.results.length === 0) {
+            globalResultsDiv.innerHTML = `
+                <div class="p-6 text-center">
+                    <i class="ti ti-search-off text-3xl text-gray-300 mb-2 block"></i>
+                    <p class="text-gray-500 text-sm">No results found for "${escapeHtml(query)}"</p>
+                </div>
+            `;
+        } else {
+        const typeNames = {
+    book: '📚 Books',
+    chat: '💬 AI Chats',
+    certificate: '🎓 Certificates',
+    quiz: '📝 Quizzes',
+    user: '👤 Users',
+    group: '👥 Community Groups',
+    marketplace: '🛒 Marketplace',
+    document: '📄 Documents',
+    transaction: '💰 Wallet Transactions',
+    referral: '🎁 Referrals',
+    conversion: '🔄 File Conversions'
+};
+            const typeIcons = {
+                book: 'ti-book',
+                chat: 'ti-message-circle-2',
+                user: 'ti-user',
+                certificate: 'ti-certificate',
+                quiz: 'ti-brain'
+            };
+            
+            const typeColors = {
+                book: 'from-purple-500 to-indigo-500',
+                chat: 'from-green-500 to-emerald-500',
+                user: 'from-blue-500 to-cyan-500',
+                certificate: 'from-pink-500 to-rose-500',
+                quiz: 'from-indigo-500 to-blue-500'
+            };
+            
+            const grouped = {};
+            data.results.forEach(item => {
+                if (!grouped[item.type]) grouped[item.type] = [];
+                grouped[item.type].push(item);
+            });
+            
+            let html = '';
+            for (const [type, items] of Object.entries(grouped)) {
+                html += `
+                    <div class="border-b border-gray-100 last:border-0">
+                        <div class="px-4 py-2 bg-gray-50">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${typeNames[type] || type + 's'}</p>
+                        </div>
+                        <div class="divide-y divide-gray-50">
+                            ${items.map(item => `
+                                <a href="${item.url}" class="flex items-center gap-3 p-3 hover:bg-purple-50 transition group">
+                                    <div class="w-9 h-9 bg-gradient-to-br ${typeColors[type] || 'from-gray-400 to-gray-500'} rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <i class="ti ${typeIcons[type] || 'ti-search'} text-white text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-800 group-hover:text-purple-600 truncate">${escapeHtml(item.title)}</p>
+                                        <p class="text-xs text-gray-400 truncate">${escapeHtml(item.subtitle)}</p>
+                                    </div>
+                                    <i class="ti ti-arrow-right text-gray-400 group-hover:text-purple-500 text-sm flex-shrink-0"></i>
+                                </a>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            globalResultsDiv.innerHTML = html;
+        }
+        
+        globalResultsDiv.classList.remove('hidden');
+    } catch (error) {
+        console.error('Search error:', error);
+        globalResultsDiv.innerHTML = `
+            <div class="p-6 text-center">
+                <i class="ti ti-alert-circle text-3xl text-red-300 mb-2 block"></i>
+                <p class="text-gray-500 text-sm">Search failed. Please try again.</p>
+            </div>
+        `;
+        globalResultsDiv.classList.remove('hidden');
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Close results when clicking outside
+document.addEventListener('click', function(e) {
+    if (globalSearchInput && !globalSearchInput.contains(e.target) && globalResultsDiv && !globalResultsDiv.contains(e.target)) {
+        globalResultsDiv.classList.add('hidden');
+    }
+});
+
+// Keyboard shortcut to focus search
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        if (globalSearchInput) globalSearchInput.focus();
+    }
+});
+</script>
                         <!-- Profile Button -->
                         <button id="profile-btn" class="flex items-center gap-3 focus:outline-none">
                             <!-- Wallet Badge -->
