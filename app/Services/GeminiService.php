@@ -12,8 +12,8 @@ class GeminiService
     
     public function __construct()
     {
-        $this->apiKey = env('GEMINI_API_KEY');
-        $this->model = env('GEMINI_MODEL', 'gemini-2.5-flash');
+      $this->apiKey = config('services.gemini.api_key');
+      $this->model = config('services.gemini.model', 'gemini-2.5-flash');
     }
     
     public function chat($message)
