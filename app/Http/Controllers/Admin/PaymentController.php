@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\WithdrawalRequest; // Add this
+use App\Models\InstitutionWallet; // Add this
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,10 +23,16 @@ class PaymentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
         
-        // Get pending withdrawals
+        // Get pending withdrawals (User withdrawals - existing)
         $pendingWithdrawals = Transaction::where('type', 'debit')
             ->where('status', 'pending')
             ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Get pending INSTITUTION withdrawals (NEW)
+        $pendingInstitutionWithdrawals = WithdrawalRequest::with(['institution', 'requester'])
+            ->where('status', 'pending')
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -53,14 +61,21 @@ class PaymentController extends Controller
             ->where('payable_type', 'App\\Models\\Book')
             ->sum('amount');
         
+        // Institution withdrawal stats (NEW)
+        $totalInstitutionWithdrawals = WithdrawalRequest::where('status', 'completed')->sum('amount');
+        $pendingInstitutionTotal = WithdrawalRequest::where('status', 'pending')->sum('amount');
+        
         return view('admin.payments.index', compact(
             'payments',
             'pendingWithdrawals',
+            'pendingInstitutionWithdrawals',
             'completedWithdrawals',
             'totalDeposits',
             'pendingDeposits',
             'totalWithdrawals',
-            'totalBookSales'
+            'totalBookSales',
+            'totalInstitutionWithdrawals',
+            'pendingInstitutionTotal'
         ));
     }
     
@@ -75,7 +90,7 @@ class PaymentController extends Controller
     }
     
     /**
-     * Approve a pending withdrawal
+     * Approve a pending withdrawal (User withdrawal)
      */
     public function approveWithdrawal($id)
     {
@@ -102,7 +117,73 @@ class PaymentController extends Controller
     }
     
     /**
-     * Reject a pending withdrawal
+     * Approve an INSTITUTION withdrawal (NEW)
+     */
+    public function approveInstitutionWithdrawal($id)
+    {
+        $withdrawal = WithdrawalRequest::findOrFail($id);
+        
+        if ($withdrawal->status !== 'pending') {
+            return back()->with('error', 'This withdrawal has already been processed.');
+        }
+        
+        DB::beginTransaction();
+        
+        try {
+            $withdrawal->status = 'processing';
+            $withdrawal->processed_by = auth()->id();
+            $withdrawal->processed_at = now();
+            $withdrawal->save();
+            
+            DB::commit();
+            
+            return back()->with('success', 'Institution withdrawal marked as processing.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to process withdrawal: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Complete an INSTITUTION withdrawal (NEW)
+     */
+    public function completeInstitutionWithdrawal($id)
+    {
+        $withdrawal = WithdrawalRequest::findOrFail($id);
+        
+        if ($withdrawal->status !== 'processing') {
+            return back()->with('error', 'This withdrawal cannot be completed.');
+        }
+        
+        DB::beginTransaction();
+        
+        try {
+            $withdrawal->status = 'completed';
+            $withdrawal->save();
+            
+            // Update institution wallet
+            $wallet = $withdrawal->institution->wallet;
+            $wallet->pending_withdrawal -= $withdrawal->amount;
+            $wallet->total_withdrawn += $withdrawal->amount;
+            $wallet->save();
+            
+            // Update transaction record
+            Transaction::where('reference', 'WD-' . $withdrawal->id)
+                ->update(['status' => 'completed']);
+            
+            DB::commit();
+            
+            return back()->with('success', 'Institution withdrawal completed successfully!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to complete withdrawal: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Reject a pending withdrawal (User withdrawal)
      */
     public function rejectWithdrawal($id)
     {
@@ -126,6 +207,50 @@ class PaymentController extends Controller
             DB::commit();
             
             return back()->with('success', 'Withdrawal rejected and funds refunded to user wallet.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to reject withdrawal: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Reject an INSTITUTION withdrawal (NEW)
+     */
+    public function rejectInstitutionWithdrawal(Request $request, $id)
+    {
+        $withdrawal = WithdrawalRequest::findOrFail($id);
+        
+        if ($withdrawal->status !== 'pending') {
+            return back()->with('error', 'This withdrawal cannot be rejected.');
+        }
+        
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10',
+        ]);
+        
+        DB::beginTransaction();
+        
+        try {
+            $withdrawal->status = 'rejected';
+            $withdrawal->processed_by = auth()->id();
+            $withdrawal->processed_at = now();
+            $withdrawal->rejection_reason = $request->rejection_reason;
+            $withdrawal->save();
+            
+            // Return money to institution wallet
+            $wallet = $withdrawal->institution->wallet;
+            $wallet->balance += $withdrawal->amount;
+            $wallet->pending_withdrawal -= $withdrawal->amount;
+            $wallet->save();
+            
+            // Update transaction record
+            Transaction::where('reference', 'WD-' . $withdrawal->id)
+                ->update(['status' => 'failed']);
+            
+            DB::commit();
+            
+            return back()->with('success', 'Institution withdrawal rejected. Funds returned to wallet.');
             
         } catch (\Exception $e) {
             DB::rollBack();

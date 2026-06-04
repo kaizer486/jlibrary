@@ -1,6 +1,7 @@
-@extends('layouts.admin')
+@extends('layouts.master')
 
-@section('content')
+@section('page-content')
+
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-900">Pending Marketplace Listings</h1>
     <a href="{{ route('admin.marketplace.all') }}" class="text-jlibrary-600 hover:text-jlibrary-700">

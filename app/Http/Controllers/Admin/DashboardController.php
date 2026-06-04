@@ -17,6 +17,8 @@ class DashboardController extends Controller
 
   public function index()
 {
+
+
     $totalUsers = User::count();
     $totalBooks = Book::count();
     $totalListings = MarketplaceListing::count();

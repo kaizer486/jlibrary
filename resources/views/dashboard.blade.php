@@ -25,6 +25,11 @@
                         <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
                             Level {{ Auth::user()->level ?? 1 }} Learner
                         </div>
+                        @if(Auth::user()->institution_id && Auth::user()->institution)
+                        <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
+                            <i class="ti ti-building"></i> {{ Auth::user()->institution->name }}
+                        </div>
+                        @endif
                     </div>
                 </div>
                 <div class="mt-4 md:mt-0">
@@ -72,6 +77,9 @@
                 </div>
                 <p class="text-3xl font-bold text-gray-800">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</p>
                 <p class="text-gray-400 text-sm mt-2">From referrals & quizzes</p>
+                <div class="mt-2">
+                    <a href="{{ route('withdrawals.index') }}" class="text-sm text-purple-600 hover:text-purple-700 underline">Request Withdrawal →</a>
+                </div>
             </div>
 
             <!-- Certificates Card -->
@@ -84,6 +92,37 @@
                 </div>
                 <p class="text-3xl font-bold text-gray-800">{{ Auth::user()->certificates()->count() }}</p>
                 <p class="text-gray-400 text-sm mt-2">Earned so far</p>
+            </div>
+        </div>
+
+
+        <!-- INSTITUTIONS SECTION - SINGLE LONG BAR -->
+        <!-- ============================================ -->
+        <div class="mb-8">
+            <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-xl border border-white/20">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <i class="ti ti-building-community text-3xl"></i>
+                            <h3 class="text-2xl font-bold">Institutions</h3>
+                        </div>
+                        <p class="text-indigo-100 text-sm">Connect with learning communities and access exclusive resources</p>
+                    </div>
+                    <div class="flex gap-3 flex-wrap">
+                        <!-- My Institution Button -->
+                        <a href="{{ route('my.institution') }}" 
+                           class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
+                            <i class="ti ti-building"></i>
+                            My Institution
+                        </a>
+                        <!-- Discover Institutions Button -->
+                        <a href="{{ route('discover.institutions') }}" 
+                           class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
+                            <i class="ti ti-building-community"></i>
+                            Discover Institutions
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -131,33 +170,6 @@
             </div>
             @endif
         @endif
-
-        <!-- Current Course Banner -->
-        <div class="relative overflow-hidden bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 mb-8 shadow-xl border border-slate-700">
-            <div class="relative flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                    <p class="text-indigo-300 text-sm mb-1">📚 Currently Learning</p>
-                    <h2 class="text-2xl font-bold text-white mb-2">Intermediate AI Systems</h2>
-                    <div class="flex items-center gap-3">
-                        <span class="text-sm text-gray-300">Lesson 3 of 10</span>
-                        <div class="w-48 bg-gray-700 rounded-full h-2">
-                            <div class="bg-gradient-to-r from-indigo-400 to-purple-400 h-2 rounded-full" style="width: 25%"></div>
-                        </div>
-                        <span class="text-sm font-semibold text-white">25%</span>
-                    </div>
-                </div>
-                <div class="mt-4 md:mt-0 flex gap-3">
-                    <a href="{{ route('ai.chat') }}" class="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-5 py-2 rounded-xl transition-all text-sm flex items-center gap-2">
-                        <i class="ti ti-robot"></i>
-                        Ask AI
-                    </a>
-                    <a href="#" class="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-5 py-2 rounded-xl transition-all text-sm font-semibold flex items-center gap-2 shadow-lg">
-                        <i class="ti ti-player-play"></i>
-                        Resume Lesson
-                    </a>
-                </div>
-            </div>
-        </div>
 
         <!-- Continue Learning -->
         <div class="mb-8">
@@ -223,7 +235,7 @@
                 <span class="px-4 py-2 bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 rounded-full text-sm font-medium shadow-sm">SQL for Beginners</span>
                 <span class="px-4 py-2 bg-gradient-to-r from-teal-100 to-green-100 text-teal-700 rounded-full text-sm font-medium shadow-sm">Mobile App Development</span>
                 <span class="px-4 py-2 bg-gradient-to-r from-slate-100 to-gray-200 text-gray-700 rounded-full text-sm font-medium shadow-sm">Computer Science</span>
-                <span class="px-4 py-2 bg-gradient-to-r from-red-100 to-pink-100 text-red-700 rounded-full text-sm font-medium shadow-sm">Exam Prep</span>
+
             </div>
         </div>
 
@@ -416,4 +428,64 @@
 
     </div>
 </div>
+
+<!-- Join Request Modal -->
+<div id="joinModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">📝 Request to Join</h3>
+                <button onclick="closeJoinModal()" class="text-white/80 hover:text-white">
+                    <i class="ti ti-x text-2xl"></i>
+                </button>
+            </div>
+        </div>
+        <form method="POST" action="{{ route('join-requests.store') }}" class="p-6">
+            @csrf
+            <input type="hidden" name="institution_id" id="join_institution_id">
+            
+            <div class="mb-4 p-4 bg-purple-50 rounded-xl">
+                <p class="text-sm text-gray-600 mb-1">You are requesting to join:</p>
+                <p class="font-bold text-gray-800 text-lg" id="join_institution_name"></p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Optional Message</label>
+                <textarea name="message" rows="3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                          placeholder="Why do you want to join this institution? (Optional)"></textarea>
+                <p class="text-xs text-gray-400 mt-1">This message will be sent to the institution admin</p>
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2.5 rounded-lg hover:shadow-lg transition font-semibold">
+                    Send Request
+                </button>
+                <button type="button" onclick="closeJoinModal()" class="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openJoinModal(institutionId, institutionName) {
+    document.getElementById('join_institution_id').value = institutionId;
+    document.getElementById('join_institution_name').textContent = institutionName;
+    document.getElementById('joinModal').classList.remove('hidden');
+    document.getElementById('joinModal').classList.add('flex');
+}
+
+function closeJoinModal() {
+    document.getElementById('joinModal').classList.add('hidden');
+    document.getElementById('joinModal').classList.remove('flex');
+}
+
+// Close modal on click outside
+document.getElementById('joinModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeJoinModal();
+    }
+});
+</script>
 @endsection

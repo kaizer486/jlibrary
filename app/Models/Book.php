@@ -95,6 +95,11 @@ class Book extends Model
         return $this->hasMany(Quiz::class);
     }
 
+    // Add this with your other relationships
+public function institution()
+{
+    return $this->belongsTo(Institution::class);
+}
     public function certificates(): HasMany
     {
         return $this->hasMany(Certificate::class);
@@ -151,7 +156,19 @@ class Book extends Model
     {
         return $this->ratings()->count();
     }
-
+ public function getCommissionBreakdown($price)
+{
+    $institutionCommission = CommissionSetting::getInstitutionCommission();
+    $platformCommission = CommissionSetting::getPlatformCommission();
+    $authorCommission = CommissionSetting::getAuthorCommission();
+    
+    return [
+        'price' => $price,
+        'institution_amount' => ($price * $institutionCommission) / 100,
+        'platform_amount' => ($price * $platformCommission) / 100,
+        'author_amount' => ($price * $authorCommission) / 100,
+    ];
+}
     public function userRating($userId = null)
     {
         $userId = $userId ?? auth()->id();

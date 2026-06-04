@@ -1,8 +1,10 @@
-@extends('layouts.admin')
+@extends('layouts.master')
+
+
 
 @section('title', 'Institution Dashboard')
 
-@section('content')
+@section('page-content')
 <div class="mb-6">
     <h1 class="text-2xl font-bold text-gray-900">🏢 {{ $institution->name }}</h1>
     <p class="text-gray-500 text-sm mt-1">Manage your institution's library and members</p>

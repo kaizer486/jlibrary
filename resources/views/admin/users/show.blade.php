@@ -1,6 +1,7 @@
-@extends('layouts.admin')
+@extends('layouts.master')
 
-@section('content')
+@section('page-content')
+
 <div class="max-w-4xl mx-auto">
     <div class="mb-6">
         <a href="{{ route('admin.users.index') }}" class="text-jlibrary-600 hover:text-jlibrary-700">

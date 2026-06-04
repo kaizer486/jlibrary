@@ -14,13 +14,18 @@ class InstitutionMiddleware
         
         $user = auth()->user();
         
-        // Super Admin and Admin can access everything
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        // Super Admin, Admin, and Institution Admin with institution_id can access
+        if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
             return $next($request);
         }
         
-        // Institution Admin and Librarian need to belong to an institution
-        if (($user->isInstitutionAdmin() || $user->isLibrarian()) && !$user->hasInstitution()) {
+        // Institution Admin must have an institution_id
+        if ($user->hasRole('institution_admin') && !$user->institution_id) {
+            abort(403, 'You are not associated with any institution.');
+        }
+        
+        // Librarian must have an institution_id
+        if ($user->hasRole('librarian') && !$user->institution_id) {
             abort(403, 'You are not associated with any institution.');
         }
         

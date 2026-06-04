@@ -12,20 +12,54 @@
             </div>
             <p class="text-gray-600">Customize your public profile and personal information</p>
         </div>
-        
-        <!-- Success Message -->
-        @if(session('success'))
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-                <i class="ti ti-circle-check text-green-600 text-xl"></i>
-                <div>
-                    <p class="text-green-700 font-medium">{{ session('success') }}</p>
-                </div>
-                <button onclick="this.parentElement.remove()" class="ml-auto text-green-500 hover:text-green-700">
-                    <i class="ti ti-x text-sm"></i>
-                </button>
-            </div>
-        @endif
-        
+      <!-- Success Message -->
+@if(session('success'))
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+        <i class="ti ti-circle-check text-green-600 text-xl"></i>
+        <div>
+            <p class="text-green-700 font-medium">{{ session('success') }}</p>
+        </div>
+        <button onclick="this.parentElement.remove()" class="ml-auto text-green-500 hover:text-green-700">
+            <i class="ti ti-x text-sm"></i>
+        </button>
+    </div>
+@endif
+
+<!-- INSTITUTION INFO CARD - Only shows if user belongs to an institution -->
+@if(Auth::user()->institution_id && Auth::user()->institution)
+<div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-6 border border-indigo-100">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="ti ti-building text-white text-lg"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-xs text-gray-500 uppercase tracking-wide">Your Institution</p>
+            <p class="font-semibold text-gray-800 institution-name-multiline" title="{{ Auth::user()->institution->name }}">
+                {{ Auth::user()->institution->name }}
+            </p>
+            <p class="text-xs text-gray-500">You are a member of this institution</p>
+        </div>
+        <a href="{{ route('institution.members.directory') }}" class="text-indigo-600 hover:text-indigo-700 text-sm flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+            View Members <i class="ti ti-arrow-right"></i>
+        </a>
+    </div>
+</div>
+@endif
+
+<!-- Error Messages -->
+@if($errors->any())
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="ti ti-alert-circle text-red-600 text-lg"></i>
+            <p class="text-red-700 font-medium">Please fix the following errors:</p>
+        </div>
+        <ul class="list-disc list-inside space-y-1">
+            @foreach($errors->all() as $error)
+                <li class="text-red-600 text-sm">{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
         <!-- Error Messages -->
         @if($errors->any())
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">

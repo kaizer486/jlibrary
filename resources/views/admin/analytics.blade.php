@@ -1,8 +1,10 @@
-@extends('layouts.admin')
+@extends('layouts.master')
+
+
 
 @section('title', 'Analytics Dashboard')
 
-@section('content')
+@section('page-content')
 <div class="space-y-6">
     <!-- Header -->
     <div>

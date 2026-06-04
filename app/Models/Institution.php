@@ -31,6 +31,30 @@ class Institution extends Model
         return $this->hasMany(User::class);
     }
     
+    public function wallet()
+{
+    return $this->hasOne(InstitutionWallet::class);
+}
+
+public function withdrawalRequests()
+{
+    return $this->hasMany(WithdrawalRequest::class);
+}
+
+public function subscription()
+{
+    return $this->hasOne(Subscription::class)->latest();
+}
+
+public function createWallet()
+{
+    return $this->wallet()->create([
+        'balance' => 0,
+        'total_earned' => 0,
+        'total_withdrawn' => 0,
+        'pending_withdrawal' => 0,
+    ]);
+}
  public function books()
 {
     try {

@@ -1,8 +1,11 @@
-@extends('layouts.admin')
+@extends('layouts.master')
+
+
 
 @section('title', 'Institution Members')
 
-@section('content')
+@section('page-content')
+
 <div class="mb-6">
     <div class="flex justify-between items-center flex-wrap gap-4">
         <div>

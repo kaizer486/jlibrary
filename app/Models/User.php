@@ -12,6 +12,8 @@ use App\Models\Transaction;
 use App\Traits\HasXpRewards;
 use App\Models\QuizAttempt;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Permission\Traits\HasRoles; 
+
 /**
  * @property int $id
  * @property string $full_name
@@ -135,8 +137,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
-    use HasXpRewards;
+    use HasFactory, Notifiable, HasRoles, HasXpRewards;
 
     protected $table = 'users';
 
@@ -164,10 +165,9 @@ class User extends Authenticatable
         'referral_code',
         'referred_by',
         'referral_earnings',
-
-         'institution_id',
-       'position',
-    'is_institution_admin',
+        'institution_id',
+        'position',
+        'is_institution_admin',
     ];
     
 
@@ -183,158 +183,145 @@ class User extends Authenticatable
         'referral_earnings' => 'decimal:2',
     ];
 
-
-
+    // ========== APPLICATION RELATIONSHIPS ==========
+    
     public function applications()
-{
-    return $this->hasMany(Application::class);
-}
-
-public function hasPendingApplication($type = null)
-{
-    $query = $this->applications()->where('status', 'pending');
-    if ($type) {
-        $query->where('type', $type);
+    {
+        return $this->hasMany(Application::class);
     }
-    return $query->exists();
-}
 
-public function isApprovedAuthor()
-{
-    return $this->role === 'author' || 
-           $this->applications()->where('type', 'author')->where('status', 'approved')->exists();
-}
+    public function hasPendingApplication($type = null)
+    {
+        $query = $this->applications()->where('status', 'pending');
+        if ($type) {
+            $query->where('type', $type);
+        }
+        return $query->exists();
+    }
 
-public function isApprovedBookseller()
-{
-    return $this->role === 'bookseller' || 
-           $this->applications()->where('type', 'bookseller')->where('status', 'approved')->exists();
-}
+    public function isApprovedAuthor()
+    {
+        return $this->hasRole('author') || 
+               $this->applications()->where('type', 'author')->where('status', 'approved')->exists();
+    }
 
-// ========== ROLE METHODS ==========
+    public function isApprovedBookseller()
+    {
+        return $this->hasRole('bookseller') || 
+               $this->applications()->where('type', 'bookseller')->where('status', 'approved')->exists();
+    }
+
+    // ========== ROLE METHODS (Using Spatie) ==========
     
-public function isSuperAdmin(): bool
-{
-    return $this->role === 'super_admin';
-}
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
 
-public function isAdmin(): bool
-{
-    return $this->role === 'admin';
-}
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
 
-public function isUser(): bool
-{
-    return $this->role === 'user';
-}
-
-// ========== INSTITUTION RELATIONSHIPS ==========
-
-public function institution(): BelongsTo
-{
-    return $this->belongsTo(Institution::class);
-}
-
-// Check if user belongs to an institution
-public function hasInstitution(): bool
-{
-    return !is_null($this->institution_id);
-}
-
-// Check if user can manage this institution
-public function canManageInstitution($institution): bool
-{
-    if ($this->isSuperAdmin()) return true;
-    if ($this->isAdmin()) return true;
-    if ($this->is_institution_admin && $this->institution_id === $institution->id) return true;
-    return false;
-}
-
-// ========== NEW ROLE CHECKING METHODS ==========
-
-public function isInstitutionAdmin(): bool
-{
-    return $this->role === 'institution_admin' || $this->is_institution_admin === true;
-}
-
-public function isLibrarian(): bool
-{
-    return $this->role === 'librarian';
-}
-
-public function isAuthor(): bool
-{
-    return $this->role === 'author';
-}
-
-public function isBookseller(): bool
-{
-    return $this->role === 'bookseller';
-}
-
-public function isResearcher(): bool
-{
-    return $this->role === 'researcher';
-}
-
-public function isPublisher(): bool
-{
-    return $this->role === 'publisher';
-}
-/**
- * Check if current user can manage another user
- * - Super admin can manage anyone
- * - Admin can manage regular users and other admins (but NOT super admins)
- * - Regular users cannot manage anyone
- */
-public function canManageUser(User $user): bool
-{
-    // Super admin can manage everyone
-    if ($this->isSuperAdmin()) {
-        return true;
+    public function isUser(): bool
+    {
+        return $this->hasRole('user');
     }
     
-    // Admin can manage regular users and other admins
-    // But CANNOT manage super admins
-    if ($this->isAdmin() && !$user->isSuperAdmin()) {
-        return true;
+    public function isInstitutionAdmin(): bool
+    {
+        return $this->hasRole('institution_admin') || $this->is_institution_admin === true;
     }
-    
-    // Regular users cannot manage anyone
-    return false;
-}
 
-/**
- * Check if current user can delete another user
- * - Super admin can delete anyone
- * - Admin can delete regular users only (NOT admins or super admins)
- * - Regular users cannot delete anyone
- */
-public function canDeleteUser(User $user): bool
-{
-    // Super admin can delete everyone
-    if ($this->isSuperAdmin()) {
-        return true;
+    public function isLibrarian(): bool
+    {
+        return $this->hasRole('librarian');
     }
-    
-    // Admin can only delete regular users (not other admins or super admins)
-    if ($this->isAdmin() && $user->isUser()) {
-        return true;
-    }
-    
-    return false;
-}
 
-/**
- * Check if current user can change role of another user
- * - Only super admin can change roles
- */
-public function canChangeRole(User $user): bool
-{
-    // Only super admin can change roles
-    // And cannot change their own role (to prevent locking themselves out)
-    return $this->isSuperAdmin() && $this->id !== $user->id;
-}
+    public function isInstructor(): bool
+    {
+        return $this->hasRole('instructor');
+    }
+
+    public function isAuthor(): bool
+    {
+        return $this->hasRole('author');
+    }
+
+    public function isBookseller(): bool
+    {
+        return $this->hasRole('bookseller');
+    }
+
+    public function isResearcher(): bool
+    {
+        return $this->hasRole('researcher');
+    }
+
+    public function isPublisher(): bool
+    {
+        return $this->hasRole('publisher');
+    }
+
+    // ========== INSTITUTION RELATIONSHIPS ==========
+
+    public function institution(): BelongsTo
+    {
+        return $this->belongsTo(Institution::class);
+    }
+
+    public function hasInstitution(): bool
+    {
+        return !is_null($this->institution_id);
+    }
+
+    public function canManageInstitution($institution): bool
+    {
+        if ($this->isSuperAdmin()) return true;
+        if ($this->isAdmin()) return true;
+        if ($this->isInstitutionAdmin() && $this->institution_id === $institution->id) return true;
+        return false;
+    }
+
+    /**
+     * Check if current user can manage another user
+     */
+    public function canManageUser(User $user): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        
+        if ($this->isAdmin() && !$user->isSuperAdmin()) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if current user can delete another user
+     */
+    public function canDeleteUser(User $user): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        
+        if ($this->isAdmin() && $user->isUser()) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if current user can change role of another user
+     */
+    public function canChangeRole(User $user): bool
+    {
+        return $this->isSuperAdmin() && $this->id !== $user->id;
+    }
     
     // ========== BOOK RELATIONSHIPS ==========
     
@@ -352,10 +339,6 @@ public function canChangeRole(User $user): bool
                     ->where('status', 'completed');
     }
 
-    
-    /**
-     * Check if user has purchased a specific book
-     */
     public function hasPurchasedBook($bookId)
     {
         return $this->payments()
@@ -365,24 +348,17 @@ public function canChangeRole(User $user): bool
             ->exists();
     }
     
-    /**
-     * Purchase a book using wallet
-     */
     public function purchaseBookWithWallet($book, $paymentMethod = 'wallet')
     {
-        // Check if already purchased
         if ($this->hasPurchasedBook($book->id)) {
             return ['success' => false, 'message' => 'You already own this book.'];
         }
         
-        // Check if book is free
         if (!$book->is_paid) {
-            // Free book - just add to library without payment
             $this->books()->syncWithoutDetaching([$book->id => ['purchased_at' => now()]]);
             return ['success' => true, 'message' => 'Free book added to your library!'];
         }
         
-        // Check wallet balance
         if ($this->wallet_balance < $book->price) {
             return [
                 'success' => false, 
@@ -391,13 +367,11 @@ public function canChangeRole(User $user): bool
             ];
         }
         
-        // Deduct from wallet
         $oldBalance = $this->wallet_balance;
         $newBalance = $oldBalance - $book->price;
         $this->wallet_balance = $newBalance;
         $this->save();
         
-        // Create payment record
         $payment = Payment::create([
             'user_id' => $this->id,
             'payable_type' => Book::class,
@@ -408,7 +382,6 @@ public function canChangeRole(User $user): bool
             'transaction_id' => 'PUR_' . time() . '_' . $this->id . '_' . $book->id,
         ]);
         
-        // Add to user_books with purchased_at
         $this->books()->syncWithoutDetaching([
             $book->id => [
                 'purchased_at' => now(),
@@ -416,7 +389,6 @@ public function canChangeRole(User $user): bool
             ]
         ]);
         
-        // Create transaction record (for wallet history)
         Transaction::create([
             'user_id' => $this->id,
             'type' => 'debit',
@@ -437,15 +409,13 @@ public function canChangeRole(User $user): bool
         ];
     }
     
-    /**
-     * Get purchased books (override existing method)
-     */
     public function getPurchasedBooks()
     {
         return $this->belongsToMany(Book::class, 'user_books')
                     ->wherePivotNotNull('purchased_at')
                     ->withPivot('progress_percent', 'current_page', 'status', 'purchased_at');
     }
+    
     // ========== COMMUNITY RELATIONSHIPS ==========
     
     public function groups()
@@ -462,9 +432,6 @@ public function canChangeRole(User $user): bool
     
     // ========== PAYMENT & CERTIFICATE RELATIONSHIPS ==========
     
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function payments()
     {
         return $this->hasMany(\App\Models\Payment::class);
@@ -503,120 +470,95 @@ public function canChangeRole(User $user): bool
         return $this->hasMany(Bookmark::class);
     }
     
-// ========== XP, LEVEL & STREAK METHODS ==========
+    // ========== XP, LEVEL & STREAK METHODS ==========
 
-/**
- * Get combined score for leaderboard ranking
- */
-public function getCombinedScoreAttribute()
-{
-    $certificateScore = $this->certificates()->count() * 10;
-    $quizAvg = $this->quizAttempts()->avg('percentage') ?? 0;
-    $streakScore = $this->streak_days;
-    $booksRead = $this->books()->wherePivot('status', 'completed')->count() * 5;
-    
-    return round($certificateScore + $quizAvg + $streakScore + $booksRead);
-}
-
-/**
- * Update user's streak based on last active date
- */
-public function updateStreak()
-{
-    $lastActive = $this->last_active_at;
-    
-    if (!$lastActive) {
-        $this->streak_days = 1;
-    } else {
-        $daysDiff = now()->diffInDays($lastActive);
+    public function getCombinedScoreAttribute()
+    {
+        $certificateScore = $this->certificates()->count() * 10;
+        $quizAvg = $this->quizAttempts()->avg('percentage') ?? 0;
+        $streakScore = $this->streak_days;
+        $booksRead = $this->books()->wherePivot('status', 'completed')->count() * 5;
         
-        if ($daysDiff == 1) {
-            $this->streak_days++;
-        } elseif ($daysDiff > 1) {
+        return round($certificateScore + $quizAvg + $streakScore + $booksRead);
+    }
+
+    public function updateStreak()
+    {
+        $lastActive = $this->last_active_at;
+        
+        if (!$lastActive) {
             $this->streak_days = 1;
+        } else {
+            $daysDiff = now()->diffInDays($lastActive);
+            
+            if ($daysDiff == 1) {
+                $this->streak_days++;
+            } elseif ($daysDiff > 1) {
+                $this->streak_days = 1;
+            }
+        }
+        
+        $this->last_active_at = now();
+        $this->save();
+        $this->updateLevel();
+    }
+
+    public function updateLevel()
+    {
+        $newLevel = 1;
+        
+        if ($this->xp_points >= 1000) {
+            $newLevel = 5;
+        } elseif ($this->xp_points >= 600) {
+            $newLevel = 4;
+        } elseif ($this->xp_points >= 300) {
+            $newLevel = 3;
+        } elseif ($this->xp_points >= 100) {
+            $newLevel = 2;
+        }
+        
+        if ($this->level != $newLevel) {
+            $this->level = $newLevel;
+            $this->save();
         }
     }
-    
-    $this->last_active_at = now();
-    $this->save();
-    
-    // Update level based on XP
-    $this->updateLevel();
-}
 
-/**
- * Update user level based on XP points
- */
-public function updateLevel()
-{
-    // Level 1: 0-99 XP
-    // Level 2: 100-299 XP
-    // Level 3: 300-599 XP
-    // Level 4: 600-999 XP
-    // Level 5: 1000+ XP
-    $newLevel = 1;
-    
-    if ($this->xp_points >= 1000) {
-        $newLevel = 5;
-    } elseif ($this->xp_points >= 600) {
-        $newLevel = 4;
-    } elseif ($this->xp_points >= 300) {
-        $newLevel = 3;
-    } elseif ($this->xp_points >= 100) {
-        $newLevel = 2;
-    }
-    
-    if ($this->level != $newLevel) {
-        $this->level = $newLevel;
+    public function addXp($points)
+    {
+        $this->xp_points += $points;
         $this->save();
+        $this->updateLevel();
+        
+        return $this->xp_points;
     }
-}
 
-/**
- * Add XP points to user
- */
-public function addXp($points)
-{
-    $this->xp_points += $points;
-    $this->save();
-    $this->updateLevel();
-    
-    return $this->xp_points;
-}
-
-/**
- * Get current level progress percentage (for progress bar)
- */
-public function getLevelProgressAttribute()
-{
-    $levelThresholds = [0, 100, 300, 600, 1000];
-    $currentLevel = $this->level;
-    
-    $currentMin = $levelThresholds[$currentLevel - 1] ?? 0;
-    $currentMax = $levelThresholds[$currentLevel] ?? 1000;
-    
-    $xpInLevel = $this->xp_points - $currentMin;
-    $xpNeeded = $currentMax - $currentMin;
-    
-    if ($xpNeeded <= 0) return 100;
-    
-    return min(100, round(($xpInLevel / $xpNeeded) * 100));
-}
-
-/**
- * Get next level XP needed
- */
-public function getNextLevelXpNeededAttribute()
-{
-    $levelThresholds = [0, 100, 300, 600, 1000];
-    
-    if ($this->level >= 5) {
-        $nextLevelXp = 1000 + (($this->level - 4) * 500);
-        return $nextLevelXp - $this->xp_points;
+    public function getLevelProgressAttribute()
+    {
+        $levelThresholds = [0, 100, 300, 600, 1000];
+        $currentLevel = $this->level;
+        
+        $currentMin = $levelThresholds[$currentLevel - 1] ?? 0;
+        $currentMax = $levelThresholds[$currentLevel] ?? 1000;
+        
+        $xpInLevel = $this->xp_points - $currentMin;
+        $xpNeeded = $currentMax - $currentMin;
+        
+        if ($xpNeeded <= 0) return 100;
+        
+        return min(100, round(($xpInLevel / $xpNeeded) * 100));
     }
-    
-    return $levelThresholds[$this->level] - $this->xp_points;
-}
+
+    public function getNextLevelXpNeededAttribute()
+    {
+        $levelThresholds = [0, 100, 300, 600, 1000];
+        
+        if ($this->level >= 5) {
+            $nextLevelXp = 1000 + (($this->level - 4) * 500);
+            return $nextLevelXp - $this->xp_points;
+        }
+        
+        return $levelThresholds[$this->level] - $this->xp_points;
+    }
 
     // ========== RATINGS & REVIEWS RELATIONSHIPS ==========
     
@@ -753,33 +695,21 @@ public function getNextLevelXpNeededAttribute()
     
     // ========== REFERRAL METHODS ==========
     
-    /**
-     * Get all referrals made by this user
-     */
     public function referrals()
     {
         return $this->hasMany(Referral::class, 'referrer_id');
     }
     
-    /**
-     * Get the user who referred this user
-     */
     public function referredBy()
     {
         return $this->belongsTo(User::class, 'referred_by');
     }
     
-    /**
-     * Get all users referred by this user
-     */
     public function referredUsers()
     {
         return $this->hasMany(User::class, 'referred_by');
     }
     
-    /**
-     * Generate a unique referral code
-     */
     public static function generateReferralCode()
     {
         do {
@@ -789,41 +719,26 @@ public function getNextLevelXpNeededAttribute()
         return $code;
     }
     
-    /**
-     * Get the referral link for this user
-     */
     public function getReferralLinkAttribute()
     {
         return url('/register?ref=' . $this->referral_code);
     }
     
-    /**
-     * Get total number of referrals
-     */
     public function getTotalReferralsAttribute()
     {
         return $this->referrals()->count();
     }
     
-    /**
-     * Get number of completed referrals
-     */
     public function getCompletedReferralsAttribute()
     {
         return $this->referrals()->where('status', 'completed')->count();
     }
     
-    /**
-     * Get pending referrals
-     */
     public function getPendingReferralsAttribute()
     {
         return $this->referrals()->where('status', 'pending')->count();
     }
     
-    /**
-     * Get total earnings from referrals
-     */
     public function getReferralEarningsAttribute($value)
     {
         return floatval($value ?? 0);

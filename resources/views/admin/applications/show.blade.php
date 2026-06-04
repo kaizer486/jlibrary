@@ -1,8 +1,10 @@
-@extends('layouts.admin')
+@extends('layouts.master')
+
+
 
 @section('title', 'Review Application')
 
-@section('content')
+@section('page-content')
 <div class="max-w-4xl mx-auto">
     <div class="mb-6">
         <a href="{{ route('admin.applications.index') }}" class="text-purple-600 hover:text-purple-700">

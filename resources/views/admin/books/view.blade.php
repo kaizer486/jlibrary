@@ -1,8 +1,11 @@
-@extends('layouts.admin')
+@extends('layouts.master')
+
+
 
 @section('title', $book->title)
 
-@section('content')
+@section('page-content')
+
 <div class="max-w-6xl mx-auto">
     <!-- Breadcrumb -->
     <div class="mb-6 flex items-center gap-2 text-sm">

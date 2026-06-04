@@ -1,6 +1,7 @@
-@extends('layouts.admin')
+@extends('layouts.master')
 
-@section('content')
+@section('page-content')
+
 <div class="max-w-2xl mx-auto">
     <div class="mb-6">
         <a href="{{ route('admin.users.index') }}" class="text-purple-600 hover:text-purple-700">
@@ -54,16 +55,17 @@
                     @enderror
                 </div>
                 
-                <!-- Role Selection (Only Super Admin can change role) -->
+                <!-- Role Selection -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         User Role
                     </label>
                     
                     @if(auth()->user()->isSuperAdmin())
-                        <select name="role" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white">
+                        <select name="role" id="role-select" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white">
                             <option value="user" {{ $user->role == 'user' ? 'selected' : '' }}>👤 Regular User</option>
                             <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>🛡️ Admin</option>
+                            <option value="institution_admin" {{ $user->role == 'institution_admin' ? 'selected' : '' }}>🏢 Institution Admin</option>
                             <option value="super_admin" {{ $user->role == 'super_admin' ? 'selected' : '' }}>👑 Super Admin</option>
                         </select>
                         <p class="text-xs text-gray-400 mt-1">Changing role will update user permissions immediately.</p>
@@ -73,6 +75,8 @@
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">👑 Super Admin</span>
                             @elseif($user->isAdmin())
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">🛡️ Admin</span>
+                            @elseif($user->isInstitutionAdmin())
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">🏢 Institution Admin</span>
                             @else
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">👤 User</span>
                             @endif
@@ -84,6 +88,39 @@
                     @error('role')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <!-- Institution Assignment -->
+                <div id="institution-fields" style="display: {{ $user->role == 'institution_admin' ? 'block' : 'none' }};" class="p-4 bg-gray-50 rounded-lg">
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="ti ti-building"></i> Institution Settings
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Assign to Institution</label>
+                            <select name="institution_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white">
+                                <option value="">Select Institution</option>
+                                @php
+                                    $institutions = \App\Models\Institution::where('status', 'approved')->get();
+                                @endphp
+                                @foreach($institutions as $institution)
+                                    <option value="{{ $institution->id }}" {{ old('institution_id', $user->institution_id) == $institution->id ? 'selected' : '' }}>
+                                        {{ $institution->name }} ({{ $institution->type_label }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">Select which institution this user belongs to</p>
+                        </div>
+                        
+                        <div>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="is_institution_admin" value="1" {{ old('is_institution_admin', $user->is_institution_admin) ? 'checked' : '' }} class="w-4 h-4 text-purple-600 rounded">
+                                <span class="text-sm text-gray-700">This user is an Institution Administrator</span>
+                            </label>
+                            <p class="text-xs text-gray-400 mt-1 ml-6">Institution Admins can manage members and books for their institution</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Password Change Option -->
@@ -170,5 +207,19 @@
             passwordConfirmInput.value = '';
         }
     });
+    
+    // Toggle institution fields based on role selection
+    const roleSelect = document.getElementById('role-select');
+    const institutionFields = document.getElementById('institution-fields');
+    
+    if (roleSelect) {
+        roleSelect.addEventListener('change', function() {
+            if (this.value === 'institution_admin') {
+                institutionFields.style.display = 'block';
+            } else {
+                institutionFields.style.display = 'none';
+            }
+        });
+    }
 </script>
 @endsection

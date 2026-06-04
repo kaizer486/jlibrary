@@ -1,6 +1,7 @@
-@extends('layouts.admin')
+@extends('layouts.master')
 
-@section('content')
+@section('page-content')
+
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
     <p class="text-gray-600 mt-1">Welcome back, {{ Auth::user()->full_name }}!</p>

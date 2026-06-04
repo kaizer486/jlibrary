@@ -1,8 +1,10 @@
-@extends('layouts.admin')
+@extends('layouts.master')
+
+
 
 @section('title', 'Add Member')
 
-@section('content')
+@section('page-content')
 <div class="max-w-2xl mx-auto">
     <div class="mb-6">
         <a href="{{ route('admin.institutions.members', $institution) }}" class="text-purple-600 hover:text-purple-700">

@@ -1,8 +1,11 @@
-@extends('layouts.admin')
+@extends('layouts.master')
+
+
 
 @section('title', 'Admin - Payments Management')
 
-@section('content')
+@section('page-content')
+
 <div class="container mx-auto px-4 py-8 max-w-7xl">
     
     <!-- Header -->
@@ -131,6 +134,117 @@
             </table>
         </div>
     </div>
+
+    <!-- Pending INSTITUTION Withdrawals Section (NEW) -->
+@if(isset($pendingInstitutionWithdrawals) && $pendingInstitutionWithdrawals->count() > 0)
+<div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+        <h2 class="text-white font-bold text-lg flex items-center gap-2">
+            <i class="ti ti-building"></i> Institution Withdrawal Requests
+            <span class="bg-white/20 px-2 py-0.5 rounded-full text-sm">{{ $pendingInstitutionWithdrawals->count() }}</span>
+        </h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b">
+                <tr>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Institution</th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Requested By</th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Amount</th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Method</th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Requested</th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </td>
+            </thead>
+            <tbody class="divide-y">
+                @foreach($pendingInstitutionWithdrawals as $wd)
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <p class="font-medium text-gray-800">{{ $wd->institution->name }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="text-gray-800">{{ $wd->requester->full_name }}</p>
+                        <p class="text-xs text-gray-500">{{ $wd->requester->email }}</p>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="font-semibold text-red-600">TSh {{ number_format($wd->amount, 2) }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="capitalize px-2 py-1 bg-gray-100 rounded-full text-xs">{{ $wd->payment_method }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ $wd->created_at->format('M d, Y H:i') }}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <form action="{{ route('admin.payments.approve-institution-withdrawal', $wd->id) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-600 transition" onclick="return confirm('Mark this withdrawal as processing?')">
+                                    Process
+                                </button>
+                            </form>
+                            <button onclick="showRejectModal({{ $wd->id }})" class="bg-red-500 text-white px-3 py-1 rounded-lg text-sm hover:bg-red-600 transition">
+                                Reject
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full mx-4 overflow-hidden">
+        <div class="bg-gradient-to-r from-red-600 to-red-700 p-4 text-white">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold">Reject Withdrawal</h3>
+                <button onclick="closeRejectModal()" class="text-white/80 hover:text-white">
+                    <i class="ti ti-x text-2xl"></i>
+                </button>
+            </div>
+        </div>
+        <form id="rejectForm" method="POST">
+            @csrf
+            <div class="p-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Reason for Rejection</label>
+                <textarea name="rejection_reason" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required placeholder="Please provide a reason..."></textarea>
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">Confirm Rejection</button>
+                    <button type="button" onclick="closeRejectModal()" class="flex-1 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentWithdrawalId = null;
+
+function showRejectModal(withdrawalId) {
+    currentWithdrawalId = withdrawalId;
+    const modal = document.getElementById('rejectModal');
+    const form = document.getElementById('rejectForm');
+    form.action = `{{ url('/admin/payments/institution-withdrawals') }}/${withdrawalId}/reject`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeRejectModal() {
+    const modal = document.getElementById('rejectModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.getElementById('rejectForm').reset();
+}
+
+// Close modal on click outside
+document.getElementById('rejectModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRejectModal();
+    }
+});
+</script>
+@endif
     
     <!-- All Transactions Section -->
     <div class="bg-white rounded-xl shadow-md overflow-hidden">

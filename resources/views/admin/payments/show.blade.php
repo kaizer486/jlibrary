@@ -1,8 +1,10 @@
-@extends('layouts.admin')
+@extends('layouts.master')
+
+
 
 @section('title', 'Payment Details')
 
-@section('content')
+@section('page-content')
 <div class="container mx-auto px-4 py-8 max-w-4xl">
     
     <div class="mb-6">

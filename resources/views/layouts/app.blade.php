@@ -52,6 +52,37 @@
             z-index: 100;
         }
         
+         /* Institution badge truncation */
+.institution-badge {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* For mobile screens */
+@media (max-width: 768px) {
+    .institution-badge {
+        max-width: 120px;
+    }
+}
+
+/* Institution banner truncation */
+.institution-name {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+/* For very long names - multi-line */
+.institution-name-multiline {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
         @media (max-width: 1024px) {
             #sidebar {
                 transform: translateX(-100%);
@@ -286,23 +317,33 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
-                        <!-- Profile Button -->
-                        <button id="profile-btn" class="flex items-center gap-3 focus:outline-none">
-                            <!-- Wallet Badge -->
-                            <div class="hidden md:flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-full">
-                                <i class="ti ti-wallet text-green-600 text-sm"></i>
-                                <span class="text-sm font-semibold text-green-700">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</span>
-                            </div>
-                            <!-- Avatar -->
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                                <i class="ti ti-user text-white text-sm"></i>
-                            </div>
-                            <span class="hidden md:inline text-sm text-gray-700">{{ Auth::user()->full_name }}</span>
-                            <i id="dropdown-chevron" class="ti ti-chevron-down text-gray-400 text-xs transition-transform duration-200"></i>
-                        </button>
-                        
-                        <!-- Profile Dropdown Menu -->
-                       <!-- Profile Dropdown Menu -->
+                     <!-- Profile Button -->
+<button id="profile-btn" class="flex items-center gap-3 focus:outline-none">
+    <!-- Wallet Badge -->
+    <div class="hidden md:flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-full">
+        <i class="ti ti-wallet text-green-600 text-sm"></i>
+        <span class="text-sm font-semibold text-green-700">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</span>
+    </div>
+    
+  <!-- INSTITUTION BADGE - Only shows if user belongs to an institution -->
+@if(Auth::user()->institution_id && Auth::user()->institution)
+<div class="hidden md:flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-full group relative">
+    <i class="ti ti-building text-indigo-600 text-sm flex-shrink-0"></i>
+    <span class="text-sm font-semibold text-indigo-700 institution-badge" title="{{ Auth::user()->institution->name }}">
+        {{ Str::limit(Auth::user()->institution->name, 25) }}
+    </span>
+</div>
+@endif
+    
+    <!-- Avatar -->
+    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+        <i class="ti ti-user text-white text-sm"></i>
+    </div>
+    <span class="hidden md:inline text-sm text-gray-700">{{ Auth::user()->full_name }}</span>
+    <i id="dropdown-chevron" class="ti ti-chevron-down text-gray-400 text-xs transition-transform duration-200"></i>
+</button>
+        
+                      <!-- Profile Dropdown Menu -->
 <div id="profile-dropdown" class="hidden absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
     <!-- User Info with Edit Button -->
     <div class="px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border-b">
@@ -321,19 +362,31 @@ document.addEventListener('keydown', function(e) {
         </div>
     </div>
 
-    <!-- Admin Panel (for admin AND super_admin) -->
-    @if(Auth::user()->role === 'admin' || Auth::user()->role === 'super_admin')
+    @role('super_admin')
+        <a href="{{ route('super-admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
+            <i class="ti ti-crown text-lg text-yellow-500"></i>
+            <span class="font-medium text-gray-700">Super Dashboard</span>
+            <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded ml-auto">Super</span>
+        </a>
+    @endrole
+    @role('admin')
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
             <i class="ti ti-dashboard text-lg text-purple-600"></i>
             <span class="font-medium text-gray-700">Admin Panel</span>
-            @if(Auth::user()->role === 'super_admin')
-                <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded ml-auto">Super Admin</span>
-            @else
-                <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded ml-auto">Admin</span>
-            @endif
+            <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded ml-auto">Admin</span>
         </a>
-    @endif
+    @endrole
 
+       <!-- Institution Admin Panel Link (for institution_admin) -->
+@hasrole('institution_admin')
+    <a href="{{ route('institution.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
+        <i class="ti ti-building text-lg text-blue-500"></i>
+        <span class="font-medium text-gray-700">Institution Panel</span>
+        <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded ml-auto">Admin</span>
+    </a>
+@endhasrole
+
+      <!-- #region -->
     <!-- Wallet -->
     <a href="{{ route('wallet.index') }}" class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition">
         <i class="ti ti-wallet text-lg text-amber-500"></i>
@@ -371,7 +424,7 @@ document.addEventListener('keydown', function(e) {
             <span>Logout</span>
         </button>
     </form>
-</div>                    
+</div>       
                     </div>
                 </div>
             </div>

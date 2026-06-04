@@ -16,6 +16,7 @@
         "laravel/reverb": "^1.10",
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^3.0",
+        "spatie/laravel-permission": "^8.0",
         "stripe/stripe-php": "*"
     },
     "require-dev": {
