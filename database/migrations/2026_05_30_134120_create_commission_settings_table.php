@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('commission_settings', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique();
-            $table->decimal('value', 5, 2);
+         $table->decimal('value', 12, 2)->default(0);
             $table->text('description')->nullable();
             $table->timestamps();
         });
