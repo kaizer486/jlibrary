@@ -6,6 +6,9 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\InstitutionMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,9 +20,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
+            // Your custom middleware
             'admin'       => AdminMiddleware::class,
             'institution' => InstitutionMiddleware::class,
             'superadmin'  => SuperAdminMiddleware::class,
+            
+            // Spatie middleware
+            'role'        => RoleMiddleware::class,
+            'permission'  => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
