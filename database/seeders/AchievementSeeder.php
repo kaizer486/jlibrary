@@ -52,6 +52,6 @@ class AchievementSeeder extends Seeder
             ],
         ];
 
-        DB::table('achievements')->insert($achievements);
+       DB::table('achievements')->insertOrIgnore($achievements);
     }
 }

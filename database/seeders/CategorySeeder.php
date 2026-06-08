@@ -18,6 +18,6 @@ class CategorySeeder extends Seeder
             ['name' => 'Marketing', 'slug' => 'marketing', 'icon' => 'ti-chart-bar', 'color' => '#ef4444', 'created_at' => now(), 'updated_at' => now()],
         ];
 
-        DB::table('categories')->insert($categories);
+        DB::table('categories')->insertOrIgnore($categories);
     }
 }

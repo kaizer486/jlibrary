@@ -87,6 +87,6 @@ class CourseSeeder extends Seeder
             ],
         ];
 
-        DB::table('courses')->insert($courses);
+       DB::table('courses')->insertOrIgnore($courses);
     }
 }

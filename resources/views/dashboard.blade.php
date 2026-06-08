@@ -20,6 +20,7 @@
                     <div class="flex items-center gap-3 flex-wrap">
                         <div class="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
                             <span class="text-yellow-300">🔥</span>
+                            
                             <span class="text-sm">{{ Auth::user()->streak_days ?? 0 }}-day streak</span>
                         </div>
                         <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
