@@ -40,101 +40,18 @@
                     <span class="text-xl font-bold">JLIBRARY</span>
                 </div>
                 <p class="text-xs text-gray-400 mt-1">Admin Panel</p>
-                @if(auth()->user()?->hasRole('super_admin'))
+              @if(auth()->check() && auth()->user()->hasRole('super_admin'))
                     <div class="mt-2 inline-block bg-red-600/20 text-red-400 text-xs px-2 py-0.5 rounded-full">
                         👑 Super Admin Access
                     </div>
                 @endif
             </div>
             
+           
             <nav class="p-4 space-y-1">
-                <!-- ========================================== -->
-                <!-- SUPER ADMIN MENU (highest priority) -->
-                <!-- ========================================== -->
-                @hasrole('super_admin')
-                    <div class="px-3 mt-4 mb-2">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider">Super Admin</p>
-                    </div>
-                    <a href="{{ route('super-admin.dashboard') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('super-admin.dashboard') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-crown"></i> Super Dashboard
-                    </a>
-                    <a href="{{ route('admin.books.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.books.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-books"></i> Books
-                    </a>
-                    <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-users"></i> Users
-                    </a>
-                    <a href="{{ route('admin.institutions.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.institutions.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-building"></i> Institutions
-                    </a>
-                    <a href="{{ route('admin.marketplace.pending') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.marketplace.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-shopping-cart"></i> Marketplace
-                    </a>
-                    <a href="{{ route('admin.analytics') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.analytics') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-chart-bar"></i> Analytics
-                    </a>
-                    <a href="{{ route('admin.payments.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
-                        <i class="ti ti-wallet"></i> Payments
-                    </a>
-                    <a href="{{ route('admin.applications.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.applications.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-files"></i> Applications
-                        @php
-                            $pendingCount = App\Models\Application::where('status', 'pending')->count();
-                        @endphp
-                        @if($pendingCount > 0)
-                            <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
-                        @endif
-                    </a>
-                    <!-- Manage Quotes - Super Admin -->
-                    <a href="{{ route('admin.quotes.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
-                        <i class="ti ti-quote"></i> Manage Quotes
-                    </a>
-                @endhasrole
-
-                <!-- ========================================== -->
-                <!-- ADMIN MENU (only for admin, NOT super_admin) -->
-                <!-- ========================================== -->
-                @hasrole('admin')
-                    <div class="px-3 mt-4 mb-2">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider">Administration</p>
-                    </div>
-                    <a href="{{ route('admin.dashboard') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.dashboard') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-dashboard"></i> Dashboard
-                    </a>
-                    <a href="{{ route('admin.books.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.books.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-books"></i> Books
-                    </a>
-                    <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-users"></i> Users
-                    </a>
-                    <a href="{{ route('admin.institutions.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.institutions.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-building"></i> Institutions
-                    </a>
-                    <a href="{{ route('admin.marketplace.pending') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.marketplace.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-shopping-cart"></i> Marketplace
-                    </a>
-                    <a href="{{ route('admin.analytics') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.analytics') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-chart-bar"></i> Analytics
-                    </a>
-                    <a href="{{ route('admin.payments.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
-                        <i class="ti ti-wallet"></i> Payments
-                    </a>
-                    <a href="{{ route('admin.applications.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.applications.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-files"></i> Applications
-                        @php
-                            $pendingCount = App\Models\Application::where('status', 'pending')->count();
-                        @endphp
-                        @if($pendingCount > 0)
-                            <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
-                        @endif
-                    </a>
-                    <!-- Manage Quotes - Admin -->
-                    <a href="{{ route('admin.quotes.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
-                        <i class="ti ti-quote"></i> Manage Quotes
-                    </a>
-                @endhasrole
-
-              <!-- Institution Admin Menu -->
+  <!-- ========================================== -->
+<!-- INSTITUTION ADMIN MENU (only for institution_admin) -->
+<!-- ========================================== -->
 @hasrole('institution_admin')
     <div class="px-3 mt-4 mb-2">
         <p class="text-xs text-gray-500 uppercase tracking-wider">Institution</p>
@@ -151,25 +68,26 @@
     <a href="{{ route('institution.withdrawals.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
         <i class="ti ti-wallet"></i> Withdrawals
     </a>
-    <!-- FIXED: Use institution quotes route, NOT admin quotes -->
+    <!-- Institution Quotes - CORRECT ROUTE -->
     <a href="{{ route('institution.quotes.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('institution.quotes.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
         <i class="ti ti-quote"></i> Institution Quotes
     </a>
 @endhasrole
 
-                <hr class="my-3 border-gray-800">
-                
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
-                    <i class="ti ti-arrow-left"></i> Back to Dashboard
-                </a>
-                
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition">
-                        <i class="ti ti-logout"></i> Logout
-                    </button>
-                </form>
-            </nav>    
+
+    <hr class="my-3 border-gray-800">
+    
+    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
+        <i class="ti ti-arrow-left"></i> Back to Dashboard
+    </a>
+    
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition">
+            <i class="ti ti-logout"></i> Logout
+        </button>
+    </form>
+</nav>
         </aside>
         
         <!-- Main Content Area -->
@@ -208,9 +126,9 @@
                             <div class="hidden md:block">
                                 <p class="text-sm font-medium text-gray-700">{{ Auth::user()->full_name }}</p>
                                 <p class="text-xs">
-                                    @if(auth()->user()?->hasRole('super_admin'))
+                                    @if(auth()->user()->hasRole('super_admin'))
                                         <span class="text-red-500 font-semibold">👑 Super Admin</span>
-                                    @elseif(auth()->user()?->hasRole('institution_admin'))
+                                    @elseif(auth()->user()->hasRole('institution_admin'))
                                         <span class="text-blue-500 font-semibold">🏢 Institution Admin</span>
                                     @else
                                         <span class="text-gray-400">Administrator</span>

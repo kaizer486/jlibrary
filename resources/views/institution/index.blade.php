@@ -63,7 +63,7 @@
                     </p>
                     
                     <!-- View Details Button -->
-                    <a href="{{ route('institution.show', $institution->id) }}" 
+                    <a href="{{ route('institutions.show', $institution->id) }}" 
                        class="w-full block text-center bg-gray-100 hover:bg-indigo-50 text-indigo-700 font-medium px-4 py-2.5 rounded-xl transition text-sm border border-gray-200 hover:border-indigo-200">
                         <i class="ti ti-eye"></i> View Details
                     </a>

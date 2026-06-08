@@ -101,6 +101,11 @@
                     <span>Analytics</span>
                 </a>
 
+                <!-- SUPER ADMIN QUOTES - NEW MENU ITEM -->
+                <a href="{{ route('super-admin.quotes.index') }}" class="nav-item {{ request()->routeIs('super-admin.quotes.*') ? 'active' : '' }}">
+    <i class="ti ti-quote text-purple-400 text-xl"></i>
+    <span>Manage Quotes</span>
+</a>
                 <hr class="my-3 border-gray-800">
 
                 <!-- Back to User Site -->

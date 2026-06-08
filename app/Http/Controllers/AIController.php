@@ -17,6 +17,39 @@ class AIController extends Controller
         $this->gemini = $gemini;
     }
     
+    private function formatResponse($text)
+{
+    // Split into sentences
+    $sentences = preg_split('/(?<=[.!?])\s+(?=[A-Z])/', $text);
+    
+    $result = "";
+    $count = 0;
+    
+    foreach ($sentences as $sentence) {
+        $sentence = trim($sentence);
+        if (empty($sentence)) continue;
+        
+        $count++;
+        
+        // Add line break every 2-3 sentences
+        if ($count % 3 == 0) {
+            $result .= $sentence . "\n\n";
+        } else {
+            $result .= $sentence . " ";
+        }
+    }
+    
+    // Add line breaks before bullet points
+    $result = preg_replace('/([.!?])\s+([•\-])/', "$1\n$2", $result);
+    
+    // Add line breaks before numbers
+    $result = preg_replace('/([.!?])\s+(\d+\.)/', "$1\n$2", $result);
+    
+    // Ensure --- has breaks
+    $result = preg_replace('/---/', "\n\n---\n\n", $result);
+    
+    return trim($result);
+}
     // ✅ ADD THIS METHOD IF MISSING
     public function index(Request $request)
     {

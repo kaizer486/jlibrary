@@ -13,9 +13,9 @@
             <div class="relative flex flex-col md:flex-row md:items-center md:justify-between">
                 <div>
                     <div class="flex items-center gap-2 mb-2">
-                        <span class="text-3xl">👋</span>
+                        <span class="text-3xl"></span>
                         <h1 class="text-2xl md:text-3xl font-bold">Welcome back, {{ Auth::user()->full_name }}!</h1>
-                        <span class="text-2xl">🎉</span>
+                        <span class="text-2xl"></span>
                     </div>
                     <div class="flex items-center gap-3 flex-wrap">
                         <div class="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
@@ -377,17 +377,12 @@
                 </div>
             </div>
         </div>
+           
+        
+         <!-- QUOTE OF THE DAY SECTION -->
+        <!-- ============================================ -->
+         @include('components.quote-of-the-day')
 
-        <!-- ============================================ -->
-        <!-- TOP LEARNERS LEADERBOARD - FULL WIDTH SECTION -->
-        <!-- ============================================ -->
-        <div class="mb-8">
-            @include('components.leaderboard', [
-                'topLearners' => $topLearners ?? collect(), 
-                'currentUserRank' => $currentUserRank ?? 1, 
-                'timeframe' => 'all_time'
-            ])
-        </div>
 
         <!-- Knowledge Tips -->
         <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 mb-8 text-white shadow-xl border border-white/20">

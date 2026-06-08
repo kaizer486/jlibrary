@@ -3,7 +3,7 @@
     <!-- Logo -->
     <div class="flex items-center justify-between p-4 border-b border-white/10">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-            <i class="ti ti-book text-2xl text-purple-400"></i>
+           <img src="{{ asset('images/jlibrary.jpeg') }}" alt="Logo" class="h-10 w-auto rounded-3xl">
             <span class="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">JLIBRARY</span>
         </a>
         <button id="close-sidebar" class="lg:hidden text-gray-400 hover:text-white">
@@ -20,31 +20,21 @@
             <div class="flex-1">
                 <p class="font-semibold text-sm text-white">{{ Auth::user()->full_name }}</p>
                 <p class="text-xs text-gray-400">
-                    @role('super_admin')
+                    @if(auth()->user()->role === 'super_admin')
                         👑 Super Administrator
+                    @elseif(auth()->user()->role === 'admin')
+                        🛡️ Administrator
+                    @elseif(auth()->user()->role === 'institution_admin')
+                        🏢 Institution Admin
+                    @elseif(auth()->user()->role === 'author')
+                        📚 Author
+                    @elseif(auth()->user()->role === 'librarian')
+                        📖 Librarian
+                    @elseif(auth()->user()->role === 'instructor')
+                        👨‍🏫 Instructor
                     @else
-                        @role('admin')
-                            🛡️ Administrator
-                        @else
-                            @role('institution_admin')
-                                🏢 Institution Admin
-                            @else
-                                @role('author')
-                                    📚 Author
-                                @else
-                                    @role('librarian')
-                                        📖 Librarian
-                                    @else
-                                        @role('instructor')
-                                            👨‍🏫 Instructor
-                                        @else
-                                            👤 Member
-                                        @endrole
-                                    @endrole
-                                @endrole
-                            @endrole
-                        @endrole
-                    @endrole
+                        👤 Member
+                    @endif
                 </p>
             </div>
         </div>
@@ -74,7 +64,7 @@
         </div>
         
         <!-- DASHBOARD -->
-        @role('super_admin')
+        @if(auth()->user()->role === 'super_admin')
             <a href="{{ url('/super-admin/dashboard') }}" class="nav-item {{ request()->is('super-admin/dashboard') ? 'active' : '' }}">
                 <i class="ti ti-crown text-yellow-400 text-xl"></i>
                 <span>Super Dashboard</span>
@@ -84,7 +74,7 @@
                 <i class="ti ti-dashboard text-indigo-400 text-xl"></i>
                 <span>Dashboard</span>
             </a>
-        @endrole
+        @endif
 
         <!-- Library -->
         <a href="{{ route('library.index') }}" class="nav-item {{ (request()->routeIs('library.*') && !request()->routeIs('library.my-library')) ? 'active' : '' }}">
@@ -161,126 +151,182 @@
             @endif
         </a>
 
-
-
-            <!-- Institution Admin Section (only for institution_admin) -->
-@hasrole('institution_admin')
-    <div class="px-3 mt-4 mb-2">
-        <p class="text-xs text-gray-500 uppercase tracking-wider">Institution Admin</p>
-    </div>
-    <a href="{{ route('institution.dashboard') }}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition">
-        <i class="ti ti-building text-blue-400 text-xl"></i>
-        <span>Institution Panel</span>
-    </a>
-@endhasrole
+        <!-- ========================================== -->
+        <!-- INSTITUTION ADMIN SECTION (only for institution_admin) -->
+        <!-- ========================================== -->
+        @if(auth()->user()->role === 'institution_admin')
+            <div class="px-3 mt-4 mb-2">
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Institution Admin</p>
+            </div>
+            <a href="{{ route('institution.dashboard') }}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition {{ request()->routeIs('institution.dashboard') ? 'active' : '' }}">
+                <i class="ti ti-building text-blue-400 text-xl"></i>
+                <span>Institution Panel</span>
+            </a>
+            <a href="{{ route('institution.members.index') }}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition {{ request()->routeIs('institution.members.*') ? 'active' : '' }}">
+                <i class="ti ti-users text-cyan-400 text-xl"></i>
+                <span>Members</span>
+            </a>
+            <a href="{{ route('institution.books.index') }}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition">
+                <i class="ti ti-books text-blue-400 text-xl"></i>
+                <span>Books</span>
+            </a>
+            <a href="{{ route('institution.withdrawals.index') }}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition">
+                <i class="ti ti-wallet text-green-400 text-xl"></i>
+                <span>Withdrawals</span>
+            </a>
+            <!-- INSTITUTION QUOTES - Only for their institution -->
+            <a href="{{ route('institution.quotes.index') }}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl transition {{ request()->routeIs('institution.quotes.*') ? 'active' : '' }}">
+                <i class="ti ti-quote text-purple-400 text-xl"></i>
+                <span>Institution Quotes</span>
+            </a>
+        @endif
 
         <!-- ========================================== -->
         <!-- AUTHOR SECTION (only for authors) -->
         <!-- ========================================== -->
-        @role('author')
-        <div class="px-3 mt-4 mb-2">
-            <p class="text-xs text-gray-500 uppercase tracking-wider">Author Studio</p>
-        </div>
-        <a href="{{ route('author.dashboard') }}" class="nav-item {{ request()->routeIs('author.dashboard') ? 'active' : '' }}">
-            <i class="ti ti-dashboard text-purple-400 text-xl"></i>
-            <span>Author Dashboard</span>
-        </a>
-        <a href="{{ route('author.books.index') }}" class="nav-item {{ request()->routeIs('author.books.*') ? 'active' : '' }}">
-            <i class="ti ti-books text-blue-400 text-xl"></i>
-            <span>My Books</span>
-        </a>
-        <a href="{{ route('author.royalties.index') }}" class="nav-item {{ request()->routeIs('author.royalties.*') ? 'active' : '' }}">
-            <i class="ti ti-wallet text-green-400 text-xl"></i>
-            <span>Royalties</span>
-        </a>
-        @endrole
+        @if(auth()->user()->role === 'author')
+            <div class="px-3 mt-4 mb-2">
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Author Studio</p>
+            </div>
+            <a href="{{ route('author.dashboard') }}" class="nav-item {{ request()->routeIs('author.dashboard') ? 'active' : '' }}">
+                <i class="ti ti-dashboard text-purple-400 text-xl"></i>
+                <span>Author Dashboard</span>
+            </a>
+            <a href="{{ route('author.books.index') }}" class="nav-item {{ request()->routeIs('author.books.*') ? 'active' : '' }}">
+                <i class="ti ti-books text-blue-400 text-xl"></i>
+                <span>My Books</span>
+            </a>
+            <a href="{{ route('author.royalties.index') }}" class="nav-item {{ request()->routeIs('author.royalties.*') ? 'active' : '' }}">
+                <i class="ti ti-wallet text-green-400 text-xl"></i>
+                <span>Royalties</span>
+            </a>
+        @endif
 
         <!-- ========================================== -->
         <!-- LIBRARIAN SECTION (only for librarians) -->
         <!-- ========================================== -->
-        @role('librarian')
-        <div class="px-3 mt-4 mb-2">
-            <p class="text-xs text-gray-500 uppercase tracking-wider">Library Management</p>
-        </div>
-        <a href="{{ route('librarian.dashboard') }}" class="nav-item {{ request()->routeIs('librarian.dashboard') ? 'active' : '' }}">
-            <i class="ti ti-dashboard text-blue-400 text-xl"></i>
-            <span>Librarian Dashboard</span>
-        </a>
-        <a href="{{ route('admin.books.index') }}" class="nav-item {{ request()->routeIs('admin.books.*') ? 'active' : '' }}">
-            <i class="ti ti-books text-cyan-400 text-xl"></i>
-            <span>Manage Books</span>
-        </a>
-        @endrole
+        @if(auth()->user()->role === 'librarian')
+            <div class="px-3 mt-4 mb-2">
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Library Management</p>
+            </div>
+            <a href="{{ route('librarian.dashboard') }}" class="nav-item {{ request()->routeIs('librarian.dashboard') ? 'active' : '' }}">
+                <i class="ti ti-dashboard text-blue-400 text-xl"></i>
+                <span>Librarian Dashboard</span>
+            </a>
+            <a href="{{ route('admin.books.index') }}" class="nav-item {{ request()->routeIs('admin.books.*') ? 'active' : '' }}">
+                <i class="ti ti-books text-cyan-400 text-xl"></i>
+                <span>Manage Books</span>
+            </a>
+        @endif
 
         <!-- ========================================== -->
         <!-- INSTRUCTOR SECTION (only for instructors) -->
         <!-- ========================================== -->
-        @role('instructor')
-        <div class="px-3 mt-4 mb-2">
-            <p class="text-xs text-gray-500 uppercase tracking-wider">Teaching</p>
-        </div>
-        <a href="{{ route('instructor.dashboard') }}" class="nav-item {{ request()->routeIs('instructor.dashboard') ? 'active' : '' }}">
-            <i class="ti ti-dashboard text-green-400 text-xl"></i>
-            <span>Instructor Dashboard</span>
-        </a>
-        <a href="{{ route('instructor.courses.index') }}" class="nav-item {{ request()->routeIs('instructor.courses.*') ? 'active' : '' }}">
-            <i class="ti ti-video text-cyan-400 text-xl"></i>
-            <span>My Courses</span>
-        </a>
-        <a href="{{ route('quizzes.index') }}" class="nav-item {{ request()->routeIs('quizzes.*') ? 'active' : '' }}">
-            <i class="ti ti-brain text-purple-400 text-xl"></i>
-            <span>My Quizzes</span>
-        </a>
-        @endrole
+        @if(auth()->user()->role === 'instructor')
+            <div class="px-3 mt-4 mb-2">
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Teaching</p>
+            </div>
+            <a href="{{ route('instructor.dashboard') }}" class="nav-item {{ request()->routeIs('instructor.dashboard') ? 'active' : '' }}">
+                <i class="ti ti-dashboard text-green-400 text-xl"></i>
+                <span>Instructor Dashboard</span>
+            </a>
+            <a href="{{ route('instructor.courses.index') }}" class="nav-item {{ request()->routeIs('instructor.courses.*') ? 'active' : '' }}">
+                <i class="ti ti-video text-cyan-400 text-xl"></i>
+                <span>My Courses</span>
+            </a>
+            <a href="{{ route('quizzes.index') }}" class="nav-item {{ request()->routeIs('quizzes.*') ? 'active' : '' }}">
+                <i class="ti ti-brain text-purple-400 text-xl"></i>
+                <span>My Quizzes</span>
+            </a>
+        @endif
 
         <!-- ========================================== -->
-        <!-- ADMIN & SUPER ADMIN SECTION -->
+        <!-- ADMIN SECTION (only for admin role) -->
         <!-- ========================================== -->
-        @hasanyrole('admin|super_admin')
-        <div class="px-3 mt-4 mb-2">
-            <p class="text-xs text-gray-500 uppercase tracking-wider">
-                @role('super_admin')👑 Super Admin Panel @else Administration @endrole
-            </p>
-        </div>
+        @if(auth()->user()->role === 'admin')
+            <div class="px-3 mt-4 mb-2">
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Administration</p>
+            </div>
+            <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                <i class="ti ti-dashboard text-red-400 text-xl"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ route('admin.books.index') }}" class="nav-item {{ request()->routeIs('admin.books.*') ? 'active' : '' }}">
+                <i class="ti ti-books text-blue-400 text-xl"></i>
+                <span>Manage Books</span>
+            </a>
+            <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                <i class="ti ti-users text-cyan-400 text-xl"></i>
+                <span>Manage Users</span>
+            </a>
+            <a href="{{ route('admin.institutions.index') }}" class="nav-item {{ request()->routeIs('admin.institutions.*') ? 'active' : '' }}">
+                <i class="ti ti-building text-indigo-400 text-xl"></i>
+                <span>Institutions</span>
+            </a>
+            <a href="{{ route('admin.marketplace.pending') }}" class="nav-item {{ request()->routeIs('admin.marketplace.*') ? 'active' : '' }}">
+                <i class="ti ti-shopping-cart text-amber-400 text-xl"></i>
+                <span>Pending Approvals</span>
+            </a>
+            <a href="{{ route('admin.payments.index') }}" class="nav-item {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}">
+                <i class="ti ti-wallet text-green-400 text-xl"></i>
+                <span>Payments</span>
+            </a>
+            <a href="{{ route('admin.analytics') }}" class="nav-item {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
+                <i class="ti ti-chart-bar text-yellow-400 text-xl"></i>
+                <span>Analytics</span>
+            </a>
+            <!-- GLOBAL QUOTES - Only for admin (global quotes) -->
+            <a href="{{ route('admin.quotes.index') }}" class="nav-item {{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
+                <i class="ti ti-quote text-purple-400 text-xl"></i>
+                <span>Manage Quotes</span>
+            </a>
+        @endif
 
-        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-            <i class="ti ti-dashboard text-red-400 text-xl"></i>
-            <span>Dashboard</span>
-            @role('super_admin')
-                <span class="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full">Super</span>
-            @endrole
-        </a>
-
-        <a href="{{ route('admin.books.index') }}" class="nav-item {{ request()->routeIs('admin.books.*') ? 'active' : '' }}">
-            <i class="ti ti-books text-blue-400 text-xl"></i>
-            <span>Manage Books</span>
-        </a>
-
-        <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-            <i class="ti ti-users text-cyan-400 text-xl"></i>
-            <span>Manage Users</span>
-        </a>
-
-        <a href="{{ route('admin.institutions.index') }}" class="nav-item {{ request()->routeIs('admin.institutions.*') ? 'active' : '' }}">
-            <i class="ti ti-building text-indigo-400 text-xl"></i>
-            <span>Institutions</span>
-        </a>
-
-        <a href="{{ route('admin.marketplace.pending') }}" class="nav-item {{ request()->routeIs('admin.marketplace.*') ? 'active' : '' }}">
-            <i class="ti ti-shopping-cart text-amber-400 text-xl"></i>
-            <span>Pending Approvals</span>
-        </a>
-
-        <a href="{{ route('admin.payments.index') }}" class="nav-item {{ request()->routeIs('admin.payments.*') ? 'active' : '' }}">
-            <i class="ti ti-wallet text-green-400 text-xl"></i>
-            <span>Payments</span>
-        </a>
-
-        <a href="{{ route('admin.analytics') }}" class="nav-item {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
-            <i class="ti ti-chart-bar text-yellow-400 text-xl"></i>
-            <span>Analytics</span>
-        </a>
-        @endhasanyrole
+        <!-- ========================================== -->
+        <!-- SUPER ADMIN SECTION (only for super_admin) -->
+        <!-- ========================================== -->
+        @if(auth()->user()->role === 'super_admin')
+            <div class="px-3 mt-4 mb-2">
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Super Admin</p>
+            </div>
+            <a href="{{ route('super-admin.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.dashboard') ? 'active' : '' }}">
+                <i class="ti ti-crown text-yellow-400 text-xl"></i>
+                <span>Super Dashboard</span>
+            </a>
+            <a href="{{ route('super-admin.books.index') }}" class="nav-item {{ request()->routeIs('super-admin.books.*') ? 'active' : '' }}">
+                <i class="ti ti-books text-blue-400 text-xl"></i>
+                <span>Manage Books</span>
+            </a>
+            <a href="{{ route('super-admin.users.index') }}" class="nav-item {{ request()->routeIs('super-admin.users.*') ? 'active' : '' }}">
+                <i class="ti ti-users text-cyan-400 text-xl"></i>
+                <span>Manage Users</span>
+            </a>
+            <a href="{{ route('super-admin.institutions.index') }}" class="nav-item {{ request()->routeIs('super-admin.institutions.*') ? 'active' : '' }}">
+                <i class="ti ti-building text-indigo-400 text-xl"></i>
+                <span>Institutions</span>
+            </a>
+            <a href="{{ route('super-admin.marketplace.index') }}" class="nav-item {{ request()->routeIs('super-admin.marketplace.*') ? 'active' : '' }}">
+                <i class="ti ti-shopping-cart text-amber-400 text-xl"></i>
+                <span>Marketplace</span>
+            </a>
+            <a href="{{ route('super-admin.applications.index') }}" class="nav-item {{ request()->routeIs('super-admin.applications.*') ? 'active' : '' }}">
+                <i class="ti ti-files text-yellow-400 text-xl"></i>
+                <span>Applications</span>
+            </a>
+            <a href="{{ route('super-admin.payments.index') }}" class="nav-item {{ request()->routeIs('super-admin.payments.*') ? 'active' : '' }}">
+                <i class="ti ti-wallet text-green-400 text-xl"></i>
+                <span>Payments</span>
+            </a>
+            <a href="{{ route('super-admin.analytics.index') }}" class="nav-item {{ request()->routeIs('super-admin.analytics.*') ? 'active' : '' }}">
+                <i class="ti ti-chart-bar text-yellow-400 text-xl"></i>
+                <span>Analytics</span>
+            </a>
+            <!-- GLOBAL QUOTES - Only for super admin -->
+            <a href="{{ route('admin.quotes.index') }}" class="nav-item {{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
+                <i class="ti ti-quote text-purple-400 text-xl"></i>
+                <span>Manage Quotes</span>
+            </a>
+        @endif
 
     </nav>
 

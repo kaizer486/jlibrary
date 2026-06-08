@@ -5,7 +5,7 @@
         if (auth()->user()->hasRole('super_admin')) {
             $layout = 'layouts.super-admin';
         } elseif (auth()->user()->hasRole('institution_admin')) {
-            $layout = 'layouts.admin';
+            $layout = 'layouts.institution';  // ← CHANGED: use dedicated institution layout
         } elseif (auth()->user()->hasRole('admin')) {
             $layout = 'layouts.admin';
         } elseif (auth()->user()->hasRole('instructor')) {
@@ -20,6 +20,6 @@
 
 @extends($layout)
 
-@section('content')
-    @yield('page-content')
+@section('page-content')
+    @yield('content')
 @endsection

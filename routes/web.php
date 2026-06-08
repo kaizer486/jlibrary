@@ -24,10 +24,10 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\ReferralController;
-use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\JoinRequestController;
+use App\Http\Controllers\InstitutionQuoteController;
 
 // ==========================================
 // PUBLIC ROUTES (No login required)
@@ -68,13 +68,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leaderboard/data', [App\Http\Controllers\LeaderboardController::class, 'index'])->name('leaderboard.data');
     
     // ==========================================
-    // INSTITUTION ROUTES (My Institution & Discover)
+    // INSTITUTION DISCOVERY (All users)
     // ==========================================
     Route::get('/my-institution', [InstitutionController::class, 'myInstitution'])->name('my.institution');
     Route::get('/discover-institutions', [InstitutionController::class, 'discover'])->name('discover.institutions');
-    Route::get('/institution/{id}', [InstitutionController::class, 'show'])->name('institution.show');
+    Route::get('/institutions/{id}', [InstitutionController::class, 'show'])->name('institution.show');
     
-    // Join Request Routes
+    // Join Request Routes (All users)
     Route::post('/join-requests', [JoinRequestController::class, 'store'])->name('join-requests.store');
     Route::delete('/join-requests/{joinRequest}', [JoinRequestController::class, 'cancel'])->name('join-requests.cancel');
     Route::get('/join-requests/my-requests', [JoinRequestController::class, 'myRequests'])->name('join-requests.my-requests');
@@ -294,12 +294,52 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{withdrawal}', [App\Http\Controllers\WithdrawalController::class, 'show'])->name('show');
         Route::post('/{withdrawal}/cancel', [App\Http\Controllers\WithdrawalController::class, 'cancel'])->name('cancel');
     });
+    
+    // ==========================================
+    // INSTRUCTOR COURSE ROUTES
+    // ==========================================
+    Route::prefix('instructor')->name('instructor.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Instructor\DashboardController::class, 'index'])->name('dashboard');
+        Route::resource('courses', App\Http\Controllers\Instructor\CourseController::class);
+        Route::post('/courses/{course}/lessons', [App\Http\Controllers\Instructor\CourseController::class, 'addLesson'])->name('courses.lessons.store');
+        Route::put('/lessons/{lesson}', [App\Http\Controllers\Instructor\CourseController::class, 'updateLesson'])->name('lessons.update');
+        Route::delete('/lessons/{lesson}', [App\Http\Controllers\Instructor\CourseController::class, 'deleteLesson'])->name('lessons.destroy');
+        Route::get('/courses/{course}/enrollments', [App\Http\Controllers\Instructor\CourseController::class, 'enrollments'])->name('courses.enrollments');
+    });
+    
+    // ==========================================
+    // INSTITUTION ADMIN ROUTES (ALL in ONE group)
+    // ==========================================
+    Route::middleware(['auth', 'institution'])->prefix('institution')->name('institution.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [App\Http\Controllers\Institution\DashboardController::class, 'index'])->name('dashboard');
+        
+        // Books
+        Route::get('/books', [App\Http\Controllers\Institution\BookController::class, 'index'])->name('books.index');
+        
+        // Members
+        Route::resource('members', App\Http\Controllers\Institution\MemberController::class);
+        Route::post('/members/{member}/role', [App\Http\Controllers\Institution\MemberController::class, 'updateRole'])->name('members.update-role');
+        
+        // Withdrawals
+        Route::resource('withdrawals', App\Http\Controllers\Institution\WithdrawalController::class);
+        Route::post('/withdrawals/{withdrawal}/cancel', [App\Http\Controllers\Institution\WithdrawalController::class, 'cancel'])->name('withdrawals.cancel');
+        
+        // Quotes - Using InstitutionQuoteController
+        Route::get('/quotes', [App\Http\Controllers\InstitutionQuoteController::class, 'index'])->name('quotes.index');
+        Route::get('/quotes/create', [App\Http\Controllers\InstitutionQuoteController::class, 'create'])->name('quotes.create');
+        Route::post('/quotes', [App\Http\Controllers\InstitutionQuoteController::class, 'store'])->name('quotes.store');
+        Route::get('/quotes/{quote}/edit', [App\Http\Controllers\InstitutionQuoteController::class, 'edit'])->name('quotes.edit');
+        Route::put('/quotes/{quote}', [App\Http\Controllers\InstitutionQuoteController::class, 'update'])->name('quotes.update');
+        Route::delete('/quotes/{quote}', [App\Http\Controllers\InstitutionQuoteController::class, 'destroy'])->name('quotes.destroy');
+        Route::get('/quotes/{quote}/analytics', [App\Http\Controllers\InstitutionQuoteController::class, 'analytics'])->name('quotes.analytics');
+    });
 });
 
 // ==========================================
 // SUPER ADMIN ROUTES
 // ==========================================
-Route::middleware(['auth'])->prefix('super-admin')->name('super-admin.')->group(function () {
+Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
     
     Route::resource('books', App\Http\Controllers\SuperAdmin\BookController::class);
@@ -344,18 +384,15 @@ Route::middleware(['auth'])->prefix('super-admin')->name('super-admin.')->group(
     });
     
     Route::get('/withdrawals/{withdrawal}', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'withdrawalShow'])->name('withdrawals.show');
-});
-
-// ==========================================
-// INSTRUCTOR COURSE ROUTES
-// ==========================================
-Route::middleware(['auth'])->prefix('instructor')->name('instructor.')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\Instructor\DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('courses', App\Http\Controllers\Instructor\CourseController::class);
-    Route::post('/courses/{course}/lessons', [App\Http\Controllers\Instructor\CourseController::class, 'addLesson'])->name('courses.lessons.store');
-    Route::put('/lessons/{lesson}', [App\Http\Controllers\Instructor\CourseController::class, 'updateLesson'])->name('lessons.update');
-    Route::delete('/lessons/{lesson}', [App\Http\Controllers\Instructor\CourseController::class, 'deleteLesson'])->name('lessons.destroy');
-    Route::get('/courses/{course}/enrollments', [App\Http\Controllers\Instructor\CourseController::class, 'enrollments'])->name('courses.enrollments');
+    
+    // Quote Management - Global quotes
+    Route::get('/quotes', [App\Http\Controllers\QuoteController::class, 'index'])->name('quotes.index');
+    Route::get('/quotes/create', [App\Http\Controllers\QuoteController::class, 'create'])->name('quotes.create');
+    Route::post('/quotes', [App\Http\Controllers\QuoteController::class, 'store'])->name('quotes.store');
+    Route::get('/quotes/{quote}/edit', [App\Http\Controllers\QuoteController::class, 'edit'])->name('quotes.edit');
+    Route::put('/quotes/{quote}', [App\Http\Controllers\QuoteController::class, 'update'])->name('quotes.update');
+    Route::delete('/quotes/{quote}', [App\Http\Controllers\QuoteController::class, 'destroy'])->name('quotes.destroy');
+    Route::get('/quotes/{quote}/analytics', [App\Http\Controllers\QuoteController::class, 'analytics'])->name('quotes.analytics');
 });
 
 // ==========================================
@@ -406,18 +443,25 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     });
     
     Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
+    
+    // Quote Management - Global quotes
+    Route::get('/quotes', [App\Http\Controllers\QuoteController::class, 'index'])->name('quotes.index');
+    Route::get('/quotes/create', [App\Http\Controllers\QuoteController::class, 'create'])->name('quotes.create');
+    Route::post('/quotes', [App\Http\Controllers\QuoteController::class, 'store'])->name('quotes.store');
+    Route::get('/quotes/{quote}/edit', [App\Http\Controllers\QuoteController::class, 'edit'])->name('quotes.edit');
+    Route::put('/quotes/{quote}', [App\Http\Controllers\QuoteController::class, 'update'])->name('quotes.update');
+    Route::delete('/quotes/{quote}', [App\Http\Controllers\QuoteController::class, 'destroy'])->name('quotes.destroy');
+    Route::get('/quotes/{quote}/analytics', [App\Http\Controllers\QuoteController::class, 'analytics'])->name('quotes.analytics');
 });
 
 // ==========================================
-// INSTITUTION ADMIN ROUTES
+// PUBLIC QUOTE ROUTES (for dashboard)
 // ==========================================
-Route::middleware(['auth'])->prefix('institution')->name('institution.')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\Institution\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/books', [App\Http\Controllers\Institution\BookController::class, 'index'])->name('books.index');
-    Route::resource('members', App\Http\Controllers\Institution\MemberController::class);
-    Route::post('/members/{member}/role', [App\Http\Controllers\Institution\MemberController::class, 'updateRole'])->name('members.update-role');
-    Route::resource('withdrawals', App\Http\Controllers\Institution\WithdrawalController::class);
-    Route::post('/withdrawals/{withdrawal}/cancel', [App\Http\Controllers\Institution\WithdrawalController::class, 'cancel'])->name('withdrawals.cancel');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/quote-of-the-day', [App\Http\Controllers\QuoteController::class, 'quoteOfTheDay']);
+    Route::post('/api/quote/{quote}/favorite', [App\Http\Controllers\QuoteController::class, 'toggleFavorite']);
+    Route::post('/api/quote/{quote}/share', [App\Http\Controllers\QuoteController::class, 'share']);
+    Route::get('/api/quote/next', [App\Http\Controllers\QuoteController::class, 'nextQuote']);
 });
 
 // ==========================================

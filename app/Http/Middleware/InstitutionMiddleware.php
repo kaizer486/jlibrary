@@ -11,24 +11,31 @@ class InstitutionMiddleware
         if (!auth()->check()) {
             return redirect()->route('login');
         }
-        
+
         $user = auth()->user();
-        
-        // Super Admin, Admin, and Institution Admin with institution_id can access
+
+        // Super Admin and Admin pass freely
         if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
             return $next($request);
         }
-        
-        // Institution Admin must have an institution_id
-        if ($user->hasRole('institution_admin') && !$user->institution_id) {
-            abort(403, 'You are not associated with any institution.');
+
+        // Institution Admin must exist and have an institution
+        if ($user->hasRole('institution_admin')) {
+            if (!$user->institution_id) {
+                abort(403, 'You are not associated with any institution.');
+            }
+            return $next($request); // ✅ explicit pass
         }
-        
-        // Librarian must have an institution_id
-        if ($user->hasRole('librarian') && !$user->institution_id) {
-            abort(403, 'You are not associated with any institution.');
+
+        // Librarian must have an institution
+        if ($user->hasRole('librarian')) {
+            if (!$user->institution_id) {
+                abort(403, 'You are not associated with any institution.');
+            }
+            return $next($request); // ✅ explicit pass
         }
-        
-        return $next($request);
+
+        // Everyone else is denied
+        abort(403, 'You do not have permission to access this page.');
     }
 }

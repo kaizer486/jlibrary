@@ -18,10 +18,10 @@
 
     {{-- ── NEW: Top Navbar ──────────────────────────────────── --}}
     <nav class="relative z-10 flex items-center justify-between px-6 md:px-12 py-5">
-        <div class="flex items-center gap-2 text-white font-bold text-lg tracking-tight">
-            <i class="ti ti-books text-yellow-400 text-2xl"></i>
-            JLIBRARY
-        </div>
+       <div class="flex items-center gap-2">
+    <img src="{{ asset('images/jlibrary.jpeg') }}" alt="Logo" class="h-10 w-auto">
+    <span class="text-white text-lg tracking-tight">JLIBRARY</span>
+</div>
         <div class="hidden md:flex items-center gap-8 text-sm font-medium text-white/70">
             <a href="#features" class="hover:text-white transition-colors">Browse</a>
             <a href="#" class="hover:text-white transition-colors">Community</a>
