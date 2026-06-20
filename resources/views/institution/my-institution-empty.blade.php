@@ -11,10 +11,16 @@
             </div>
             <h2 class="text-2xl font-bold text-white mb-2">No Institution Yet</h2>
             <p class="text-gray-300 mb-6">You haven't joined any institution. Discover and join one to access exclusive resources!</p>
-            <a href="{{ route('discover.institutions') }}" 
-               class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition">
-                <i class="ti ti-building-community"></i> Discover Institutions
-            </a>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="{{ route('discover.institutions') }}" 
+                   class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition">
+                    <i class="ti ti-building-community"></i> Discover Institutions
+                </a>
+                <a href="{{ route('institution.create-request') }}" 
+                   class="inline-flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl font-semibold transition">
+                    <i class="ti ti-file-plus"></i> Create Institution
+                </a>
+            </div>
         </div>
     </div>
 </div>

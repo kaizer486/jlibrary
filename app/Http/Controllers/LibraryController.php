@@ -60,35 +60,58 @@ class LibraryController extends Controller
     }
     
     // Read book online (PDF viewer)
-  public function read(Book $book)
+public function read(Book $book)
 {
     $user = auth()->user();
     
-    // Check if user has access to this book
-    if (!$book->canUserAccess($user->id)) {
+    // For free books, always allow access
+    if (!$book->is_paid) {
+        // Auto-add free book to user's library if not already there
+        $userBook = $user->books()->where('book_id', $book->id)->first();
+        
+        if (!$userBook) {
+            $user->books()->attach($book->id, [
+                'status' => 'reading',
+                'progress_percent' => 0,
+                'current_page' => 0,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            $currentPage = 0;
+        } else {
+            $currentPage = $userBook->pivot->current_page ?? 0;
+        }
+        
+        // Return the dedicated reader view
+        return view('library.reader', compact('book', 'currentPage'));
+    }
+    
+    // For paid books, check access
+    if (!$book->userHasAccess($user->id)) {
         return redirect()->route('library.show', $book)
             ->with('error', 'You need to purchase this book to read it.');
     }
     
-    // Get or create user_book record
+    // Get or create user_book record for paid books
     $userBook = $user->books()->where('book_id', $book->id)->first();
     
     if (!$userBook) {
-        // Create a record if it doesn't exist
         $user->books()->attach($book->id, [
             'status' => 'reading',
             'progress_percent' => 0,
             'current_page' => 0,
-            'purchased_at' => now()
+            'purchased_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
-    } elseif ($userBook->pivot->status === 'want_to_read') {
-        // Update status to reading
-        $user->books()->updateExistingPivot($book->id, ['status' => 'reading']);
+        $currentPage = 0;
+    } else {
+        $currentPage = $userBook->pivot->current_page ?? 0;
     }
     
-    return view('library.read', compact('book'));
-}
-    
+    // Return the dedicated reader view
+    return view('library.reader', compact('book', 'currentPage'));
+}   
 
     // Update reading progress (AJAX)
     public function updateProgress(Request $request, Book $book)
@@ -172,6 +195,55 @@ class LibraryController extends Controller
         
         return view('library.my-library', compact('reading', 'completed', 'wantToRead', 'purchased'));
     }
+
+    /**
+ * Serve PDF file with proper authentication
+ */
+public function servePdf(Book $book)
+{
+    $user = auth()->user();
+    
+    // Check if user is logged in
+    if (!$user) {
+        abort(403, 'Please login to read this book.');
+    }
+    
+    // Allow access if user is Super Admin or Admin
+    if ($user->isSuperAdmin() || $user->isAdmin()) {
+        // Admins can read any book
+        return $this->returnPdfFile($book);
+    }
+    
+    // For free books, any logged-in user can read
+    if (!$book->is_paid) {
+        return $this->returnPdfFile($book);
+    }
+    
+    // For paid books, check if user has purchased
+    if ($book->userHasAccess($user->id)) {
+        return $this->returnPdfFile($book);
+    }
+    
+    // If no conditions met, deny access
+    abort(403, 'You do not have permission to read this book.');
+}
+
+/**
+ * Return the PDF file
+ */
+private function returnPdfFile(Book $book)
+{
+    $filePath = storage_path('app/public/' . $book->file_path);
+    
+    if (!file_exists($filePath)) {
+        abort(404, 'Book file not found.');
+    }
+    
+    return response()->file($filePath, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'inline; filename="' . $book->title . '.pdf"',
+    ]);
+}
     
     // Add book to user's library
     public function addToLibrary(Request $request, Book $book)

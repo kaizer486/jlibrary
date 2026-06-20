@@ -10,7 +10,11 @@
         <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-6 mb-6 text-white shadow-xl">
             <div class="flex items-center gap-4">
                 <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <i class="ti ti-building text-3xl"></i>
+                    @if($institution->logo)
+                        <img src="{{ asset('storage/' . $institution->logo) }}" alt="{{ $institution->name }}" class="w-14 h-14 rounded-xl object-cover">
+                    @else
+                        <i class="ti ti-building text-3xl"></i>
+                    @endif
                 </div>
                 <div>
                     <h1 class="text-2xl md:text-3xl font-bold">{{ $institution->name }}</h1>
@@ -20,6 +24,19 @@
                         <span class="text-sm flex items-center gap-1">
                             <i class="ti ti-map-pin"></i> {{ $institution->city }}, {{ $institution->region ?? '' }}
                         </span>
+                        @endif
+                        <!-- ========================================== -->
+                        <!-- INSTITUTION BADGES                        -->
+                        <!-- ========================================== -->
+                        @if(isset($institution->is_verified) && $institution->is_verified)
+                            <span class="text-sm flex items-center gap-1 bg-blue-500/30 px-3 py-1 rounded-full">
+                                <i class="ti ti-shield-check"></i> Verified
+                            </span>
+                        @endif
+                        @if(isset($institution->is_featured) && $institution->is_featured)
+                            <span class="text-sm flex items-center gap-1 bg-yellow-500/30 px-3 py-1 rounded-full">
+                                <i class="ti ti-star"></i> Featured
+                            </span>
                         @endif
                     </div>
                 </div>

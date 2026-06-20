@@ -55,10 +55,10 @@
             </div>
             
             <!-- Embedded PDF Viewer -->
-            <iframe src="{{ asset('storage/' . $book->file_path) }}#toolbar=1&navpanes=1&scrollbar=1"
-                    class="w-full h-[80vh]"
-                    style="min-height: 600px;">
-            </iframe>
+          <iframe src="{{ route('library.pdf', $book) }}#toolbar=1&navpanes=1&scrollbar=1"
+        class="w-full h-[80vh]"
+        style="min-height: 600px;">
+</iframe>
         @else
             <!-- Sample text content when PDF is not available -->
             <div class="p-8 prose max-w-none">

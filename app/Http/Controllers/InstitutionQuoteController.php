@@ -40,7 +40,9 @@ class InstitutionQuoteController extends Controller
     public function create()
     {
         $categories = Quote::getCategories();
-        return view('institution.quotes.create', compact('categories'));
+        $institution = auth()->user()->institution;
+        
+        return view('institution.quotes.create', compact('categories', 'institution'));
     }
     
     public function store(Request $request)

@@ -10,6 +10,7 @@ use App\Models\Payment;
 
 /**
  * @property int $id
+ * @property int|null $institution_id
  * @property string $title
  * @property string $author
  * @property string|null $description
@@ -41,6 +42,7 @@ use App\Models\Payment;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Review> $reviews
  * @property-read int|null $reviews_count
  * @property-read \App\Models\User|null $uploader
+ * @property-read \App\Models\Institution|null $institution
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
  * @property-read int|null $users_count
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Book newModelQuery()
@@ -54,6 +56,7 @@ use App\Models\Payment;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereEmbedding($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereFilePath($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereInstitutionId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereIsPaid($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Book wherePrice($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereStatus($value)
@@ -66,9 +69,18 @@ use App\Models\Payment;
 class Book extends Model
 {
     protected $fillable = [
-        'title', 'author', 'description', 'cover_image',
-        'file_path', 'is_paid', 'price', 'total_pages',
-        'downloads', 'uploaded_by', 'status'
+        'title', 
+        'author', 
+        'description', 
+        'cover_image',
+        'file_path', 
+        'is_paid', 
+        'price', 
+        'total_pages',
+        'downloads', 
+        'uploaded_by', 
+        'status',
+        'institution_id',  // ✅ ADDED THIS
     ];
 
     protected $casts = [
@@ -95,11 +107,14 @@ class Book extends Model
         return $this->hasMany(Quiz::class);
     }
 
-    // Add this with your other relationships
-public function institution()
-{
-    return $this->belongsTo(Institution::class);
-}
+    /**
+     * Get the institution that owns the book.
+     */
+    public function institution(): BelongsTo
+    {
+        return $this->belongsTo(Institution::class);
+    }
+    
     public function certificates(): HasMany
     {
         return $this->hasMany(Certificate::class);
@@ -156,19 +171,21 @@ public function institution()
     {
         return $this->ratings()->count();
     }
- public function getCommissionBreakdown($price)
-{
-    $institutionCommission = CommissionSetting::getInstitutionCommission();
-    $platformCommission = CommissionSetting::getPlatformCommission();
-    $authorCommission = CommissionSetting::getAuthorCommission();
     
-    return [
-        'price' => $price,
-        'institution_amount' => ($price * $institutionCommission) / 100,
-        'platform_amount' => ($price * $platformCommission) / 100,
-        'author_amount' => ($price * $authorCommission) / 100,
-    ];
-}
+    public function getCommissionBreakdown($price)
+    {
+        $institutionCommission = CommissionSetting::getInstitutionCommission();
+        $platformCommission = CommissionSetting::getPlatformCommission();
+        $authorCommission = CommissionSetting::getAuthorCommission();
+        
+        return [
+            'price' => $price,
+            'institution_amount' => ($price * $institutionCommission) / 100,
+            'platform_amount' => ($price * $platformCommission) / 100,
+            'author_amount' => ($price * $authorCommission) / 100,
+        ];
+    }
+    
     public function userRating($userId = null)
     {
         $userId = $userId ?? auth()->id();
@@ -244,14 +261,11 @@ public function institution()
     }
     
     /**
-     * Check if user can access this book
+     * Check if user can access this book (alias for userHasAccess)
      */
     public function canUserAccess($userId = null)
     {
         $userId = $userId ?? auth()->id();
-        
-        if (!$userId) return false;
-        
         return $this->userHasAccess($userId);
     }
     

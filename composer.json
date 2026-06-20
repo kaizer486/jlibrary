@@ -14,10 +14,11 @@
         "laravel/ai": "^0.6.8",
         "laravel/framework": "^13.7",
         "laravel/reverb": "^1.10",
+        "laravel/sanctum": "^4.3",
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^3.0",
         "spatie/laravel-permission": "^8.0",
-        "stripe/stripe-php": "*"
+        "stripe/stripe-php": "^20.2"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.7",
@@ -35,7 +36,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Helpers/CurrencyHelper.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

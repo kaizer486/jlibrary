@@ -19,8 +19,7 @@
                     </div>
                     <div class="flex items-center gap-3 flex-wrap">
                         <div class="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                            <span class="text-yellow-300">🔥</span>
-                            
+                            <span class="text-yellow-300"></span>
                             <span class="text-sm">{{ Auth::user()->streak_days ?? 0 }}-day streak</span>
                         </div>
                         <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
@@ -97,35 +96,42 @@
         </div>
 
 
-        <!-- INSTITUTIONS SECTION - SINGLE LONG BAR -->
-        <!-- ============================================ -->
-        <div class="mb-8">
-            <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-xl border border-white/20">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <div class="flex items-center gap-2 mb-2">
-                            <i class="ti ti-building-community text-3xl"></i>
-                            <h3 class="text-2xl font-bold">Institutions</h3>
-                        </div>
-                        <p class="text-indigo-100 text-sm">Connect with learning communities and access exclusive resources</p>
-                    </div>
-                    <div class="flex gap-3 flex-wrap">
-                        <!-- My Institution Button -->
-                        <a href="{{ route('my.institution') }}" 
-                           class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
-                            <i class="ti ti-building"></i>
-                            My Institution
-                        </a>
-                        <!-- Discover Institutions Button -->
-                        <a href="{{ route('discover.institutions') }}" 
-                           class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
-                            <i class="ti ti-building-community"></i>
-                            Discover Institutions
-                        </a>
-                    </div>
+    <!-- ============================================ -->
+<!-- INSTITUTIONS SECTION - THREE OPTIONS         -->
+<!-- ============================================ -->
+<div class="mb-8">
+    <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-xl border border-white/20">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="ti ti-building-community text-3xl"></i>
+                    <h3 class="text-2xl font-bold">Institutions</h3>
                 </div>
+                <p class="text-indigo-100 text-sm">Connect with learning communities and access exclusive resources</p>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+                <!-- Option 1: My Institution -->
+                <a href="{{ route('my.institution') }}" 
+                   class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
+                    <i class="ti ti-building"></i>
+                    My Institution
+                </a>
+                <!-- Option 2: Discover Institutions -->
+                <a href="{{ route('discover.institutions') }}" 
+                   class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
+                    <i class="ti ti-building-community"></i>
+                    Discover Institutions
+                </a>
+                <!-- Option 3: Request to Create Institution -->
+                <a href="{{ route('institution.create-request') }}" 
+                   class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
+                    <i class="ti ti-file-plus"></i>
+                    Register institution
+                </a>
             </div>
         </div>
+    </div>
+</div>
 
         <!-- ============================================ -->
         <!-- BECOME A CREATOR SECTION - ONLY FOR REGULAR USERS -->
@@ -175,7 +181,7 @@
         <!-- Continue Learning -->
         <div class="mb-8">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-white">📖 Continue Learning</h2>
+                <h2 class="text-xl font-bold text-white"> Continue Learning</h2>
                 <a href="#" class="text-indigo-300 text-sm hover:underline">View All →</a>
             </div>
             <div class="grid md:grid-cols-2 gap-4">
@@ -225,7 +231,7 @@
         <!-- Browse Library -->
         <div class="mb-8">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-white">🔍 Browse Library</h2>
+                <h2 class="text-xl font-bold text-white"> Browse Library</h2>
                 <a href="{{ route('library.index') }}" class="text-indigo-300 text-sm hover:underline">View Library →</a>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -361,7 +367,7 @@
                             </div>
                             <div>
                                 <h4 class="font-bold text-lg">{{ Auth::user()->full_name }}</h4>
-                                <p class="text-xs text-purple-200">Level {{ Auth::user()->level ?? 1 }} Learner ⭐</p>
+                                <p class="text-xs text-purple-200">Level {{ Auth::user()->level ?? 1 }} Learner </p>
                             </div>
                         </div>
                         <div class="mt-3">

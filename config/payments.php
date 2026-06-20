@@ -57,19 +57,18 @@ return [
             'color' => 'red'
         ],
         
-        'card' => [
-            'name' => 'Credit / Debit Card',
-            'enabled' => env('STRIPE_ENABLED', true),
-            'driver' => 'stripe',
-            'public_key' => env('STRIPE_KEY'),
-            'secret_key' => env('STRIPE_SECRET'),
-            'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-            'min_amount' => 50,
-            'max_amount' => 1000000,
-            'icon' => 'ti-credit-card',
-            'color' => 'purple'
-        ],
-        
+      'card' => [
+    'name' => 'Credit / Debit Card',
+    'enabled' => env('STRIPE_ENABLED', true),
+    'driver' => 'stripe',
+    'public_key' => env('STRIPE_KEY'),
+    'secret_key' => env('STRIPE_SECRET'),
+    'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'), 
+    'min_amount' => 50,
+    'max_amount' => 1000000,
+    'icon' => 'ti-credit-card',
+    'color' => 'purple'
+],
         'bank' => [
             'name' => 'Bank Transfer',
             'enabled' => env('BANK_ENABLED', true),
@@ -87,6 +86,20 @@ return [
             ]
         ]
     ],
+
+    'pesapal' => [
+    'name' => 'PesaPal',
+    'enabled' => env('PESAPAL_ENABLED', true),
+    'environment' => env('PESAPAL_ENVIRONMENT', 'sandbox'), 
+    'consumer_key' => env('PESAPAL_CONSUMER_KEY'),
+    'consumer_secret' => env('PESAPAL_CONSUMER_SECRET'),
+    'callback_url' => env('PESAPAL_CALLBACK_URL', '/payment/pesapal/callback'),
+    'ipn_url' => env('PESAPAL_IPN_URL', '/webhooks/pesapal'),
+    'min_amount' => 100,
+    'max_amount' => 10000000,
+    'icon' => 'ti-credit-card',
+    'color' => 'blue'
+],
     
     'commission' => [
         'marketplace_seller' => 80, // 80% to seller

@@ -41,38 +41,81 @@ class PaymentGatewayService
         return $gateways;
     }
 
+   
     /**
-     * Process payment with selected gateway
-     */
-    public function processPayment($gateway, $user, $amount, $type, $reference, $metadata = [])
-    {
-        $result = ['success' => false, 'message' => 'Payment gateway not found'];
-        
-        switch ($gateway) {
-            case 'mpesa':
-                $result = $this->mpesaStkPush($user, $amount, $reference, $type, $metadata);
-                break;
-                
-            case 'tigopesa':
-                $result = $this->tigopesaPay($user, $amount, $reference, $type, $metadata);
-                break;
-                
-            case 'halopesa':
-                $result = $this->halopesaPay($user, $amount, $reference, $type, $metadata);
-                break;
-                
-            case 'card':
-                $result = $this->createStripePaymentIntent($amount, $reference, $metadata);
-                break;
-                
-            case 'bank':
-                $result = $this->createBankTransfer($amount, $reference, $type);
-                break;
-        }
-        
-        return $result;
+ * Process payment with selected gateway
+ */
+public function processPayment($gateway, $user, $amount, $type, $reference, $metadata = [])
+{
+    $result = ['success' => false, 'message' => 'Payment gateway not found'];
+    
+    switch ($gateway) {
+        case 'mpesa':
+            $result = $this->mpesaStkPush($user, $amount, $reference, $type, $metadata);
+            break;
+            
+        case 'tigopesa':
+            $result = $this->tigopesaPay($user, $amount, $reference, $type, $metadata);
+            break;
+            
+        case 'halopesa':
+            $result = $this->halopesaPay($user, $amount, $reference, $type, $metadata);
+            break;
+            
+        case 'card':
+            $result = $this->createStripePaymentIntent($amount, $reference, $metadata);
+            break;
+            
+        case 'pesapal':  
+            $result = $this->pesapalPay($user, $amount, $reference, $type, $metadata);
+            break;
+            
+        case 'bank':
+            $result = $this->createBankTransfer($amount, $reference, $type);
+            break;
     }
+    
+    return $result;
+}
 
+/**
+ * Process Pesapal payment
+ */
+protected function pesapalPay($user, $amount, $reference, $description, $metadata)
+{
+    $pesapal = new \App\Services\PesapalService();
+    
+    $phone = $metadata['phone'] ?? $user->mpesa_phone;
+    $phoneFormatted = $pesapal->formatPhoneNumber($phone);
+    
+    $orderData = [
+        'id' => $reference,
+        'currency' => 'TZS',
+        'amount' => round($amount),
+        'description' => $description,
+        'callback_url' => url(config('payments.gateways.pesapal.callback_url')),
+        'notification_id' => null,
+        'billing_address' => [
+            'email_address' => $user->email,
+            'phone_number' => $phoneFormatted,
+            'country_code' => 'TZ',
+            'first_name' => explode(' ', $user->full_name)[0] ?? 'Customer',
+            'last_name' => explode(' ', $user->full_name)[1] ?? 'User',
+        ],
+    ];
+    
+    $result = $pesapal->submitOrder($orderData);
+    
+    if ($result['success']) {
+        return [
+            'success' => true,
+            'redirect_url' => $result['redirect_url'],
+            'order_tracking_id' => $result['order_tracking_id'],
+        ];
+    }
+    
+    return ['success' => false, 'message' => $result['message'] ?? 'Pesapal payment failed'];
+}
     /**
      * Initialize M-Pesa STK Push
      */

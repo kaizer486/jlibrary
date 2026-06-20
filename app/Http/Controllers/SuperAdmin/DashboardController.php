@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\QuizAttempt;
 use App\Models\Certificate;
 use App\Models\WithdrawalRequest;
+use App\Models\InstitutionCreationRequest; 
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -27,6 +28,9 @@ class DashboardController extends Controller
         
         // Platform Earnings (20% commission)
         $platformEarnings = $totalRevenue * 0.20;
+        
+        // ✅ Pending Institution Creation Requests
+        $pendingRequests = InstitutionCreationRequest::where('status', 'pending')->count();
         
         // Recent Activity
         $recentUsers = User::latest()->limit(5)->get();
@@ -56,7 +60,8 @@ class DashboardController extends Controller
             'totalUsers', 'totalInstitutions', 'totalBooks', 'totalRevenue',
             'totalQuizzes', 'totalCertificates', 'pendingWithdrawals',
             'platformEarnings', 'recentUsers', 'recentInstitutions', 'recentBooks',
-            'monthlyRevenue', 'userGrowth', 'months'
+            'monthlyRevenue', 'userGrowth', 'months',
+            'pendingRequests' // 
         ));
     }
 }

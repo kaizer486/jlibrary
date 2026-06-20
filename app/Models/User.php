@@ -13,6 +13,7 @@ use App\Traits\HasXpRewards;
 use App\Models\QuizAttempt;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Traits\HasRoles; 
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * @property int $id
@@ -137,7 +138,7 @@ use Spatie\Permission\Traits\HasRoles;
  */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles, HasXpRewards;
+    use HasApiTokens, Notifiable, HasRoles, HasXpRewards;
 
     protected $table = 'users';
 
@@ -183,6 +184,28 @@ class User extends Authenticatable
         'referral_earnings' => 'decimal:2',
     ];
 
+
+    /**
+     * Create a new API token for the user
+     */
+    public function createApiToken(string $name = 'mobile_app', array $abilities = ['*']): array
+    {
+        $token = $this->createToken($name, $abilities);
+        
+        return [
+            'access_token' => $token->plainTextToken,
+            'token_type' => 'Bearer',
+            'expires_at' => null, // Sanctum tokens don't expire by default
+        ];
+    }
+    
+    /**
+     * Revoke all user tokens (logout from all devices)
+     */
+    public function revokeAllTokens(): void
+    {
+        $this->tokens()->delete();
+    }
     // ========== APPLICATION RELATIONSHIPS ==========
     
     public function applications()
@@ -430,17 +453,56 @@ class User extends Authenticatable
         return $this->hasMany(GroupMessage::class);
     }
     
-    // ========== PAYMENT & CERTIFICATE RELATIONSHIPS ==========
-    
-    public function payments()
-    {
-        return $this->hasMany(\App\Models\Payment::class);
-    }
-    
-    public function certificates()
-    {
-        return $this->hasMany(Certificate::class);
-    }
+   // ========== PAYMENT & CERTIFICATE RELATIONSHIPS ==========
+
+public function payments()
+{
+    return $this->hasMany(\App\Models\Payment::class);
+}
+
+/**
+ * Get all wallet transactions for this user
+ */
+public function transactions()
+{
+    return $this->hasMany(\App\Models\Transaction::class);
+}
+
+/**
+ * Get completed credit transactions (deposits only)
+ */
+public function deposits()
+{
+    return $this->transactions()
+        ->where('type', 'credit')
+        ->where('status', 'completed');
+}
+
+/**
+ * Get completed debit transactions (purchases only)
+ */
+public function purchases()
+{
+    return $this->transactions()
+        ->where('type', 'debit')
+        ->where('status', 'completed');
+}
+
+/**
+ * Get pending withdrawals
+ */
+public function pendingWithdrawals()
+{
+    return $this->transactions()
+        ->where('type', 'debit')
+        ->where('method', 'withdrawal')
+        ->where('status', 'pending');
+}
+
+public function certificates()
+{
+    return $this->hasMany(Certificate::class);
+}
     
     // ========== MARKETPLACE RELATIONSHIPS ==========
     

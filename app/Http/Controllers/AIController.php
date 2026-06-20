@@ -7,6 +7,7 @@ use App\Models\ChatSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class AIController extends Controller
 {
@@ -17,40 +18,6 @@ class AIController extends Controller
         $this->gemini = $gemini;
     }
     
-    private function formatResponse($text)
-{
-    // Split into sentences
-    $sentences = preg_split('/(?<=[.!?])\s+(?=[A-Z])/', $text);
-    
-    $result = "";
-    $count = 0;
-    
-    foreach ($sentences as $sentence) {
-        $sentence = trim($sentence);
-        if (empty($sentence)) continue;
-        
-        $count++;
-        
-        // Add line break every 2-3 sentences
-        if ($count % 3 == 0) {
-            $result .= $sentence . "\n\n";
-        } else {
-            $result .= $sentence . " ";
-        }
-    }
-    
-    // Add line breaks before bullet points
-    $result = preg_replace('/([.!?])\s+([•\-])/', "$1\n$2", $result);
-    
-    // Add line breaks before numbers
-    $result = preg_replace('/([.!?])\s+(\d+\.)/', "$1\n$2", $result);
-    
-    // Ensure --- has breaks
-    $result = preg_replace('/---/', "\n\n---\n\n", $result);
-    
-    return trim($result);
-}
-    // ✅ ADD THIS METHOD IF MISSING
     public function index(Request $request)
     {
         $sessions = ChatSession::where('user_id', Auth::id())
@@ -74,6 +41,34 @@ class AIController extends Controller
     
     public function sendMessage(Request $request)
     {
+        // RATE LIMIT CHECK - 10 requests per minute per user
+        $userId = Auth::id();
+        $cacheKey = "ai_rate_limit_{$userId}";
+        $limit = 10;
+        $timeWindow = 60;
+        
+        $requests = Cache::get($cacheKey, []);
+        $now = time();
+        
+        $requests = array_filter($requests, function($timestamp) use ($now, $timeWindow) {
+            return ($now - $timestamp) < $timeWindow;
+        });
+        
+        if (count($requests) >= $limit) {
+            $oldestRequest = min($requests);
+            $waitTime = $timeWindow - ($now - $oldestRequest);
+            
+            return response()->json([
+                'success' => false,
+                'response' => "You're sending messages too quickly. Please wait {$waitTime} seconds before trying again.",
+                'rate_limited' => true
+            ], 429);
+        }
+        
+        $requests[] = $now;
+        Cache::put($cacheKey, $requests, $timeWindow);
+        
+        // Validate input
         $request->validate([
             'message' => 'required|string|max:2000',
             'session_id' => 'nullable|exists:chat_sessions,id'
@@ -90,35 +85,31 @@ class AIController extends Controller
             if (!$session) {
                 $session = ChatSession::create([
                     'user_id' => Auth::id(),
-                    'title' => substr($request->message, 0, 50),
+                    'title' => 'New Chat',
                     'messages' => []
                 ]);
             }
             
-            $messages = $session->messages ?? [];
+            $messages = $session->getRecentMessages(20);
             
             $result = $this->gemini->chat($request->message, $messages);
             
-            $messages[] = [
-                'role' => 'user',
-                'content' => $request->message,
-                'timestamp' => now()->toIso8601String()
-            ];
-            $messages[] = [
-                'role' => 'assistant',
-                'content' => $result['response'],
-                'timestamp' => now()->toIso8601String()
-            ];
-            
-            if (count($messages) <= 2) {
-                $title = substr($request->message, 0, 40) . (strlen($request->message) > 40 ? '...' : '');
-                $session->title = $title;
+            // Check if Gemini returned an error
+            if (!$result['success']) {
+                // Get status code from result or default to 500
+                $statusCode = $result['status_code'] ?? 500;
+                
+                return response()->json([
+                    'success' => false,
+                    'response' => $result['response'],
+                    'rate_limited' => $result['rate_limited'] ?? false,
+                    'retry_after' => $result['retry_after'] ?? null
+                ], $statusCode);
             }
             
-            $session->update([
-                'messages' => $messages,
-                'updated_at' => now()
-            ]);
+            // Add messages using the model's helper method
+            $session->addMessage('user', $request->message);
+            $session->addMessage('assistant', $result['response']);
             
             return response()->json([
                 'success' => true,
@@ -128,9 +119,32 @@ class AIController extends Controller
             
         } catch (\Exception $e) {
             Log::error('AI Chat Error: ' . $e->getMessage());
+            
+            $errorMessage = $e->getMessage();
+            
+            // Check if it's a rate limit/quota error
+            if (strpos($errorMessage, '429') !== false || 
+                strpos(strtolower($errorMessage), 'quota') !== false ||
+                strpos(strtolower($errorMessage), 'rate limit') !== false) {
+                
+                $retrySeconds = 30;
+                if (preg_match('/retry in (\d+\.?\d*)s/', $errorMessage, $matches)) {
+                    $retrySeconds = ceil($matches[1]) + 5;
+                }
+                
+                return response()->json([
+                    'success' => false,
+                    'response' => "The AI service has reached its free usage limit. Please wait about {$retrySeconds} seconds and try again. You can upgrade to a paid plan for higher limits.",
+                    'rate_limited' => true,
+                    'retry_after' => $retrySeconds
+                ], 429);
+            }
+            
+            // Generic error
             return response()->json([
                 'success' => false,
-                'response' => 'Sorry, something went wrong. Please try again.'
+                'response' => 'Sorry, something went wrong. Please try again.',
+                'error' => config('app.debug') ? $errorMessage : null
             ], 500);
         }
     }

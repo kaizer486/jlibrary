@@ -7,6 +7,7 @@
     <title>JLIBRARY AI Assistant</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
@@ -235,21 +236,21 @@
         <div id="messagesArea" class="flex-1 overflow-y-auto px-5 py-4 {{ ($currentSession && $currentSession->messages && count($currentSession->messages) > 0) ? 'block' : 'hidden' }}">
             <div class="max-w-3xl mx-auto">
                 <div id="chatMessages">
-                    @if($currentSession && $currentSession->messages && count($currentSession->messages) > 0)
-                        @foreach($currentSession->messages as $msg)
-                        <div class="mb-3 {{ $msg['role'] == 'user' ? 'text-right' : '' }}">
-                            <div class="inline-block {{ $msg['role'] == 'user' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-white/10 text-white' }} rounded-xl px-4 py-2 max-w-[85%]">
-                                @if($msg['role'] == 'user')
-                                    <p class="text-sm">{{ $msg['content'] }}</p>
-                                @else
-                                    <div class="ai-message text-sm">
-                                        {!! \App\Helpers\TextFormatter::format($msg['content']) !!}
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                        @endforeach
-                    @endif
+                 @if($currentSession && $currentSession->messages && count($currentSession->messages) > 0)
+    @foreach($currentSession->messages as $msg)
+    <div class="mb-3 {{ $msg['role'] == 'user' ? 'text-right' : '' }}">
+        <div class="inline-block {{ $msg['role'] == 'user' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-white/10 text-white' }} rounded-xl px-4 py-2 max-w-[85%]">
+            @if($msg['role'] == 'user')
+                <p class="text-sm">{{ $msg['content'] }}</p>
+            @else
+                <div class="ai-message text-sm">
+                    <span class="ai-markdown" data-content="{{ e($msg['content']) }}"></span>
+                </div>
+            @endif
+        </div>
+    </div>
+    @endforeach
+@endif
                 </div>
                 <div id="typingIndicator" class="hidden mb-3">
                     <div class="inline-block bg-white/10 rounded-xl px-3 py-2">
@@ -285,11 +286,26 @@
     
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
+// ============================================
+// CONFIGURATION
+// ============================================
+marked.setOptions({
+    breaks: true,
+    gfm: true,
+});
+
+// ============================================
+// STATE VARIABLES
+// ============================================
 let currentSessionId = {{ $currentSession ? $currentSession->id : 'null' }};
 let isSending = false;
 let activeDropdown = null;
 
+// ============================================
+// DOM ELEMENTS
+// ============================================
 const chatMessages = document.getElementById('chatMessages');
 const messageInput = document.getElementById('messageInput');
 const sendBtn = document.getElementById('sendBtn');
@@ -298,58 +314,16 @@ const welcomeScreen = document.getElementById('welcomeScreen');
 const messagesArea = document.getElementById('messagesArea');
 const newChatBtn = document.getElementById('newChatBtn');
 
-// ========== TEXT FORMATTING FUNCTION ==========
+// ============================================
+// RENDER FUNCTIONS
+// ============================================
+document.querySelectorAll('.ai-markdown').forEach(el => {
+    const raw = el.dataset.content || '';
+    el.innerHTML = marked.parse(raw);
+});
 
-
-function formatAIText(text) {
-    // Clean up
-    text = text.replace(/---/g, '');
-    text = text.replace(/\(Continued\)/gi, '');
-    
-    // Add HTML for numbered sections
-    text = text.replace(/(\d+)\.\s+([A-Z][a-z]+(?: [A-Z][a-z]+)*)/g, '<h3 style="color: #e9d5ff; margin-top: 20px; margin-bottom: 10px;">$1. $2</h3>');
-    
-    // Add HTML for bullet points (lines that start with bullet-like symbols)
-    text = text.replace(/^[•\-*]\s*([^.\n]+[.!]?)/gm, '<li style="margin-bottom: 6px;">$1</li>');
-    
-    // Wrap consecutive bullet points in ul tags
-    text = text.replace(/(<li>.*?<\/li>\n?)+/gs, '<ul style="margin-bottom: 16px; padding-left: 24px;">$&</ul>');
-    
-    // Wrap paragraphs (every 2-3 sentences)
-    let sentences = text.split(/(?<=[.!?])\s+(?=[A-Z0-9<])/);
-    let result = '';
-    let para = '';
-    let count = 0;
-    
-    for (let i = 0; i < sentences.length; i++) {
-        let sentence = sentences[i];
-        
-        // Skip if it's already HTML
-        if (sentence.includes('<h3') || sentence.includes('<ul') || sentence.includes('<li')) {
-            if (para.trim()) {
-                result += '<p style="margin-bottom: 14px;">' + para.trim() + '</p>';
-                para = '';
-                count = 0;
-            }
-            result += sentence;
-            continue;
-        }
-        
-        para += sentence + ' ';
-        count++;
-        
-        if (count >= 2) {
-            result += '<p style="margin-bottom: 14px;">' + para.trim() + '</p>';
-            para = '';
-            count = 0;
-        }
-    }
-    
-    if (para.trim()) {
-        result += '<p style="margin-bottom: 14px;">' + para.trim() + '</p>';
-    }
-    
-    return result;
+function renderAI(content) {
+    return marked.parse(content);
 }
 
 function escapeHtml(text) {
@@ -358,67 +332,84 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// ============================================
+// ADD MESSAGE FUNCTION
+// ============================================
 function addMessage(role, content) {
-    // Hide welcome screen, show messages area
     if (welcomeScreen && !welcomeScreen.classList.contains('hidden')) {
         welcomeScreen.classList.add('hidden');
         messagesArea.classList.remove('hidden');
     }
-    
+
     const div = document.createElement('div');
     div.className = `mb-3 ${role === 'user' ? 'text-right' : ''}`;
-    
+
     if (role === 'user') {
         div.innerHTML = `
             <div class="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl px-4 py-2 max-w-[80%]">
                 <p class="text-sm">${escapeHtml(content)}</p>
-            </div>
-        `;
+            </div>`;
     } else {
-        // FORMAT THE AI RESPONSE
-        let formattedContent = formatAIText(content);
-        
         div.innerHTML = `
-            <div class="inline-block bg-white/10 text-white rounded-xl px-5 py-3 max-w-[85%] ai-message" style="text-align: left;">
-                ${formattedContent}
-            </div>
-        `;
+            <div class="inline-block bg-white/10 text-white rounded-xl px-5 py-3 max-w-[85%] ai-message" style="text-align:left">
+                ${renderAI(content)}
+            </div>`;
     }
-    
+
     chatMessages.appendChild(div);
-    
-    // Scroll to bottom
-    const messagesContainer = document.getElementById('messagesArea');
-    if (messagesContainer) {
-        setTimeout(() => {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }, 100);
-    }
+
+    const container = document.getElementById('messagesArea');
+    if (container) setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
 }
 
+// ============================================
+// TYPING INDICATOR
+// ============================================
 function showTyping() {
     typingIndicator.classList.remove('hidden');
-    const messagesContainer = document.getElementById('messagesArea');
-    if (messagesContainer) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
+    const c = document.getElementById('messagesArea');
+    if (c) c.scrollTop = c.scrollHeight;
 }
 
 function hideTyping() {
     typingIndicator.classList.add('hidden');
 }
 
+// ============================================
+// NEW CHAT FUNCTION
+// ============================================
+async function newChat() {
+    try {
+        const response = await fetch('{{ route("ai.new") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            window.location.href = '{{ route("ai.chat") }}?chat_session=' + data.session_id;
+        }
+    } catch (error) {
+        console.error('New chat error:', error);
+        alert('Could not create new chat. Please try again.');
+    }
+}
+
+// ============================================
+// SEND MESSAGE FUNCTION
+// ============================================
 async function sendMessage() {
     const message = messageInput.value.trim();
     if (!message || isSending) return;
-    
+
     addMessage('user', message);
     messageInput.value = '';
-    
     isSending = true;
     sendBtn.disabled = true;
     showTyping();
-    
+
     try {
         const response = await fetch('{{ route("ai.send") }}', {
             method: 'POST',
@@ -426,50 +417,49 @@ async function sendMessage() {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
-            body: JSON.stringify({ message: message, session_id: currentSessionId })
+            body: JSON.stringify({
+                message: message,
+                session_id: currentSessionId
+            })
         });
-        
+
         const data = await response.json();
         hideTyping();
-        
+
+        if (!response.ok) {
+            const errorMsg = data.response || 'Sorry, I encountered an error. Please try again.';
+            addMessage('assistant', errorMsg);
+            if (response.status === 429) {
+                console.warn('Rate limited:', data);
+            }
+            return;
+        }
+
         if (data.success) {
             addMessage('assistant', data.response);
-            if (data.session_id) {
-                currentSessionId = data.session_id;
-            }
+            if (data.session_id) currentSessionId = data.session_id;
         } else {
-            addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+            addMessage('assistant', data.response || 'Sorry, I encountered an error. Please try again.');
         }
     } catch (error) {
         hideTyping();
+        console.error('Fetch error:', error);
         addMessage('assistant', 'Connection error. Please check your internet and try again.');
     }
-    
+
     isSending = false;
     sendBtn.disabled = false;
     messageInput.focus();
 }
 
-async function newChat() {
-    try {
-        const response = await fetch('{{ route("ai.new") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-        });
-        const data = await response.json();
-        if (data.success) {
-            window.location.href = '{{ route("ai.chat") }}?chat_session=' + data.session_id;
-        }
-    } catch (error) {
-        alert('Could not create new chat');
-    }
-}
-
+// ============================================
+// DELETE CHAT FUNCTION
+// ============================================
 async function deleteChat(sessionId) {
     try {
-        await fetch('/ai/session/' + sessionId, { 
-            method: 'DELETE', 
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } 
+        await fetch('/ai/session/' + sessionId, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
         });
         location.reload();
     } catch (error) {
@@ -477,7 +467,55 @@ async function deleteChat(sessionId) {
     }
 }
 
-// Event Listeners
+// ============================================
+// EVENT LISTENERS
+// ============================================
+
+// 1. Send Button
+if (sendBtn) {
+    sendBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+}
+
+// 2. New Chat Button
+if (newChatBtn) {
+    newChatBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        newChat();
+    });
+}
+
+// 3. Enter Key on Message Input
+if (messageInput) {
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+}
+
+// 4. Click on Chat Items (sidebar)
+document.querySelectorAll('.chat-item').forEach(item => {
+    item.addEventListener('click', function(e) {
+        if (!e.target.closest('.menu-dots') && !e.target.closest('.chat-menu-btn')) {
+            window.location.href = '{{ route("ai.chat") }}?chat_session=' + this.dataset.sessionId;
+        }
+    });
+});
+
+// 5. Prompt Buttons
+document.querySelectorAll('.prompt-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const text = this.textContent.trim().replace(/^[^\w]+/, '');
+        messageInput.value = text;
+        sendMessage();
+    });
+});
+
+// 6. Chat Menu Dropdown (three dots)
 document.addEventListener('click', function(e) {
     if (activeDropdown && !activeDropdown.contains(e.target)) {
         activeDropdown.remove();
@@ -488,15 +526,15 @@ document.addEventListener('click', function(e) {
 document.querySelectorAll('.chat-menu-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
         e.stopPropagation();
-        
+
         const sessionId = this.dataset.sessionId;
         const sessionTitle = this.dataset.sessionTitle;
-        
+
         if (activeDropdown) {
             activeDropdown.remove();
             activeDropdown = null;
         }
-        
+
         const dropdown = document.createElement('div');
         dropdown.className = 'chat-menu-dropdown';
         dropdown.innerHTML = `
@@ -507,21 +545,21 @@ document.querySelectorAll('.chat-menu-btn').forEach(btn => {
                 <i class="ti ti-trash mr-2"></i> Delete chat
             </button>
         `;
-        
+
         const rect = btn.getBoundingClientRect();
         dropdown.style.position = 'fixed';
         dropdown.style.top = `${rect.bottom + 5}px`;
         dropdown.style.right = `${window.innerWidth - rect.right + 5}px`;
         document.body.appendChild(dropdown);
         activeDropdown = dropdown;
-        
+
         dropdown.querySelector('.copy-chat').addEventListener('click', function(e) {
             e.stopPropagation();
             navigator.clipboard.writeText(this.dataset.title);
             dropdown.remove();
             activeDropdown = null;
         });
-        
+
         dropdown.querySelector('.delete-chat').addEventListener('click', function(e) {
             e.stopPropagation();
             deleteChat(this.dataset.id);
@@ -531,28 +569,10 @@ document.querySelectorAll('.chat-menu-btn').forEach(btn => {
     });
 });
 
-sendBtn.addEventListener('click', sendMessage);
-newChatBtn.addEventListener('click', newChat);
-messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
-
-document.querySelectorAll('.chat-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-        if (!e.target.closest('.menu-dots') && !e.target.closest('.chat-menu-btn')) {
-            window.location.href = '{{ route("ai.chat") }}?chat_session=' + item.dataset.sessionId;
-        }
-    });
-});
-
-document.querySelectorAll('.prompt-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const text = btn.textContent.trim().replace(/^[^\w]+/, '');
-        messageInput.value = text;
-        sendMessage();
-    });
-});
-
+// ============================================
+// FOCUS ON LOAD
+// ============================================
 messageInput.focus();
 </script>
-
 </body>
 </html>

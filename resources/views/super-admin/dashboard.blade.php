@@ -23,7 +23,7 @@
 </div>
 
 <!-- Stats Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
     <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-purple-500 hover:shadow-md transition">
         <div class="flex items-center justify-between">
             <div>
@@ -74,8 +74,27 @@
             </div>
         </div>
     </div>
-</div>
 
+    <!-- ========================================== -->
+    <!-- PENDING INSTITUTION REQUESTS CARD         -->
+    <!-- ========================================== -->
+    <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-orange-500 hover:shadow-md transition cursor-pointer" onclick="window.location='{{ route('super-admin.institution-requests.index') }}'">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm">Pending Institution Requests</p>
+                <p class="text-3xl font-bold text-orange-600">{{ $pendingRequests ?? 0 }}</p>
+            </div>
+            <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                <i class="ti ti-file-plus text-orange-600 text-2xl"></i>
+            </div>
+        </div>
+        <div class="mt-2">
+            <a href="{{ route('super-admin.institution-requests.index') }}" class="text-xs text-purple-600 hover:underline">
+                <i class="ti ti-arrow-right"></i> Manage Requests
+            </a>
+        </div>
+    </div>
+</div>
 <!-- Second Row Stats -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-indigo-500">

@@ -28,6 +28,9 @@ use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\JoinRequestController;
 use App\Http\Controllers\InstitutionQuoteController;
+use App\Http\Controllers\AuthorWalletController;
+use App\Http\Controllers\InstitutionCreationController;
+use App\Http\Controllers\SuperAdmin\InstitutionRequestController;
 
 // ==========================================
 // PUBLIC ROUTES (No login required)
@@ -35,20 +38,36 @@ use App\Http\Controllers\InstitutionQuoteController;
 Route::get('/', [FrontController::class, 'welcome'])->name('welcome');
 Route::get('/home', [FrontController::class, 'home'])->name('home');
 
+// Test webhook endpoints (development only)
+if (app()->environment('local')) {
+    Route::post('/test-webhook/mpesa', function () {
+        return response()->json(['message' => 'Test webhook received']);
+    });
+}
+
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'healthy',
+        'timestamp' => now()->toISOString(),
+        'environment' => app()->environment(),
+        'version' => '1.0.0',
+    ]);
+});
+
+// ==========================================
+// PAYMENT WEBHOOKS & CALLBACKS (Public - All Gateways)
+// ==========================================
+Route::post('/webhooks/mpesa', [App\Http\Controllers\PaymentWebhookController::class, 'handleMpesaCallback']);
+Route::post('/webhooks/tigopesa', [App\Http\Controllers\PaymentWebhookController::class, 'handleTigopesaCallback']);
+Route::post('/webhooks/halopesa', [App\Http\Controllers\PaymentWebhookController::class, 'handleHalopesaCallback']);
+Route::post('/webhooks/stripe', [App\Http\Controllers\PaymentWebhookController::class, 'handleStripeWebhook']);
+Route::post('/webhooks/pesapal', [App\Http\Controllers\PaymentWebhookController::class, 'handlePesapalCallback']);
+Route::get('/payment/pesapal/callback', [App\Http\Controllers\MultiPaymentController::class, 'pesapalCallback'])->name('payment.pesapal.callback');
+
 // ==========================================
 // REFERRAL PROCESS (Public)
 // ==========================================
 Route::get('/refer/{code}', [ReferralController::class, 'processReferral'])->name('referral.process');
-
-// ==========================================
-// PAYMENT WEBHOOKS & CALLBACKS (Public)
-// ==========================================
-Route::post('/webhooks/mpesa', [App\Http\Controllers\PaymentWebhookController::class, 'handleMpesaCallback']);
-Route::post('/webhooks/stripe', [App\Http\Controllers\PaymentWebhookController::class, 'handleStripeWebhook']);
-Route::post('/api/payments/mpesa/callback', [App\Http\Controllers\MultiPaymentController::class, 'mpesaCallback'])->name('payment.mpesa.callback');
-Route::post('/api/payments/tigopesa/callback', [App\Http\Controllers\MultiPaymentController::class, 'tigopesaCallback'])->name('payment.tigopesa.callback');
-Route::post('/api/payments/halopesa/callback', [App\Http\Controllers\MultiPaymentController::class, 'halopesaCallback'])->name('payment.halopesa.callback');
-Route::post('/stripe/webhook', [App\Http\Controllers\MultiPaymentController::class, 'stripeWebhook'])->name('stripe.webhook');
 
 // ==========================================
 // PUBLIC PROFILE ROUTE
@@ -66,15 +85,43 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/leaderboard', [App\Http\Controllers\LeaderboardController::class, 'index'])->name('leaderboard.index');
     Route::get('/leaderboard/data', [App\Http\Controllers\LeaderboardController::class, 'index'])->name('leaderboard.data');
+
+    // ==========================================
+    // INVOICE ROUTES
+    // ==========================================
+    Route::prefix('invoices')->name('invoices.')->group(function () {
+        Route::get('/payment/{paymentId}', [App\Http\Controllers\InvoiceController::class, 'paymentInvoice'])->name('payment');
+        Route::get('/transaction/{transactionId}', [App\Http\Controllers\InvoiceController::class, 'transactionInvoice'])->name('transaction');
+        Route::get('/subscription/{subscriptionPaymentId}', [App\Http\Controllers\InvoiceController::class, 'subscriptionInvoice'])->name('subscription');
+    });
     
     // ==========================================
-    // INSTITUTION DISCOVERY (All users)
+    // AUTHOR WALLET ROUTES
+    // ==========================================
+    Route::prefix('author')->name('author.')->group(function () {
+        Route::get('/wallet', [AuthorWalletController::class, 'index'])->name('wallet');
+        Route::post('/wallet/withdraw', [AuthorWalletController::class, 'requestWithdrawal'])->name('wallet.withdraw');
+    });
+    
+    // ==========================================
+    // INSTITUTION DISCOVERY & MANAGEMENT (All users)
     // ==========================================
     Route::get('/my-institution', [InstitutionController::class, 'myInstitution'])->name('my.institution');
     Route::get('/discover-institutions', [InstitutionController::class, 'discover'])->name('discover.institutions');
-    Route::get('/institutions/{id}', [InstitutionController::class, 'show'])->name('institution.show');
+    Route::get('/institutions/{id}', [InstitutionController::class, 'show'])->name('institutions.show');
     
-    // Join Request Routes (All users)
+    // ==========================================
+    // INSTITUTION CREATION REQUESTS (User)
+    // ==========================================
+    Route::get('/institution/create-request', [InstitutionCreationController::class, 'create'])->name('institution.create-request');
+    Route::post('/institution/create-request', [InstitutionCreationController::class, 'store'])->name('institution.store-request');
+    Route::get('/institution/my-requests', [InstitutionCreationController::class, 'myRequests'])->name('institution.my-requests');
+    Route::get('/institution/request/{id}', [InstitutionCreationController::class, 'show'])->name('institution.request.show');
+    Route::post('/institution/request/{id}/cancel', [InstitutionCreationController::class, 'cancel'])->name('institution.request.cancel');
+    
+    // ==========================================
+    // JOIN REQUESTS (All users)
+    // ==========================================
     Route::post('/join-requests', [JoinRequestController::class, 'store'])->name('join-requests.store');
     Route::delete('/join-requests/{joinRequest}', [JoinRequestController::class, 'cancel'])->name('join-requests.cancel');
     Route::get('/join-requests/my-requests', [JoinRequestController::class, 'myRequests'])->name('join-requests.my-requests');
@@ -93,6 +140,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/my-library', [LibraryController::class, 'myLibrary'])->name('my-library');
         Route::get('/{book}', [LibraryController::class, 'show'])->name('show');
         Route::get('/{book}/read', [LibraryController::class, 'read'])->name('read');
+        Route::get('/{book}/pdf', [LibraryController::class, 'servePdf'])->name('pdf');
         Route::get('/{book}/download', [LibraryController::class, 'download'])->name('download');
         Route::post('/{book}/progress', [LibraryController::class, 'updateProgress'])->name('progress');
         Route::post('/{book}/add-to-library', [LibraryController::class, 'addToLibrary'])->name('add-to-library');
@@ -125,6 +173,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/balance', [WalletController::class, 'getBalance'])->name('balance');
         Route::post('/withdraw', [WalletController::class, 'withdraw'])->name('withdraw');
         Route::post('/topup', [WalletController::class, 'topUp'])->name('topup');
+        Route::get('/export', [WalletController::class, 'exportTransactions'])->name('export');
     });
     
     // ==========================================
@@ -276,7 +325,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/institution/members/directory', [App\Http\Controllers\Institution\MemberController::class, 'directory'])->name('institution.members.directory');
     
     // ==========================================
-    // AUTHOR ROUTES
+    // AUTHOR DASHBOARD ROUTES
     // ==========================================
     Route::prefix('author')->name('author.')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Author\DashboardController::class, 'index'])->name('dashboard');
@@ -285,7 +334,7 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // ==========================================
-    // USER WITHDRAWALS
+    // USER WITHDRAWALS (Create request only - approval is SuperAdmin)
     // ==========================================
     Route::prefix('withdrawals')->name('withdrawals.')->group(function () {
         Route::get('/', [App\Http\Controllers\WithdrawalController::class, 'index'])->name('index');
@@ -308,7 +357,7 @@ Route::middleware(['auth'])->group(function () {
     });
     
     // ==========================================
-    // INSTITUTION ADMIN ROUTES (ALL in ONE group)
+    // INSTITUTION ADMIN ROUTES
     // ==========================================
     Route::middleware(['auth', 'institution'])->prefix('institution')->name('institution.')->group(function () {
         // Dashboard
@@ -325,34 +374,57 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('withdrawals', App\Http\Controllers\Institution\WithdrawalController::class);
         Route::post('/withdrawals/{withdrawal}/cancel', [App\Http\Controllers\Institution\WithdrawalController::class, 'cancel'])->name('withdrawals.cancel');
         
-        // Quotes - Using InstitutionQuoteController
-        Route::get('/quotes', [App\Http\Controllers\InstitutionQuoteController::class, 'index'])->name('quotes.index');
-        Route::get('/quotes/create', [App\Http\Controllers\InstitutionQuoteController::class, 'create'])->name('quotes.create');
-        Route::post('/quotes', [App\Http\Controllers\InstitutionQuoteController::class, 'store'])->name('quotes.store');
-        Route::get('/quotes/{quote}/edit', [App\Http\Controllers\InstitutionQuoteController::class, 'edit'])->name('quotes.edit');
-        Route::put('/quotes/{quote}', [App\Http\Controllers\InstitutionQuoteController::class, 'update'])->name('quotes.update');
-        Route::delete('/quotes/{quote}', [App\Http\Controllers\InstitutionQuoteController::class, 'destroy'])->name('quotes.destroy');
-        Route::get('/quotes/{quote}/analytics', [App\Http\Controllers\InstitutionQuoteController::class, 'analytics'])->name('quotes.analytics');
+        // Quotes
+        Route::get('/quotes', [InstitutionQuoteController::class, 'index'])->name('quotes.index');
+        Route::get('/quotes/create', [InstitutionQuoteController::class, 'create'])->name('quotes.create');
+        Route::post('/quotes', [InstitutionQuoteController::class, 'store'])->name('quotes.store');
+        Route::get('/quotes/{quote}/edit', [InstitutionQuoteController::class, 'edit'])->name('quotes.edit');
+        Route::put('/quotes/{quote}', [InstitutionQuoteController::class, 'update'])->name('quotes.update');
+        Route::delete('/quotes/{quote}', [InstitutionQuoteController::class, 'destroy'])->name('quotes.destroy');
+        Route::get('/quotes/{quote}/analytics', [InstitutionQuoteController::class, 'analytics'])->name('quotes.analytics');
+        
+        // Join Requests (Institution Admin)
+        Route::get('/join-requests', [JoinRequestController::class, 'institutionRequests'])->name('join-requests.index');
+        Route::get('/join-requests/{id}', [JoinRequestController::class, 'showRequest'])->name('join-requests.show');
+        Route::post('/join-requests/{id}/approve', [JoinRequestController::class, 'approveRequest'])->name('join-requests.approve');
+        Route::post('/join-requests/{id}/reject', [JoinRequestController::class, 'rejectRequest'])->name('join-requests.reject');
     });
 });
 
 // ==========================================
-// SUPER ADMIN ROUTES
+// INSTITUTION CREATION REQUESTS (Superadmin)
 // ==========================================
 Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+    Route::get('/institution-requests', [InstitutionRequestController::class, 'index'])->name('institution-requests.index');
+    Route::get('/institution-requests/{id}', [InstitutionRequestController::class, 'show'])->name('institution-requests.show');
+    Route::post('/institution-requests/{id}/approve', [InstitutionRequestController::class, 'approve'])->name('institution-requests.approve');
+    Route::post('/institution-requests/{id}/reject', [InstitutionRequestController::class, 'reject'])->name('institution-requests.reject');
+    Route::get('/institution-requests/{id}/download', [InstitutionRequestController::class, 'download'])->name('institution-requests.download');
+});
+
+// ==========================================
+// SUPER ADMIN ROUTES (Full financial control)
+// ==========================================
+Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+    
+    // Dashboard
     Route::get('/dashboard', [App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
     
+    // Book Management
     Route::resource('books', App\Http\Controllers\SuperAdmin\BookController::class);
     Route::post('/books/{book}/toggle-status', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleStatus'])->name('books.toggle-status');
     Route::post('/books/bulk-action', [App\Http\Controllers\SuperAdmin\BookController::class, 'bulkAction'])->name('books.bulk-action');
     
+    // User Management
     Route::resource('users', App\Http\Controllers\SuperAdmin\UserController::class);
     
+    // Institution Management
     Route::resource('institutions', App\Http\Controllers\SuperAdmin\InstitutionController::class);
     Route::post('/institutions/{institution}/approve', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'approve'])->name('institutions.approve');
     Route::post('/institutions/{institution}/suspend', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'suspend'])->name('institutions.suspend');
     Route::post('/institutions/{institution}/reject', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'reject'])->name('institutions.reject');
     
+    // Marketplace Management
     Route::prefix('marketplace')->name('marketplace.')->group(function () {
         Route::get('/', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'index'])->name('index');
         Route::get('/{listing}', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'show'])->name('show');
@@ -361,6 +433,7 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
         Route::delete('/{listing}', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'destroy'])->name('destroy');
     });
     
+    // Application Management
     Route::prefix('applications')->name('applications.')->group(function () {
         Route::get('/', [App\Http\Controllers\SuperAdmin\ApplicationController::class, 'index'])->name('index');
         Route::get('/{application}', [App\Http\Controllers\SuperAdmin\ApplicationController::class, 'show'])->name('show');
@@ -370,22 +443,45 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
         Route::delete('/{application}', [App\Http\Controllers\SuperAdmin\ApplicationController::class, 'destroy'])->name('destroy');
     });
     
+    // Analytics
     Route::prefix('analytics')->name('analytics.')->group(function () {
         Route::get('/', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'index'])->name('index');
         Route::get('/data', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'getData'])->name('data');
         Route::get('/export', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'export'])->name('export');
     });
     
+    // ==========================================
+    // SUPER ADMIN PAYMENT ROUTES (Full financial control)
+    // ==========================================
     Route::prefix('payments')->name('payments.')->group(function () {
+        // View routes
         Route::get('/', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'index'])->name('index');
         Route::get('/transactions', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'transactions'])->name('transactions');
         Route::get('/withdrawals', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'withdrawals'])->name('withdrawals');
+        Route::get('/commissions', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'commissions'])->name('commissions');
+        Route::get('/author-payouts', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'authorPayouts'])->name('author-payouts');
+        Route::get('/audit-logs', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'auditLogs'])->name('audit-logs');
+        Route::get('/export', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'exportReport'])->name('export');
         Route::get('/{payment}', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'show'])->name('show');
+        
+        // ✅ APPROVAL ACTIONS (SuperAdmin only)
+        // User withdrawals
+        Route::post('/user-withdrawals/{id}/approve', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'approveUserWithdrawal'])->name('approve-user-withdrawal');
+        Route::post('/user-withdrawals/{id}/reject', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'rejectUserWithdrawal'])->name('reject-user-withdrawal');
+        
+        // Institution withdrawals
+        Route::post('/institution-withdrawals/{id}/approve', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'approveInstitutionWithdrawal'])->name('approve-institution-withdrawal');
+        Route::post('/institution-withdrawals/{id}/complete', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'completeInstitutionWithdrawal'])->name('complete-institution-withdrawal');
+        Route::post('/institution-withdrawals/{id}/reject', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'rejectInstitutionWithdrawal'])->name('reject-institution-withdrawal');
+        
+        // Author payouts
+        Route::post('/author-payouts/{transactionId}/approve', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'approveAuthorPayout'])->name('approve-author-payout');
+        Route::post('/author-payouts/{transactionId}/reject', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'rejectAuthorPayout'])->name('reject-author-payout');
     });
     
     Route::get('/withdrawals/{withdrawal}', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'withdrawalShow'])->name('withdrawals.show');
     
-    // Quote Management - Global quotes
+    // Quote Management
     Route::get('/quotes', [App\Http\Controllers\QuoteController::class, 'index'])->name('quotes.index');
     Route::get('/quotes/create', [App\Http\Controllers\QuoteController::class, 'create'])->name('quotes.create');
     Route::post('/quotes', [App\Http\Controllers\QuoteController::class, 'store'])->name('quotes.store');
@@ -396,55 +492,61 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
 });
 
 // ==========================================
-// ADMIN ROUTES
+// ADMIN ROUTES (Content management only - NO financial approvals)
 // ==========================================
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    
+    // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::get('/analytics/data', [AnalyticsController::class, 'getData'])->name('analytics.data');
     
+    // Book Management
     Route::resource('books', AdminBookController::class);
     Route::post('/books/{book}/toggle-status', [AdminBookController::class, 'toggleStatus'])->name('books.toggle-status');
     Route::post('/books/bulk-action', [AdminBookController::class, 'bulkAction'])->name('books.bulk-action');
     
+    // User Management
     Route::resource('users', AdminUserController::class);
     Route::post('/users/{user}/toggle-role', [AdminUserController::class, 'toggleRole'])->name('users.toggle-role');
     
+    // Institution Management
     Route::resource('institutions', App\Http\Controllers\Admin\InstitutionController::class);
     Route::post('/institutions/{institution}/approve', [App\Http\Controllers\Admin\InstitutionController::class, 'approve'])->name('institutions.approve');
     Route::post('/institutions/{institution}/reject', [App\Http\Controllers\Admin\InstitutionController::class, 'reject'])->name('institutions.reject');
     Route::post('/institutions/{institution}/suspend', [App\Http\Controllers\Admin\InstitutionController::class, 'suspend'])->name('institutions.suspend');
-    
     Route::get('/institutions/{institution}/members', [App\Http\Controllers\Admin\InstitutionMemberController::class, 'index'])->name('institutions.members');
     Route::get('/institutions/{institution}/members/create', [App\Http\Controllers\Admin\InstitutionMemberController::class, 'create'])->name('institutions.members.create');
     Route::post('/institutions/{institution}/members', [App\Http\Controllers\Admin\InstitutionMemberController::class, 'store'])->name('institutions.members.store');
     Route::delete('/institutions/{institution}/members/{member}', [App\Http\Controllers\Admin\InstitutionMemberController::class, 'destroy'])->name('institutions.members.destroy');
     
+    // Marketplace Management
     Route::get('/marketplace/pending', [AdminMarketplaceController::class, 'pending'])->name('marketplace.pending');
     Route::get('/marketplace/all', [AdminMarketplaceController::class, 'all'])->name('marketplace.all');
     Route::post('/marketplace/{listing}/approve', [AdminMarketplaceController::class, 'approve'])->name('marketplace.approve');
     Route::post('/marketplace/{listing}/reject', [AdminMarketplaceController::class, 'reject'])->name('marketplace.reject');
     
+    // Application Management
     Route::get('/applications', [App\Http\Controllers\ApplicationController::class, 'index'])->name('applications.index');
     Route::get('/applications/{application}', [App\Http\Controllers\ApplicationController::class, 'show'])->name('applications.show');
     Route::post('/applications/{application}/approve', [App\Http\Controllers\ApplicationController::class, 'approve'])->name('applications.approve');
     Route::post('/applications/{application}/reject', [App\Http\Controllers\ApplicationController::class, 'reject'])->name('applications.reject');
     Route::get('/applications/{application}/download/{document}', [App\Http\Controllers\ApplicationController::class, 'download'])->name('applications.download');
     
+    // ==========================================
+    // ADMIN PAYMENT ROUTES (VIEW ONLY - No approvals)
+    // ==========================================
     Route::prefix('payments')->name('payments.')->group(function () {
+        // View only routes
         Route::get('/', [AdminPaymentController::class, 'index'])->name('index');
+        Route::get('/transactions', [AdminPaymentController::class, 'transactions'])->name('transactions');
+        Route::get('/commissions', [AdminPaymentController::class, 'commissions'])->name('commissions');
+        Route::get('/author-payouts', [AdminPaymentController::class, 'authorPayouts'])->name('author-payouts');
+        Route::get('/audit-logs', [AdminPaymentController::class, 'auditLogs'])->name('audit-logs');
         Route::get('/{id}', [AdminPaymentController::class, 'show'])->name('show');
-        Route::post('/approve-withdrawal/{id}', [AdminPaymentController::class, 'approveWithdrawal'])->name('approve-withdrawal');
-        Route::post('/reject-withdrawal/{id}', [AdminPaymentController::class, 'rejectWithdrawal'])->name('reject-withdrawal');
-        Route::post('/approve-deposit/{id}', [AdminPaymentController::class, 'approveDeposit'])->name('approve-deposit');
-        Route::post('/institution-withdrawals/{id}/approve', [AdminPaymentController::class, 'approveInstitutionWithdrawal'])->name('approve-institution-withdrawal');
-        Route::post('/institution-withdrawals/{id}/complete', [AdminPaymentController::class, 'completeInstitutionWithdrawal'])->name('complete-institution-withdrawal');
-        Route::post('/institution-withdrawals/{id}/reject', [AdminPaymentController::class, 'rejectInstitutionWithdrawal'])->name('reject-institution-withdrawal');
     });
     
-    Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
-    
-    // Quote Management - Global quotes
+    // Quote Management
     Route::get('/quotes', [App\Http\Controllers\QuoteController::class, 'index'])->name('quotes.index');
     Route::get('/quotes/create', [App\Http\Controllers\QuoteController::class, 'create'])->name('quotes.create');
     Route::post('/quotes', [App\Http\Controllers\QuoteController::class, 'store'])->name('quotes.store');
@@ -463,11 +565,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/api/quote/{quote}/share', [App\Http\Controllers\QuoteController::class, 'share']);
     Route::get('/api/quote/next', [App\Http\Controllers\QuoteController::class, 'nextQuote']);
 });
-
-// ==========================================
-// ADMIN BANK TRANSFER APPROVAL ROUTE
-// ==========================================
-Route::middleware(['auth', 'admin'])->post('/admin/payments/{paymentId}/approve', [App\Http\Controllers\PaymentWebhookController::class, 'approveBankTransfer'])->name('admin.payments.approve');
 
 // ==========================================
 // AUTHENTICATION ROUTES

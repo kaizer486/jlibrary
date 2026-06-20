@@ -1,0 +1,526 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "JLIBRARY Payment API",
+    "description": "Complete API documentation for JLIBRARY payment system including wallet, transactions, payments, and invoices",
+    "version": "2.0.0",
+    "contact": {
+      "name": "JLIBRARY Support",
+      "email": "support@jlibrary.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://yourdomain.com/api",
+      "description": "Production Server"
+    },
+    {
+      "url": "http://localhost:8000/api",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "sanctum"
+      }
+    },
+    "schemas": {
+      "BalanceResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "balance": { "type": "number", "example": 125000.00 },
+          "formatted": { "type": "string", "example": "TSh 125,000.00" },
+          "currency": { "type": "string", "example": "TZS" }
+        }
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "type": { "type": "string", "enum": ["credit", "debit", "withdrawal", "commission"] },
+          "amount": { "type": "number" },
+          "balance_after": { "type": "number" },
+          "description": { "type": "string" },
+          "reference": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "completed", "failed", "processing"] },
+          "method": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PaymentInitiateRequest": {
+        "type": "object",
+        "required": ["gateway", "amount"],
+        "properties": {
+          "gateway": {
+            "type": "string",
+            "enum": ["mpesa", "tigopesa", "halopesa", "card", "bank", "pesapal"],
+            "example": "mpesa"
+          },
+          "amount": { "type": "number", "minimum": 100, "maximum": 1000000, "example": 10000 },
+          "phone": { "type": "string", "pattern": "^[0-9]{10}$", "example": "0712345678" },
+          "description": { "type": "string", "example": "Wallet deposit" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  },
+  "security": [
+    { "bearerAuth": [] }
+  ],
+  "paths": {
+    "/user": {
+      "get": {
+        "summary": "Get authenticated user",
+        "description": "Returns the currently authenticated user's information",
+        "responses": {
+          "200": {
+            "description": "User information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          }
+        }
+      }
+    },
+    "/wallet/balance": {
+      "get": {
+        "summary": "Get wallet balance",
+        "description": "Returns the current wallet balance for the authenticated user",
+        "responses": {
+          "200": {
+            "description": "Balance retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          }
+        }
+      }
+    },
+    "/wallet/summary": {
+      "get": {
+        "summary": "Get wallet summary",
+        "description": "Returns wallet summary including total deposited, withdrawn, spent, and pending withdrawals",
+        "responses": {
+          "200": {
+            "description": "Summary retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "current_balance": { "type": "number" },
+                        "total_deposited": { "type": "number" },
+                        "total_withdrawn": { "type": "number" },
+                        "total_spent": { "type": "number" },
+                        "pending_withdrawals": { "type": "number" },
+                        "available_to_withdraw": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wallet/withdraw": {
+      "post": {
+        "summary": "Request withdrawal",
+        "description": "Submit a withdrawal request from wallet to mobile money or bank",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["amount", "payment_method"],
+                "properties": {
+                  "amount": { "type": "number", "minimum": 5000, "example": 5000 },
+                  "payment_method": { "type": "string", "enum": ["mpesa", "bank"], "example": "mpesa" },
+                  "phone": { "type": "string", "example": "0712345678" },
+                  "account_name": { "type": "string" },
+                  "account_number": { "type": "string" },
+                  "bank_name": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Withdrawal request submitted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" },
+                    "transaction_id": { "type": "integer" },
+                    "reference": { "type": "string" },
+                    "amount": { "type": "number" },
+                    "new_balance": { "type": "number" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Insufficient balance or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions": {
+      "get": {
+        "summary": "List all transactions",
+        "description": "Returns paginated list of user transactions with optional filters",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["credit", "debit", "withdrawal", "commission"] } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "completed", "failed", "processing"] } },
+          { "name": "from_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "to_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 15 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transactions retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "transactions": { "type": "array", "items": { "$ref": "#/components/schemas/Transaction" } },
+                        "summary": { "type": "object" },
+                        "pagination": { "type": "object" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/stats": {
+      "get": {
+        "summary": "Get transaction statistics",
+        "description": "Returns transaction statistics including monthly spending and deposits for charts",
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "current_balance": { "type": "number" },
+                        "recent_transactions": { "type": "array" },
+                        "monthly_stats": { "type": "array" },
+                        "total_transactions": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/export": {
+      "get": {
+        "summary": "Export transactions to CSV",
+        "description": "Download all user transactions as CSV file",
+        "parameters": [
+          { "name": "from_date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "to_date", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV file downloaded successfully",
+            "content": {
+              "text/csv": { "schema": { "type": "string", "format": "binary" } }
+            }
+          }
+        }
+      }
+    },
+    "/transactions/{id}": {
+      "get": {
+        "summary": "Get transaction details",
+        "description": "Returns detailed information for a specific transaction",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "$ref": "#/components/schemas/Transaction" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transaction not found"
+          }
+        }
+      }
+    },
+    "/payment/methods": {
+      "get": {
+        "summary": "Get available payment methods",
+        "description": "Returns all enabled payment gateways with their details",
+        "responses": {
+          "200": {
+            "description": "Payment methods retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "gateways": {
+                      "type": "object",
+                      "properties": {
+                        "mpesa": { "type": "object" },
+                        "tigopesa": { "type": "object" },
+                        "halopesa": { "type": "object" },
+                        "card": { "type": "object" },
+                        "bank": { "type": "object" },
+                        "pesapal": { "type": "object" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payment/initiate": {
+      "post": {
+        "summary": "Initiate payment",
+        "description": "Start a payment process with selected gateway",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentInitiateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment initiated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "payment_id": { "type": "integer" },
+                    "reference": { "type": "string" },
+                    "checkout_request_id": { "type": "string" },
+                    "redirect_url": { "type": "string" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Payment initiation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payment/history": {
+      "get": {
+        "summary": "Get payment history",
+        "description": "Returns paginated list of user payments",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 15 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment history retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array" },
+                    "meta": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payment/status/{paymentId}": {
+      "get": {
+        "summary": "Check payment status",
+        "description": "Returns current status of a payment",
+        "parameters": [
+          { "name": "paymentId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "status": { "type": "string" },
+                    "amount": { "type": "number" },
+                    "reference": { "type": "string" },
+                    "method": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment not found"
+          }
+        }
+      }
+    },
+    "/payment/{paymentId}/cancel": {
+      "post": {
+        "summary": "Cancel pending payment",
+        "description": "Cancel a pending payment that hasn't been completed",
+        "parameters": [
+          { "name": "paymentId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payment not found or cannot be cancelled"
+          }
+        }
+      }
+    },
+    "/invoices/payment/{paymentId}": {
+      "get": {
+        "summary": "Download payment invoice",
+        "description": "Generate and download PDF invoice for a payment",
+        "parameters": [
+          { "name": "paymentId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF invoice downloaded successfully",
+            "content": {
+              "application/pdf": { "schema": { "type": "string", "format": "binary" } }
+            }
+          },
+          "404": {
+            "description": "Payment not found"
+          }
+        }
+      }
+    },
+    "/invoices/transaction/{transactionId}": {
+      "get": {
+        "summary": "Download transaction invoice",
+        "description": "Generate and download PDF invoice for a transaction",
+        "parameters": [
+          { "name": "transactionId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF invoice downloaded successfully",
+            "content": {
+              "application/pdf": { "schema": { "type": "string", "format": "binary" } }
+            }
+          },
+          "404": {
+            "description": "Transaction not found"
+          }
+        }
+      }
+    }
+  }
+}

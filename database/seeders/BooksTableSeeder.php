@@ -19,7 +19,7 @@ class BooksTableSeeder extends Seeder
                 'price' => 0,
                 'total_pages' => 450,
                 'downloads' => 0,
-                'status' => 'active',  // Changed from 'published'
+                'status' => 'active',  
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
@@ -43,7 +43,7 @@ class BooksTableSeeder extends Seeder
                 'price' => 0,
                 'total_pages' => 176,
                 'downloads' => 0,
-                'status' => 'active',  // Changed from 'published'
+                'status' => 'active',  
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
@@ -55,7 +55,7 @@ class BooksTableSeeder extends Seeder
                 'price' => 15000,
                 'total_pages' => 320,
                 'downloads' => 0,
-                'status' => 'active',  // Changed from 'published'
+                'status' => 'active',  
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
@@ -67,7 +67,7 @@ class BooksTableSeeder extends Seeder
                 'price' => 0,
                 'total_pages' => 280,
                 'downloads' => 0,
-                'status' => 'active',  // Changed from 'published'
+                'status' => 'active',  
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]

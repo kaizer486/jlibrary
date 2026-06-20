@@ -1,39 +1,108 @@
-<x-guest-layout>
-    <form method="POST" action="{{ route('password.store') }}">
-        @csrf
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>JLIBRARY - Reset Password</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-purple-700 to-pink-800 min-h-screen">
 
-        <!-- Password Reset Token -->
-        <input type="hidden" name="token" value="{{ $request->route('token') }}">
-
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+    <div class="min-h-screen flex items-center justify-center px-4">
+        <div class="max-w-md w-full">
+            <!-- Logo Section -->
+            <div class="text-center mb-2">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-2xl mb-2 mt-1 backdrop-blur-sm">
+                    <img src="{{ asset('images/jlibrary.jpeg') }}" alt="Logo" class="h-20 w-auto rounded-2xl">
+                </div>
+                <h1 class="text-3xl font-bold text-white">JLIBRARY</h1>
+                <p class="text-purple-200 mt-1">Create New Password</p>
+            </div>
+            
+            <!-- Reset Card -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+                <h2 class="text-2xl font-semibold text-white text-center mb-6">Reset Password</h2>
+                
+                <form method="POST" action="{{ route('password.store') }}">
+                    @csrf
+                    
+                    <input type="hidden" name="token" value="{{ $token }}">
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-white mb-2">Email Address</label>
+                        <div class="relative">
+                            <i class="ti ti-mail absolute left-3 top-1/2 -translate-y-1/2 text-2xl text-orange-400"></i>
+                            <input type="email" name="email" value="{{ old('email') }}" required
+                                   class="w-full pl-12 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        @error('email')
+                            <p class="text-red-300 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-white mb-2">New Password</label>
+                        <div class="relative">
+                            <i class="ti ti-lock absolute left-3 top-1/2 -translate-y-1/2 text-2xl text-orange-400"></i>
+                            <input type="password" name="password" id="password" required
+                                   class="w-full pl-12 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2">
+                                <i id="passwordIcon" class="ti ti-eye text-xl text-orange-400"></i>
+                            </button>
+                        </div>
+                        @error('password')
+                            <p class="text-red-300 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-white mb-2">Confirm Password</label>
+                        <div class="relative">
+                            <i class="ti ti-lock-check absolute left-3 top-1/2 -translate-y-1/2 text-2xl text-orange-400"></i>
+                            <input type="password" name="password_confirmation" required
+                                   class="w-full pl-12 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg">
+                        <i class="ti ti-key"></i>
+                        Reset Password
+                    </button>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{{ route('login') }}" class="text-sm text-purple-300 hover:text-white transition">
+                            Back to Login
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
+    </div>
+    
+    <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+        const passwordIcon = document.getElementById('passwordIcon');
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                                type="password"
-                                name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Reset Password') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+        if (togglePassword) {
+            togglePassword.addEventListener('click', function() {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                
+                if (type === 'password') {
+                    passwordIcon.classList.remove('ti-eye-off');
+                    passwordIcon.classList.add('ti-eye');
+                } else {
+                    passwordIcon.classList.remove('ti-eye');
+                    passwordIcon.classList.add('ti-eye-off');
+                }
+            });
+        }
+    </script>
+    
+</body>
+</html>

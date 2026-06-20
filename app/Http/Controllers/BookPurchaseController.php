@@ -3,122 +3,139 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\Payment;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Services\CommissionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class BookPurchaseController extends Controller
 {
-    /**
-     * Get purchase information for a book
-     */
-    public function purchaseInfo(Book $book)
+    protected $commissionService;
+    
+    public function __construct(CommissionService $commissionService)
     {
-        $user = auth()->user();
-        
-        // Check if already purchased
-        $alreadyPurchased = $book->isPurchasedByUser($user->id);
-        
-        return response()->json([
-            'success' => true,
-            'book' => [
-                'id' => $book->id,
-                'title' => $book->title,
-                'price' => $book->price,
-                'is_paid' => $book->is_paid,
-                'already_purchased' => $alreadyPurchased
-            ],
-            'user' => [
-                'wallet_balance' => $user->wallet_balance,
-                'has_sufficient_funds' => $user->wallet_balance >= $book->price
-            ]
-        ]);
+        $this->commissionService = $commissionService;
     }
     
     /**
-     * Purchase a book using wallet balance
+     * Purchase book using wallet balance
      */
-   /**
- * Purchase a book using wallet balance
- */
-public function purchaseWithWallet(Book $book)
-{
-    $user = auth()->user();
-    
-    // Check if book is paid
-    if (!$book->is_paid) {
-        return response()->json([
-            'success' => false,
-            'message' => 'This book is free. You can read it without purchase.'
-        ], 400);
-    }
-    
-    // Check if already purchased
-    if ($book->isPurchasedByUser($user->id)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'You already own this book.'
-        ], 400);
-    }
-    
-    // Check if user has sufficient balance
-    if ($user->wallet_balance < $book->price) {
-        $shortfall = $book->price - $user->wallet_balance;
+    public function purchaseWithWallet(Request $request, $bookId)
+    {
+        $user = Auth::user();
+        $book = Book::findOrFail($bookId);
         
-        return response()->json([
-            'success' => false,
-            'message' => 'Insufficient wallet balance',
-            'error_type' => 'insufficient_balance',
-            'shortfall' => $shortfall,
-            'book_price' => $book->price,
-            'current_balance' => $user->wallet_balance,
-            'book_id' => $book->id,
-            'book_title' => $book->title
-        ], 400);
-    }
-    
-    DB::beginTransaction();
-    
-    try {
-        // Process the purchase using the user model method
-        $result = $user->purchaseBookWithWallet($book, 'wallet');
-        
-        if (!$result['success']) {
-            DB::rollBack();
+        // Check if user already owns the book
+        if ($user->hasPurchasedBook($book->id)) {
             return response()->json([
                 'success' => false,
-                'message' => $result['message']
+                'message' => 'You already own this book.'
             ], 400);
         }
         
-        DB::commit();
+        // Check if free book
+        if (!$book->is_paid || $book->price <= 0) {
+            $this->addBookToLibrary($user, $book);
+            return response()->json([
+                'success' => true,
+                'message' => 'Free book added to your library!'
+            ]);
+        }
         
-        return response()->json([
-            'success' => true,
-            'message' => $result['message'],
-            'new_balance' => $result['new_balance'],
-            'redirect_url' => route('library.read', $book)
-        ]);
+        // Check wallet balance
+        if ($user->wallet_balance < $book->price) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient wallet balance',
+                'shortfall' => $book->price - $user->wallet_balance
+            ], 400);
+        }
         
-    } catch (\Exception $e) {
-        DB::rollBack();
+        DB::beginTransaction();
         
-        return response()->json([
-            'success' => false,
-            'message' => 'An error occurred: ' . $e->getMessage()
-        ], 500);
+        try {
+            // Lock user row
+            $lockedUser = User::where('id', $user->id)->lockForUpdate()->first();
+            
+            // Deduct from wallet
+            $oldBalance = $lockedUser->wallet_balance;
+            $newBalance = $oldBalance - $book->price;
+            $lockedUser->wallet_balance = $newBalance;
+            $lockedUser->save();
+            
+            // Create payment record
+            $payment = Payment::create([
+                'user_id' => $lockedUser->id,
+                'payable_type' => Book::class,
+                'payable_id' => $book->id,
+                'amount' => $book->price,
+                'status' => 'completed',
+                'method' => 'wallet',
+                'reference' => 'PUR_' . time() . '_' . $lockedUser->id . '_' . $book->id,
+            ]);
+            
+            // Create transaction record
+            Transaction::create([
+                'user_id' => $lockedUser->id,
+                'type' => 'debit',
+                'amount' => $book->price,
+                'balance_after' => $newBalance,
+                'description' => 'Purchase: ' . $book->title,
+                'reference' => $payment->reference,
+                'status' => 'completed',
+                'method' => 'wallet',
+                'payable_type' => Book::class,
+                'payable_id' => $book->id,
+            ]);
+            
+            // ✅ ADD COMMISSION LOGIC - If book has an author
+            if ($book->author_id) {
+                $author = User::find($book->author_id);
+                if ($author) {
+                    $this->commissionService->processCommission(
+                        $author,
+                        $lockedUser,
+                        $book,
+                        $book->price
+                    );
+                }
+            }
+            
+            // Add book to user's library
+            $lockedUser->books()->syncWithoutDetaching([
+                $book->id => [
+                    'purchased_at' => now(),
+                    'status' => 'want_to_read'
+                ]
+            ]);
+            
+            DB::commit();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Book purchased successfully!',
+                'new_balance' => $newBalance
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Purchase failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
-}    
-    /**
-     * Check if user has purchased a book
-     */
-    public function checkPurchase(Book $book)
+    
+    private function addBookToLibrary($user, $book)
     {
-        $user = auth()->user();
-        
-        return response()->json([
-            'success' => true,
-            'has_purchased' => $book->isPurchasedByUser($user->id),
-            'can_access' => $book->canUserAccess($user->id)
+        $user->books()->syncWithoutDetaching([
+            $book->id => [
+                'purchased_at' => now(),
+                'status' => 'want_to_read'
+            ]
         ]);
     }
 }

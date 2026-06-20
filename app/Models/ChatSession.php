@@ -4,40 +4,98 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
-/**
- * @property int $id
- * @property int $user_id
- * @property string|null $title
- * @property array<array-key, mixed>|null $messages
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\User|null $user
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession whereMessages($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession whereTitle($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|ChatSession whereUserId($value)
- * @mixin \Eloquent
- */
 class ChatSession extends Model
 {
+    protected $table = 'chat_sessions';
+
     protected $fillable = [
         'user_id',
         'title',
-        'messages'
+        'messages',
+        'is_pinned',
+        'last_message_at'
     ];
-    
+
     protected $casts = [
-        'messages' => 'array'
+        'messages' => 'array',
+        'is_pinned' => 'boolean',
+        'last_message_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
-    
+
+    protected $attributes = [
+        'is_pinned' => false,
+        'messages' => '[]',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function getRecentMessages(int $limit = 20): array
+    {
+        $messages = $this->messages ?? [];
+        return array_slice($messages, -$limit, $limit);
+    }
+
+    public function addMessage(string $role, string $content): void
+    {
+        $messages = $this->messages ?? [];
+        $messages[] = [
+            'role' => $role,
+            'content' => $content,
+            'timestamp' => now()->toIso8601String()
+        ];
+
+        if (count($messages) > 50) {
+            $messages = array_slice($messages, -50);
+        }
+
+        $this->messages = $messages;
+        $this->last_message_at = now();
+
+        if (empty($this->title) || $this->title === 'New Chat') {
+            $firstMessage = $messages[0]['content'] ?? '';
+            $this->title = Str::limit($firstMessage, 40);
+        }
+
+        $this->save();
+    }
+
+    public function scopeRecent($query, int $limit = 30)
+    {
+        return $query->orderBy('last_message_at', 'desc')
+                     ->limit($limit);
+    }
+
+    public function hasMessages(): bool
+    {
+        return !empty($this->messages) && count($this->messages) > 0;
+    }
+
+    public function getMessageCount(): int
+    {
+        return count($this->messages ?? []);
+    }
+
+    public function getLastMessage(): ?array
+    {
+        $messages = $this->messages ?? [];
+        return !empty($messages) ? end($messages) : null;
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereNotNull('messages')
+                     ->whereRaw('JSON_LENGTH(messages) > 0');
+    }
+
+    public function scopePinned($query)
+    {
+        return $query->where('is_pinned', true);
     }
 }

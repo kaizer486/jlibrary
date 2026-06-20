@@ -38,11 +38,28 @@ class WithdrawalRequest extends Model
         'processed_at' => 'datetime',
     ];
     
+  // ENCRYPT when setting
+    public function setAccountDetailsAttribute($value)
+    {
+        $this->attributes['account_details'] = encrypt($value);
+    }
+    
+    // DECRYPT when getting
+    public function getAccountDetailsAttribute($value)
+    {
+        try {
+            return decrypt($value);
+        } catch (\Exception $e) {
+            return $value; // Fallback for unencrypted data
+        }
+    }
+
     // Get the institution (if institution withdrawal)
     public function institution(): BelongsTo
     {
         return $this->belongsTo(Institution::class);
     }
+    //
     
     // Get the user (if user withdrawal)
     public function user(): BelongsTo

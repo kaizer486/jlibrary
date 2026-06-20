@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use App\Models\Transaction;  
+use App\Models\Transaction;
 use App\Models\MarketplaceListing;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,123 +17,149 @@ class WalletController extends Controller
         $user = Auth::user();
         $balance = $user->wallet_balance ?? 0;
         
-        // Get transaction history from both Payment and Transaction models
-        $payments = Payment::where('user_id', $user->id)
-                           ->latest()
-                           ->limit(10)
-                           ->get();
-        
+        // Get transaction history
         $transactions = Transaction::where('user_id', $user->id)
-                                   ->latest()
-                                   ->limit(10)
-                                   ->get();
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
         
-        // Combine and sort all transactions
-        $allTransactions = $payments->concat($transactions)
-                                    ->sortByDesc('created_at');
+        // Get deposit transactions
+        $deposits = Transaction::where('user_id', $user->id)
+            ->where('type', 'credit')
+            ->where('method', '!=', 'commission')
+            ->sum('amount');
         
-        // Calculate marketplace earnings (80% of sales)
-        $marketplaceEarnings = MarketplaceListing::where('seller_id', $user->id)
-                                                 ->where('status', 'approved')
-                                                 ->sum('price') * 0.8;
+        // Get purchase transactions
+        $purchases = Transaction::where('user_id', $user->id)
+            ->where('type', 'debit')
+            ->where('method', '!=', 'withdrawal')
+            ->sum('amount');
         
-        // Calculate total spent on purchases
-        $totalSpent = Payment::where('user_id', $user->id)
-                             ->where('status', 'completed')
-                             ->where('payable_type', 'App\Models\Book')
-                             ->sum('amount');
+        // Get withdrawal transactions
+        $withdrawals = Transaction::where('user_id', $user->id)
+            ->where('type', 'debit')
+            ->where('method', 'withdrawal')
+            ->where('status', 'completed')
+            ->sum('amount');
         
-        // Calculate total deposits
-        $totalDeposits = Payment::where('user_id', $user->id)
-                                ->where('status', 'completed')
-                                ->where('payable_type', 'App\\Models\\User')
-                                ->sum('amount');
-        
-        // Calculate pending withdrawals
+        // Get pending withdrawals
         $pendingWithdrawals = Transaction::where('user_id', $user->id)
-                                         ->where('type', 'debit')
-                                         ->where('status', 'pending')
-                                         ->sum('amount');
+            ->where('type', 'debit')
+            ->where('status', 'pending')
+            ->sum('amount');
         
-        // Calculate total withdrawn
-        $totalWithdrawn = Transaction::where('user_id', $user->id)
-                                     ->where('type', 'debit')
-                                     ->where('status', 'completed')
-                                     ->sum('amount');
-        
-        $referralEarnings = $user->referral_earnings ?? 0;
+        // Calculate available to withdraw
         $availableToWithdraw = $balance - $pendingWithdrawals;
         
-        $recentSales = MarketplaceListing::where('seller_id', $user->id)
-                                         ->where('status', 'approved')
-                                         ->latest()
-                                         ->limit(5)
-                                         ->get();
+        // Get recent activity (last 5 transactions)
+        $recentActivity = Transaction::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Get stats for chart (last 6 months)
+        $monthlyStats = $this->getMonthlyStats($user->id);
+        
+        // Get payment methods for quick actions
+        $paymentGateways = config('payments.gateways', []);
+        $enabledGateways = [];
+        foreach ($paymentGateways as $key => $gateway) {
+            if (isset($gateway['enabled']) && $gateway['enabled']) {
+                $enabledGateways[$key] = $gateway;
+            }
+        }
         
         return view('wallet.index', compact(
-            'balance', 
+            'user',
+            'balance',
             'transactions',
-            'allTransactions',
-            'payments',
-            'marketplaceEarnings', 
-            'totalSpent',
-            'totalDeposits',
-            'totalWithdrawn',
+            'deposits',
+            'purchases',
+            'withdrawals',
             'pendingWithdrawals',
             'availableToWithdraw',
-            'referralEarnings',
-            'recentSales'
+            'recentActivity',
+            'monthlyStats',
+            'enabledGateways'
         ));
     }
-    public function withdraw(Request $request)
-{
-    $user = Auth::user();
-    $currentBalance = $user->wallet_balance ?? 0;
     
-    // Set minimum withdrawal amount
- $minWithdrawal = config('wallet.withdrawal.min_amount', 5000);
-    
-    // Check if user has enough balance
-    if ($currentBalance < $minWithdrawal) {
-        return redirect()->back()->with('error', 'Minimum withdrawal amount is TSh ' . number_format($minWithdrawal, 2) . '. Your current balance is TSh ' . number_format($currentBalance, 2));
+    /**
+     * Get monthly transaction stats for chart
+     */
+    private function getMonthlyStats($userId)
+    {
+        $months = [];
+        $deposits = [];
+        $spending = [];
+        
+        for ($i = 5; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $monthName = $month->format('M Y');
+            $months[] = $monthName;
+            
+            // Deposits for this month
+            $depositTotal = Transaction::where('user_id', $userId)
+                ->where('type', 'credit')
+                ->whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->sum('amount');
+            $deposits[] = (float) $depositTotal;
+            
+            // Spending for this month
+            $spendingTotal = Transaction::where('user_id', $userId)
+                ->where('type', 'debit')
+                ->whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->sum('amount');
+            $spending[] = (float) $spendingTotal;
+        }
+        
+        return [
+            'months' => $months,
+            'deposits' => $deposits,
+            'spending' => $spending,
+        ];
     }
     
-    $request->validate([
-        'amount' => 'required|numeric|min:' . $minWithdrawal . '|max:' . $currentBalance,
-        'method' => 'required|in:mpesa,bank',
-        'phone' => 'required_if:method,mpesa|nullable|regex:/^[0-9]{10}$/',
-        'account_name' => 'required_if:method,bank|nullable|string|max:255',
-        'account_number' => 'required_if:method,bank|nullable|string|max:50',
-        'bank_name' => 'required_if:method,bank|nullable|string|max:255',
-    ], [
-        'amount.min' => 'Minimum withdrawal amount is TSh ' . number_format($minWithdrawal, 2),
-        'amount.max' => 'You cannot withdraw more than your current balance of TSh ' . number_format($currentBalance, 2),
-        'amount.required' => 'Please enter an amount to withdraw',
-        'amount.numeric' => 'Amount must be a number',
-        'phone.regex' => 'Please enter a valid 10-digit phone number (e.g., 0712345678)',
-    ]);
-
-        $amount = $request->amount;
+    public function withdraw(Request $request)
+    {
+        $user = Auth::user();
+        $currentBalance = $user->wallet_balance ?? 0;
+        $minWithdrawal = config('wallet.withdrawal.min_amount', 5000);
+        $maxWithdrawal = config('wallet.withdrawal.max_amount', 10000000);
+        
+        $request->validate([
+            'amount' => 'required|numeric|min:' . $minWithdrawal . '|max:' . min($currentBalance, $maxWithdrawal),
+            'payment_method' => 'required|in:mpesa,bank',
+            'phone' => 'required_if:payment_method,mpesa|nullable|regex:/^[0-9]{10}$/',
+            'account_name' => 'required_if:payment_method,bank|nullable|string|max:255',
+            'account_number' => 'required_if:payment_method,bank|nullable|string|max:50',
+            'bank_name' => 'required_if:payment_method,bank|nullable|string|max:255',
+        ]);
         
         DB::beginTransaction();
         
         try {
-            // Create pending withdrawal transaction
-         $transaction = \App\Models\Transaction::create([
-    'user_id' => $user->id,
-    'type' => 'debit',
-    'amount' => $amount,
-    'balance_after' => $user->wallet_balance - $amount,
-    'description' => 'Withdrawal request via ' . $request->payment_method,
-    'reference' => 'WTD_' . time() . '_' . $user->id,
-    'status' => 'pending',
-    'method' => $request->payment_method,
-    'payable_type' => 'App\\Models\\User',
-    'payable_id' => $user->id,
-]);
+            $user = User::where('id', $user->id)->lockForUpdate()->first();
             
-            // Deduct from wallet (hold the amount)
-            $user->wallet_balance = $user->wallet_balance - $amount;
+            if ($user->wallet_balance < $request->amount) {
+                throw new \Exception('Insufficient balance');
+            }
+            
+            $transaction = Transaction::create([
+                'user_id' => $user->id,
+                'type' => 'debit',
+                'amount' => $request->amount,
+                'balance_after' => $user->wallet_balance - $request->amount,
+                'description' => 'Withdrawal request via ' . $request->payment_method,
+                'reference' => 'WTD_' . uniqid() . '_' . $user->id,
+                'status' => 'pending',
+                'method' => 'withdrawal',
+                'payable_type' => 'App\\Models\\User',
+                'payable_id' => $user->id,
+            ]);
+            
+            $user->wallet_balance -= $request->amount;
             $user->save();
             
             DB::commit();
@@ -150,20 +176,11 @@ class WalletController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:1000|max:1000000',
-        ], [
-            'amount.min' => 'Minimum top-up amount is TSh 1,000',
-            'amount.max' => 'Maximum top-up amount is TSh 1,000,000',
-            'amount.required' => 'Please enter an amount to add',
-            'amount.numeric' => 'Amount must be a number',
         ]);
         
-        // Redirect to payment methods page with amount pre-filled
         return redirect()->route('payment.methods', ['amount' => $request->amount]);
     }
     
-    /**
-     * Get wallet balance (AJAX)
-     */
     public function getBalance()
     {
         return response()->json([
@@ -171,4 +188,44 @@ class WalletController extends Controller
             'formatted' => 'TSh ' . number_format(auth()->user()->wallet_balance, 2)
         ]);
     }
+    
+    /**
+     * Export transaction history as CSV
+     */
+    public function exportTransactions(Request $request)
+    {
+        $user = Auth::user();
+        
+        $transactions = Transaction::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        $filename = 'transactions_' . date('Y-m-d') . '.csv';
+        
+        $handle = fopen('php://temp', 'w');
+        fputcsv($handle, ['Date', 'Type', 'Description', 'Amount', 'Balance After', 'Status', 'Reference']);
+        
+        foreach ($transactions as $transaction) {
+            fputcsv($handle, [
+                $transaction->created_at->format('Y-m-d H:i:s'),
+                $transaction->type,
+                $transaction->description,
+                ($transaction->type === 'credit' ? '+' : '-') . number_format($transaction->amount, 2),
+                number_format($transaction->balance_after, 2),
+                $transaction->status,
+                $transaction->reference,
+            ]);
+        }
+        
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+        
+        return response($csv, 200)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+
+
 }

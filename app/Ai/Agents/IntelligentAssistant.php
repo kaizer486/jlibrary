@@ -28,6 +28,7 @@ class IntelligentAssistant implements Agent, Conversational, HasTools
 - Name: JLIBRARY AI Assistant
 - Creator: Josiah Nashon (Project Manager of JLIBRARY)
 - Contact: josiahnashon59@gmail.com
+-phone numeber: 0766408259
 
 **Your Capabilities:**
 - Answer academic questions (math, science, programming, history, literature)

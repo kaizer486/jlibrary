@@ -3,363 +3,203 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use App\Models\Transaction;
 use App\Models\User;
 use App\Services\PaymentGatewayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class MultiPaymentController extends Controller
 {
     protected $paymentGateway;
-
+    
     public function __construct(PaymentGatewayService $paymentGateway)
     {
         $this->paymentGateway = $paymentGateway;
     }
-
-    /**
-     * Show payment methods page
-     */
-  public function showMethods(Request $request)
+    
+/**
+ * Handle Pesapal callback
+ */
+public function pesapalCallback(Request $request)
 {
-    $user = auth()->user();
-    $gateways = $this->paymentGateway->getEnabledGateways();
+    Log::info('Pesapal Callback', $request->all());
     
-    // Get recent payments
-    $payments = Payment::where('user_id', $user->id)
-        ->orderBy('created_at', 'desc')
-        ->limit(20)
-        ->get();
-        
-    // Get recent transactions
-    $transactions = Transaction::where('user_id', $user->id)
-        ->orderBy('created_at', 'desc')
-        ->limit(20)
-        ->get();
+    $orderTrackingId = $request->get('OrderTrackingId');
+    $orderMerchantReference = $request->get('OrderMerchantReference');
     
-    // For redirect after payment
-    $suggestedAmount = $request->query('amount');
-    $bookId = $request->query('book_id');
-    $redirectTo = $request->query('redirect');
+    if (!$orderTrackingId) {
+        return redirect()->route('wallet.index')->with('error', 'Invalid payment callback');
+    }
+    
+    $pesapal = new \App\Services\PesapalService();
+    $status = $pesapal->getOrderStatus($orderTrackingId);
+    
+    if ($status['success'] && $status['status'] === 'COMPLETED') {
+        // Find payment by reference
+        $payment = Payment::where('reference', $orderMerchantReference)->first();
         
-    return view('payment.methods', compact('user', 'gateways', 'payments', 'transactions', 'suggestedAmount', 'bookId', 'redirectTo'));
+        if ($payment && $payment->status === 'pending') {
+            DB::transaction(function () use ($payment, $orderTrackingId) {
+                $user = User::where('id', $payment->user_id)->lockForUpdate()->first();
+                
+                $payment->status = 'completed';
+                $payment->transaction_id = $orderTrackingId;
+                $payment->save();
+                
+                $user->wallet_balance += $payment->amount;
+                $user->save();
+                
+                Transaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'credit',
+                    'amount' => $payment->amount,
+                    'balance_after' => $user->wallet_balance,
+                    'description' => 'Deposit via PesaPal',
+                    'reference' => $payment->reference,
+                    'status' => 'completed',
+                    'method' => 'pesapal',
+                    'payable_type' => 'App\\Models\\User',
+                    'payable_id' => $user->id,
+                ]);
+            });
+            
+            return redirect()->route('wallet.index')->with('success', 'Payment successful! Wallet credited.');
+        }
+    }
+    
+    return redirect()->route('payment.methods')->with('error', 'Payment failed or is pending.');
 }
 
-    /**
-     * Initiate payment
-     */
-    public function initiatePayment(Request $request)
+/**
+ * Handle Pesapal IPN (Instant Payment Notification)
+ */
+public function pesapalIpn(Request $request)
 {
-    $request->validate([
-        'gateway' => 'required|in:mpesa,tigopesa,halopesa,card,bank',
-        'amount' => 'required|numeric|min:100',
-        'phone' => 'required_if:gateway,mpesa,tigopesa,halopesa|nullable|string',
-    ]);
+    Log::info('Pesapal IPN', $request->all());
+    
+    $orderTrackingId = $request->get('order_tracking_id');
+    
+    if ($orderTrackingId) {
+        $pesapal = new \App\Services\PesapalService();
+        $status = $pesapal->getOrderStatus($orderTrackingId);
+        
+        if ($status['success'] && $status['status'] === 'COMPLETED') {
+            $payment = Payment::where('transaction_id', $orderTrackingId)->first();
+            
+            if ($payment && $payment->status === 'pending') {
+                // Process payment (same as callback)
+                DB::transaction(function () use ($payment, $orderTrackingId) {
+                    $user = User::where('id', $payment->user_id)->lockForUpdate()->first();
+                    $payment->status = 'completed';
+                    $payment->save();
+                    $user->wallet_balance += $payment->amount;
+                    $user->save();
+                });
+            }
+        }
+    }
+    
+    return response()->json(['status' => 'ok']);
+}
 
-    $user = auth()->user();
-    $amount = $request->amount;
-    $gateway = $request->gateway;
-    $reference = 'DEP_' . time() . '_' . $user->id . '_' . Str::random(6);
+
+    public function showMethods(Request $request)
+    {
+        $amount = $request->get('amount', 0);
+        $suggestedAmount = $request->get('suggested', 0);
+        
+        $gateways = $this->paymentGateway->getEnabledGateways();
+        $transactions = auth()->user()->transactions()->latest()->limit(5)->get();
+        $totalDeposits = auth()->user()->transactions()->where('type', 'credit')->sum('amount');
+        $totalSpent = auth()->user()->transactions()->where('type', 'debit')->sum('amount');
+        
+        return view('payment.methods', compact('gateways', 'amount', 'suggestedAmount', 'transactions', 'totalDeposits', 'totalSpent'));
+    }
     
-    // Create pending payment record
-    $payment = Payment::create([
-        'user_id' => $user->id,
-        'payable_type' => 'App\\Models\\User',
-        'payable_id' => $user->id,
-        'amount' => $amount,
-        'status' => 'pending',
-        'reference' => $reference,
-        'method' => $gateway,
-        'transaction_id' => $reference,
-    ]);
-    
-    // Process payment through gateway
-    $result = $this->paymentGateway->processPayment(
-        $gateway,
-        $user,
-        $amount,
-        'wallet_deposit',
-        $reference,
-        ['phone' => $request->phone, 'payment_id' => $payment->id]
-    );
-    
-    if (!$result['success']) {
-        $payment->markAsFailed();
+    public function initiatePayment(Request $request)
+    {
+        $request->validate([
+            'gateway' => 'required|string',
+            'amount' => 'required|numeric|min:100|max:1000000',
+            'phone' => 'nullable|string',
+        ]);
+        
+        $user = auth()->user();
+        $amount = $request->amount;
+        $gateway = $request->gateway;
+        $reference = 'PAY_' . Str::upper(Str::random(10)) . '_' . $user->id;
+        
+        // Create pending payment record
+        $payment = Payment::create([
+            'user_id' => $user->id,
+            'amount' => $amount,
+            'status' => 'pending',
+            'reference' => $reference,
+            'method' => $gateway,
+            'payable_type' => User::class,
+            'payable_id' => $user->id,
+        ]);
+        
+        $metadata = [
+            'phone' => $request->phone,
+            'payment_id' => $payment->id,
+        ];
+        
+        $result = $this->paymentGateway->processPayment($gateway, $user, $amount, 'wallet_deposit', $reference, $metadata);
+        
+        if ($result['success']) {
+            // Update payment with transaction ID
+            if (isset($result['checkout_request_id'])) {
+                $payment->transaction_id = $result['checkout_request_id'];
+                $payment->save();
+            }
+            
+            return response()->json([
+                'success' => true,
+                'payment_id' => $payment->id,
+                'checkout_request_id' => $result['checkout_request_id'] ?? null,
+                'client_secret' => $result['client_secret'] ?? null,
+                'bank_details' => $result['bank_details'] ?? null,
+                'message' => $result['message'] ?? 'Payment initiated successfully',
+            ]);
+        }
+        
+        $payment->status = 'failed';
+        $payment->save();
+        
         return response()->json([
             'success' => false,
-            'message' => $result['message']
+            'message' => $result['message'] ?? 'Payment initiation failed',
         ], 400);
     }
     
-    // Update payment with gateway response
-    $payment->update([
-        'transaction_id' => $result['transaction_id'] ?? $result['checkout_request_id'] ?? $reference,
-        'payment_details' => $result
-    ]);
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Payment initiated successfully',
-        'requires_approval' => $gateway === 'bank',
-        'bank_details' => $result['bank_details'] ?? null,
-        'client_secret' => $result['client_secret'] ?? null,
-        'payment_intent_id' => $result['payment_intent_id'] ?? null,
-        'payment_id' => $payment->id,
-        'gateway' => $gateway
-    ]);
-}
-    /**
-     * Check payment status
-     *//**
- * Check payment status
- */
-public function checkStatus($paymentId)
-{
-     $payment = Payment::where('id', $paymentId)
-        ->where('user_id', auth()->id())
-        ->first();
+    public function checkStatus($paymentId)
+    {
+        $payment = Payment::find($paymentId);
         
-    if (!$payment) {
-        return response()->json(['success' => false, 'message' => 'Payment not found']);
-    }
-    
-    // TEMPORARY: Auto-complete for sandbox/testing environment
-    // Remove this when you have real API credentials
-    if (env('APP_ENV') === 'local' && $payment->status === 'pending') {
-        $payment->status = 'completed';
-        $payment->save();
+        if (!$payment) {
+            return response()->json(['status' => 'not_found']);
+        }
         
-        $user = $payment->user;
-        $oldBalance = $user->wallet_balance;
-        $user->wallet_balance = $oldBalance + $payment->amount;
-        $user->save();
-        
-        // Create transaction record
-        \App\Models\Transaction::create([
-            'user_id' => $user->id,
-            'type' => 'credit',
+        return response()->json([
+            'status' => $payment->status,
             'amount' => $payment->amount,
-            'balance_after' => $user->wallet_balance,
-            'description' => $payment->method . ' deposit',
-            'reference' => $payment->reference,
-            'status' => 'completed',
-            'method' => $payment->method,
-            'payable_type' => 'App\\Models\\User',
-            'payable_id' => $user->id,
         ]);
     }
     
-    return response()->json([
-        'success' => true,
-        'status' => $payment->status,
-        'amount' => $payment->amount,
-        'completed_at' => $payment->updated_at
-    ]);
-}
-
-    /**
-     * Handle M-Pesa callback
-     */
-    public function mpesaCallback(Request $request)
-    {
-        $data = $request->all();
-        Log::info('M-Pesa Callback', $data);
-        
-        if (isset($data['Body']['stkCallback'])) {
-            $callback = $data['Body']['stkCallback'];
-            $checkoutRequestID = $callback['CheckoutRequestID'];
-            $resultCode = $callback['ResultCode'];
-            
-            // Find payment by transaction_id (checkoutRequestID stored)
-            $payment = Payment::where('transaction_id', $checkoutRequestID)->first();
-            
-            if ($payment && $resultCode == 0) {
-                DB::transaction(function () use ($payment, $callback) {
-                    // Mark payment as completed
-                    $payment->markAsCompleted();
-                    
-                    // Get amount from callback metadata
-                    $amount = $payment->amount;
-                    foreach ($callback['CallbackMetadata']['Item'] as $item) {
-                        if ($item['Name'] == 'Amount') {
-                            $amount = $item['Value'];
-                            break;
-                        }
-                    }
-                    
-                    // Create transaction record for wallet credit
-                    Transaction::create([
-                        'user_id' => $payment->user_id,
-                        'type' => 'credit',
-                        'amount' => $amount,
-                        'balance_after' => $payment->user->wallet_balance + $amount,
-                        'description' => 'M-Pesa deposit',
-                        'reference' => $payment->reference,
-                        'status' => 'completed',
-                        'method' => 'mpesa',
-                        'payable_type' => User::class,
-                        'payable_id' => $payment->user_id,
-                    ]);
-                    
-                    // Add to wallet
-                    $user = User::find($payment->user_id);
-                    $user->incrementWallet($amount);
-                });
-            } elseif ($payment) {
-                $payment->markAsFailed();
-            }
-        }
-        
-        return response()->json(['ResultCode' => 0, 'ResultDesc' => 'Success']);
-    }
-
-    /**
-     * Handle TigoPesa callback
-     */
-    public function tigopesaCallback(Request $request)
-    {
-        Log::info('TigoPesa Callback', $request->all());
-        
-        $data = $request->all();
-        $transactionId = $data['transaction_id'] ?? $data['reference'] ?? null;
-        
-        if ($transactionId) {
-            $payment = Payment::where('transaction_id', $transactionId)->first();
-            
-            if ($payment && ($data['status'] ?? '') === 'success') {
-                DB::transaction(function () use ($payment) {
-                    $payment->markAsCompleted();
-                    
-                    Transaction::create([
-                        'user_id' => $payment->user_id,
-                        'type' => 'credit',
-                        'amount' => $payment->amount,
-                        'balance_after' => $payment->user->wallet_balance + $payment->amount,
-                        'description' => 'TigoPesa deposit',
-                        'reference' => $payment->reference,
-                        'status' => 'completed',
-                        'method' => 'tigopesa',
-                        'payable_type' => User::class,
-                        'payable_id' => $payment->user_id,
-                    ]);
-                    
-                    $user = User::find($payment->user_id);
-                    $user->incrementWallet($payment->amount);
-                });
-            } elseif ($payment) {
-                $payment->markAsFailed();
-            }
-        }
-        
-        return response()->json(['status' => 'success']);
-    }
-
-    /**
-     * Handle HaloPesa callback
-     */
-    public function halopesaCallback(Request $request)
-    {
-        Log::info('HaloPesa Callback', $request->all());
-        
-        $data = $request->all();
-        $transactionId = $data['transaction_id'] ?? $data['reference'] ?? null;
-        
-        if ($transactionId) {
-            $payment = Payment::where('transaction_id', $transactionId)->first();
-            
-            if ($payment && ($data['status'] === 'success' || ($data['ResultCode'] ?? '') === '0')) {
-                DB::transaction(function () use ($payment) {
-                    $payment->markAsCompleted();
-                    
-                    Transaction::create([
-                        'user_id' => $payment->user_id,
-                        'type' => 'credit',
-                        'amount' => $payment->amount,
-                        'balance_after' => $payment->user->wallet_balance + $payment->amount,
-                        'description' => 'HaloPesa deposit',
-                        'reference' => $payment->reference,
-                        'status' => 'completed',
-                        'method' => 'halopesa',
-                        'payable_type' => User::class,
-                        'payable_id' => $payment->user_id,
-                    ]);
-                    
-                    $user = User::find($payment->user_id);
-                    $user->incrementWallet($payment->amount);
-                });
-            } elseif ($payment) {
-                $payment->markAsFailed();
-            }
-        }
-        
-        return response()->json(['status' => 'success']);
-    }
-
-    /**
-     * Handle Stripe webhook
-     */
-    public function stripeWebhook(Request $request)
-    {
-        $payload = $request->all();
-        Log::info('Stripe Webhook', $payload);
-        
-        if ($payload['type'] === 'payment_intent.succeeded') {
-            $paymentIntent = $payload['data']['object'];
-            $paymentId = $paymentIntent['metadata']['payment_id'] ?? null;
-            
-            if ($paymentId) {
-                $payment = Payment::find($paymentId);
-                if ($payment && $payment->status === 'pending') {
-                    DB::transaction(function () use ($payment) {
-                        $payment->markAsCompleted();
-                        
-                        Transaction::create([
-                            'user_id' => $payment->user_id,
-                            'type' => 'credit',
-                            'amount' => $payment->amount,
-                            'balance_after' => $payment->user->wallet_balance + $payment->amount,
-                            'description' => 'Card payment',
-                            'reference' => $payment->reference,
-                            'status' => 'completed',
-                            'method' => 'card',
-                            'payable_type' => User::class,
-                            'payable_id' => $payment->user_id,
-                        ]);
-                        
-                        $user = User::find($payment->user_id);
-                        $user->incrementWallet($payment->amount);
-                    });
-                }
-            }
-        }
-        
-        return response()->json(['status' => 'success']);
-    }
-
-    /**
-     * Save user's payment details
-     */
     public function savePaymentDetails(Request $request)
     {
         $user = auth()->user();
         
-        $request->validate([
-            'mpesa_phone' => 'nullable|string',
-            'tigopesa_phone' => 'nullable|string',
-            'halopesa_phone' => 'nullable|string',
-            'bank_name' => 'nullable|string',
-            'bank_account_number' => 'nullable|string',
-            'bank_account_name' => 'nullable|string',
-        ]);
+        $user->mpesa_phone = $request->mpesa_phone ?? $user->mpesa_phone;
+        $user->tigopesa_phone = $request->tigopesa_phone ?? $user->tigopesa_phone;
+        $user->halopesa_phone = $request->halopesa_phone ?? $user->halopesa_phone;
+        $user->bank_name = $request->bank_name ?? $user->bank_name;
+        $user->bank_account_number = $request->bank_account_number ?? $user->bank_account_number;
+        $user->bank_account_name = $request->bank_account_name ?? $user->bank_account_name;
+        $user->save();
         
-        $user->update($request->only([
-            'mpesa_phone', 'tigopesa_phone', 'halopesa_phone',
-            'bank_name', 'bank_account_number', 'bank_account_name'
-        ]));
-        
-        return response()->json(['success' => true, 'message' => 'Payment details saved']);
+        return response()->json(['success' => true]);
     }
 }
