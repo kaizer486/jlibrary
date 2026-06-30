@@ -1,9 +1,9 @@
-@extends('layouts.master')
+@extends('layouts.admin')
 
 
 
 @section('title', 'Add New Book')
-@section('page-content')
+@section('content')
 <div class="max-w-4xl mx-auto">
     <div class="mb-6">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">

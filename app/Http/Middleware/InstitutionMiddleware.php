@@ -3,39 +3,34 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class InstitutionMiddleware
 {
-    public function handle($request, Closure $next)
+    /**
+     * Handle an incoming request.
+     */
+    public function handle(Request $request, Closure $next)
     {
-        if (!auth()->check()) {
+        $user = Auth::user();
+
+        if (!$user) {
             return redirect()->route('login');
         }
 
-        $user = auth()->user();
-
-        // Super Admin and Admin pass freely
-        if ($user->hasRole('super_admin') || $user->hasRole('admin')) {
-            return $next($request);
+        // First, try the current single institution (legacy)
+        $hasInstitution = $user->institution_id && $user->institution;
+        
+        // If not, check the new multiple institutions relationship
+        if (!$hasInstitution) {
+            $hasInstitution = $user->institutions()->count() > 0;
         }
 
-        // Institution Admin must exist and have an institution
-        if ($user->hasRole('institution_admin')) {
-            if (!$user->institution_id) {
-                abort(403, 'You are not associated with any institution.');
-            }
-            return $next($request); // ✅ explicit pass
+        if (!$hasInstitution) {
+            abort(403, 'You do not belong to any institution.');
         }
 
-        // Librarian must have an institution
-        if ($user->hasRole('librarian')) {
-            if (!$user->institution_id) {
-                abort(403, 'You are not associated with any institution.');
-            }
-            return $next($request); // ✅ explicit pass
-        }
-
-        // Everyone else is denied
-        abort(403, 'You do not have permission to access this page.');
+        return $next($request);
     }
 }

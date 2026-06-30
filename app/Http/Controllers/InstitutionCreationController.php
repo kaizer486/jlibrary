@@ -23,11 +23,11 @@ class InstitutionCreationController extends Controller
                 ->with('info', 'You already have a pending institution creation request.');
         }
 
-        // Check if user is already in an institution
-        if (auth()->user()->institution_id) {
-            return redirect()->route('dashboard')
-                ->with('info', 'You are already a member of an institution.');
-        }
+        // ✅ REMOVED: Institution check - users can request even if they're in an institution
+        // if (auth()->user()->institution_id) {
+        //     return redirect()->route('dashboard')
+        //         ->with('info', 'You are already a member of an institution.');
+        // }
 
         return view('institution.requests.create');
     }
@@ -47,11 +47,11 @@ class InstitutionCreationController extends Controller
                 ->with('error', 'You already have a pending request.');
         }
 
-        // Check if user is already in an institution
-        if (auth()->user()->institution_id) {
-            return redirect()->route('dashboard')
-                ->with('error', 'You are already a member of an institution.');
-        }
+        // ✅ REMOVED: Institution check
+        // if (auth()->user()->institution_id) {
+        //     return redirect()->route('dashboard')
+        //         ->with('error', 'You are already a member of an institution.');
+        // }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -64,7 +64,7 @@ class InstitutionCreationController extends Controller
             'description' => 'nullable|string|max:1000',
             'website' => 'nullable|url|max:255',
             'motivation' => 'nullable|string|max:1000',
-            'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120', // 5MB max
+            'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
         ]);
 
         // Handle document upload
@@ -73,7 +73,7 @@ class InstitutionCreationController extends Controller
             $documentPath = $request->file('document')->store('institution-requests/documents', 'public');
         }
 
-        $request = InstitutionCreationRequest::create([
+        $creationRequest = InstitutionCreationRequest::create([
             'user_id' => auth()->id(),
             'name' => $validated['name'],
             'type' => $validated['type'],
@@ -88,9 +88,6 @@ class InstitutionCreationController extends Controller
             'document_path' => $documentPath,
             'status' => 'pending',
         ]);
-
-        // Notify superadmins (you can implement this later)
-        // event(new InstitutionCreationRequested($request));
 
         return redirect()->route('institution.my-requests')
             ->with('success', 'Your institution creation request has been submitted successfully! Please wait for approval.');

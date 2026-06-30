@@ -321,7 +321,7 @@
                 <div>
                     <p class="text-sm font-medium text-blue-800">Account Information</p>
                     <p class="text-xs text-blue-600 mt-1">Member since: {{ $user->created_at->format('F j, Y') }}</p>
-                    <p class="text-xs text-blue-600">Role: {{ ucfirst($user->role) }}</p>
+                    <p class="text-xs text-blue-600">Role: {{ $user->getRoleLabel() }}</p>
                 </div>
             </div>
         </div>

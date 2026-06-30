@@ -4,7 +4,7 @@
 
 @section('title', 'Institution Members')
 
-@section('page-content')
+@section('content')
 
 <div class="mb-6">
     <div class="flex justify-between items-center flex-wrap gap-4">

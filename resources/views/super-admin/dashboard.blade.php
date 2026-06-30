@@ -175,8 +175,8 @@
                     <p class="font-medium text-gray-800">{{ $user->full_name }}</p>
                     <p class="text-xs text-gray-500">{{ $user->email }}</p>
                 </div>
-                <span class="text-xs px-2 py-1 rounded-full {{ $user->role === 'super_admin' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700' }}">
-                    {{ ucfirst($user->role) }}
+                <span class="text-xs px-2 py-1 rounded-full {{ $user->isSuperAdmin() ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700' }}">
+                    {{ $user->getRoleLabel() }}
                 </span>
             </div>
             @empty

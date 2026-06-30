@@ -50,21 +50,42 @@ class ApplicationController extends Controller
         return view('super-admin.applications.show', compact('application'));
     }
     
+
     public function approve(Application $application)
-    {
-        $application->update([
-            'status' => 'approved',
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
-        
-        // Update user role
-        $user = $application->user;
-        $user->role = $application->type;
-        $user->save();
-        
-        return redirect()->back()->with('success', 'Application approved! User is now a ' . ucfirst($application->type) . '.');
+{
+    $application->update([
+        'status' => 'approved',
+        'reviewed_by' => auth()->id(),
+        'reviewed_at' => now(),
+    ]);
+    
+    // Update user role using Spatie
+    $user = $application->user;
+    $type = $application->type;
+    
+    // Assign the appropriate role
+    if ($type === 'author') {
+        $user->assignRole('author');
+        $user->author_approved_at = now();
+        $user->author_approved_by = auth()->id();
+    } elseif ($type === 'bookseller') {
+        $user->assignRole('bookseller');
+        $user->bookseller_approved_at = now();
+        $user->bookseller_approved_by = auth()->id();
+    } elseif ($type === 'publisher') {
+        $user->assignRole('publisher');
+        $user->publisher_approved_at = now();
+        $user->publisher_approved_by = auth()->id();
+    } elseif ($type === 'researcher') {
+        $user->assignRole('researcher');
+        $user->researcher_approved_at = now();
+        $user->researcher_approved_by = auth()->id();
     }
+    
+    $user->save();
+    
+    return redirect()->back()->with('success', 'Application approved! User is now a ' . ucfirst($type) . '.');
+}
     
     public function reject(Request $request, Application $application)
     {

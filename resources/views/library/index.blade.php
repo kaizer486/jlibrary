@@ -4,7 +4,7 @@
 <div class="container mx-auto px-4 py-8">
     <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Library</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">📚 Library</h1>
         <p class="text-gray-600">Discover thousands of books to read and learn from</p>
     </div>
     
@@ -58,7 +58,7 @@
                             </div>
                         @endif
                         
-                        <!-- NEW: Bookmark Button -->
+                        <!-- Bookmark Button -->
                         <div class="absolute bottom-2 right-2 z-10">
                             <x-bookmark-button :item="$book" type="book" size="sm" />
                         </div>

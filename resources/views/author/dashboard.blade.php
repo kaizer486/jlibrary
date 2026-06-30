@@ -179,6 +179,53 @@
             </div>
         </div>
 
+        <!-- Royalties History -->
+<div class="bg-white rounded-2xl shadow-sm overflow-hidden mt-8">
+    <div class="px-6 py-4 bg-gray-50 border-b">
+        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            <i class="ti ti-coin text-purple-600"></i>
+            Royalties History
+        </h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Book</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sale Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Your Royalty (10%)</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                @forelse($royalties as $royalty)
+                    @php
+                        $book = \App\Models\Book::find($royalty->payable_id);
+                    @endphp
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-500">{{ $royalty->created_at->format('M d, Y') }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-800">{{ $book->title ?? 'N/A' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">{{ $royalty->user->full_name ?? 'N/A' }}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-blue-600">TSh {{ number_format($royalty->amount, 2) }}</td>
+                        <td class="px-6 py-4 text-sm font-semibold text-green-600">TSh {{ number_format($royalty->amount * 0.10, 2) }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                                ✅ Completed
+                            </span>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">No royalties yet</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
     </div>
 </div>
 

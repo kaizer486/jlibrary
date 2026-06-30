@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'My Institution Creation Requests')
+@section('title', 'My Institution Requests')
 
 @section('content')
 <div class="fixed inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 -z-10"></div>
@@ -8,78 +8,70 @@
 <div class="relative z-10 min-h-screen py-8">
     <div class="container mx-auto px-4 max-w-4xl">
         
-        <div class="mb-6">
-            <a href="{{ route('dashboard') }}" class="text-purple-300 hover:text-purple-200 transition inline-flex items-center gap-1">
-                <i class="ti ti-arrow-left"></i> Back to Dashboard
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white">📋 My Institution Requests</h1>
+                <p class="text-gray-400 text-sm">Track your institution creation requests</p>
+            </div>
+            <a href="{{ route('institution.create-request') }}" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition">
+                <i class="ti ti-plus"></i> New Request
             </a>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4">
-                <div class="flex justify-between items-center flex-wrap gap-4">
-                    <div>
-                        <h1 class="text-xl font-bold text-white">📋 My Institution Creation Requests</h1>
-                        <p class="text-blue-100 text-sm">Track your requests to create an institution</p>
-                    </div>
-                    <a href="{{ route('institution.create-request') }}" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition text-sm flex items-center gap-2">
-                        <i class="ti ti-plus"></i> New Request
-                    </a>
-                </div>
-            </div>
-
-            <div class="p-6">
-                @if($requests->count() > 0)
-                    <div class="space-y-4">
-                        @foreach($requests as $request)
-                            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition">
-                                <div class="flex flex-wrap items-start justify-between gap-4">
-                                    <div>
-                                        <h3 class="font-semibold text-gray-800">{{ $request->name }}</h3>
-                                        <p class="text-sm text-gray-600">{{ $request->type_label }}</p>
-                                        <p class="text-xs text-gray-400 mt-1">Submitted: {{ $request->created_at->format('M d, Y h:i A') }}</p>
-                                        @if($request->motivation)
-                                            <p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ $request->motivation }}</p>
-                                        @endif
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        {!! $request->status_badge !!}
-                                        @if($request->status === 'pending')
-                                            <form method="POST" action="{{ route('institution.request.cancel', $request->id) }}" 
-                                                  onsubmit="return confirm('Cancel your request?')" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-red-500 hover:text-red-700 text-sm transition">
-                                                    <i class="ti ti-x"></i> Cancel
-                                                </button>
-                                            </form>
-                                        @endif
-                                        <a href="{{ route('institution.request.show', $request->id) }}" class="text-purple-600 hover:text-purple-800 text-sm transition">
-                                            View Details
-                                        </a>
-                                    </div>
+        @if($requests->count() > 0)
+            <div class="space-y-4">
+                @foreach($requests as $request)
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:border-purple-500/30 transition">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-semibold text-white">{{ $request->name }}</h3>
+                                <p class="text-sm text-gray-400">{{ $request->type }}</p>
+                                <div class="flex items-center gap-4 mt-2 text-sm text-gray-400">
+                                    <span><i class="ti ti-calendar"></i> {{ $request->created_at->format('M d, Y') }}</span>
+                                    <span><i class="ti ti-building"></i> {{ $request->city ?? 'No city' }}</span>
                                 </div>
-                                @if($request->status === 'rejected' && $request->rejection_reason)
-                                    <div class="mt-2 p-2 bg-red-50 rounded-lg text-sm text-red-700">
-                                        <i class="ti ti-info-circle"></i> Reason: {{ $request->rejection_reason }}
+                            </div>
+                            <div class="text-right">
+                                @if($request->status === 'pending')
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/20">
+                                        ⏳ Pending
+                                    </span>
+                                    <div class="mt-2">
+                                        <form method="POST" action="{{ route('institution.request.cancel', $request->id) }}" 
+                                              onsubmit="return confirm('Cancel this request?')">
+                                            @csrf
+                                            <button type="submit" class="text-xs text-red-400 hover:text-red-300 transition">
+                                                Cancel Request
+                                            </button>
+                                        </form>
                                     </div>
+                                @elseif($request->status === 'approved')
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">
+                                        ✅ Approved
+                                    </span>
+                                @elseif($request->status === 'rejected')
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/20">
+                                        ❌ Rejected
+                                    </span>
                                 @endif
                             </div>
-                        @endforeach
+                        </div>
                     </div>
-                    <div class="mt-6">
-                        {{ $requests->links() }}
-                    </div>
-                @else
-                    <div class="text-center py-12">
-                        <i class="ti ti-file-plus text-5xl text-gray-400 mb-3 block"></i>
-                        <h3 class="text-xl font-semibold text-gray-800 mb-2">No Requests</h3>
-                        <p class="text-gray-500">You haven't submitted any institution creation requests yet.</p>
-                        <a href="{{ route('institution.create-request') }}" class="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-                            <i class="ti ti-plus"></i> Create Your First Request
-                        </a>
-                    </div>
-                @endif
+                @endforeach
             </div>
-        </div>
+            <div class="mt-6">
+                {{ $requests->links() }}
+            </div>
+        @else
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-12 text-center border border-white/10">
+                <i class="ti ti-file-off text-5xl text-gray-500 mb-4 block"></i>
+                <h3 class="text-xl font-semibold text-white mb-2">No Requests Yet</h3>
+                <p class="text-gray-400">You haven't submitted any institution creation requests.</p>
+                <a href="{{ route('institution.create-request') }}" class="inline-block mt-4 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-lg transition">
+                    <i class="ti ti-plus"></i> Create Request
+                </a>
+            </div>
+        @endif
     </div>
 </div>
 @endsection

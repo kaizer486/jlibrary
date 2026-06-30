@@ -1,10 +1,10 @@
-@extends('layouts.master')
+@extends('layouts.admin')
 
 
 
 @section('title', 'Manage Books')
 
-@section('page-content')
+@section('content')
 <div class="mb-6">
     <div class="flex justify-between items-center flex-wrap gap-4">
         <div>

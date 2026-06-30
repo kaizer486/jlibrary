@@ -1,10 +1,14 @@
-@extends('layouts.master')
+@php
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+@endphp
+@extends('layouts.admin')
 
 
 
 @section('title', 'Payment Details')
 
-@section('page-content')
+@section('content')
 <div class="container mx-auto px-4 py-8 max-w-4xl">
     
     <div class="mb-6">

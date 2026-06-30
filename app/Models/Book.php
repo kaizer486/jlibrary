@@ -5,300 +5,395 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use App\Models\Payment; 
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * @property int $id
- * @property int|null $institution_id
- * @property string $title
- * @property string $author
- * @property string|null $description
- * @property string|null $cover_image
- * @property string $file_path
- * @property bool $is_paid
- * @property numeric $price
- * @property int $total_pages
- * @property int $downloads
- * @property int $uploaded_by
- * @property string $status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property string|null $embedding
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Review> $allReviews
- * @property-read int|null $all_reviews_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Bookmark> $bookmarks
- * @property-read int|null $bookmarks_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Certificate> $certificates
- * @property-read int|null $certificates_count
- * @property-read mixed $bookmark_count
- * @property-read array $rating_distribution
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Payment> $payments
- * @property-read int|null $payments_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Quiz> $quizzes
- * @property-read int|null $quizzes_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Rating> $ratings
- * @property-read int|null $ratings_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Review> $reviews
- * @property-read int|null $reviews_count
- * @property-read \App\Models\User|null $uploader
- * @property-read \App\Models\Institution|null $institution
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
- * @property-read int|null $users_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereAuthor($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereCoverImage($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereDownloads($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereEmbedding($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereFilePath($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereInstitutionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereIsPaid($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book wherePrice($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereTitle($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereTotalPages($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Book whereUploadedBy($value)
- * @mixin \Eloquent
- */
 class Book extends Model
 {
+    use SoftDeletes;
+
+    protected $table = 'books';
+
+    // ==========================================
+    // FILLABLE
+    // ==========================================
     protected $fillable = [
-        'title', 
-        'author', 
-        'description', 
-        'cover_image',
-        'file_path', 
-        'is_paid', 
-        'price', 
+        // Basic Info
+        'title',
+        'author',
+        'category',
+        'description',
+        'isbn',
+        'publication_year',
+        'publisher',
+        'language',
         'total_pages',
-        'downloads', 
-        'uploaded_by', 
+
+        // Media
+        'cover_image',
+        'file_path',
+
+        // Pricing
+        'is_paid',
+        'price',
+
+        // Institution
+        'institution_id',
+        'uploaded_by',
+
+        // Status
         'status',
-        'institution_id',  // ✅ ADDED THIS
+        'availability',
+
+        // Shelf Location
+        'shelf_number',
+        'shelf_name',
+        'column_location',
+        'position',
+        'floor',
+        'section',
+
+        // Statistics
+        'views_count',
+        'downloads',
+        'copies_available',
+        'total_copies',
     ];
 
+    // ==========================================
+    // CASTS
+    // ==========================================
     protected $casts = [
         'is_paid' => 'boolean',
-        'price' => 'decimal:2'
+        'price' => 'decimal:2',
+        'total_pages' => 'integer',
+        'views_count' => 'integer',
+        'downloads' => 'integer',
+        'copies_available' => 'integer',
+        'total_copies' => 'integer',
+        'publication_year' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
-    // ========== EXISTING RELATIONSHIPS ==========
-    
+    // ==========================================
+    // RELATIONSHIPS
+    // ==========================================
+
+    public function institution(): BelongsTo
+    {
+        return $this->belongsTo(Institution::class);
+    }
+
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
-    public function users()
+    public function shelf()
     {
-        return $this->belongsToMany(User::class, 'user_books')
-                    ->withPivot('progress_percent', 'current_page', 'status')
-                    ->withTimestamps();
+        return $this->belongsTo(Shelf::class, 'shelf_number', 'code');
     }
 
-    public function quizzes(): HasMany
-    {
-        return $this->hasMany(Quiz::class);
-    }
-
-    /**
-     * Get the institution that owns the book.
-     */
-    public function institution(): BelongsTo
-    {
-        return $this->belongsTo(Institution::class);
-    }
-    
-    public function certificates(): HasMany
-    {
-        return $this->hasMany(Certificate::class);
-    }
-    
     public function payments()
     {
-        return $this->morphMany(Payment::class, 'payable');
+        return $this->hasMany(LibraryPayment::class);
     }
 
-    // ========== BOOKMARK RELATIONSHIPS ==========
-    
-    public function bookmarks(): MorphMany
+    public function purchasers()
     {
-        return $this->morphMany(Bookmark::class, 'bookmarkable');
+        return $this->belongsToMany(User::class, 'library_payments')
+                    ->wherePivot('status', 'completed');
     }
 
-    public function isBookmarkedByUser($userId = null)
+    // ==========================================
+    // BORROWING RELATIONSHIPS
+    // ==========================================
+
+    public function borrowings()
     {
-        $userId = $userId ?? auth()->id();
-        return $this->bookmarks()->where('user_id', $userId)->exists();
+        return $this->hasMany(Borrowing::class);
     }
 
-    public function getBookmarkCountAttribute()
+    public function activeBorrowings()
     {
-        return $this->bookmarks()->count();
+        return $this->hasMany(Borrowing::class)->where('status', 'borrowed');
     }
 
-    // ========== RATINGS & REVIEWS RELATIONSHIPS ==========
-    
-    public function ratings(): HasMany
+    public function isBorrowed(): bool
     {
-        return $this->hasMany(Rating::class);
+        return $this->activeBorrowings()->count() > 0;
     }
 
-    public function reviews(): HasMany
+    public function currentBorrower()
     {
-        return $this->hasMany(Review::class)->where('is_approved', true);
+        $borrowing = $this->activeBorrowings()->with('user')->first();
+        return $borrowing ? $borrowing->user : null;
     }
 
-    public function allReviews(): HasMany
+    // ==========================================
+// RATINGS & REVIEWS RELATIONSHIPS
+// ==========================================
+
+/**
+ * Get all ratings for this book
+ */
+public function ratings()
+{
+    return $this->hasMany(Rating::class);
+}
+
+/**
+ * Get all reviews for this book
+ */
+public function reviews()
+{
+    return $this->hasMany(Review::class);
+}
+
+/**
+ * Get average rating
+ */
+public function getAverageRatingAttribute()
+{
+    return $this->ratings()->avg('rating') ?? 0;
+}
+
+/**
+ * Get total ratings count
+ */
+public function getRatingsCountAttribute()
+{
+    return $this->ratings()->count();
+}
+
+/**
+ * Get total reviews count
+ */
+public function getReviewsCountAttribute()
+{
+    return $this->reviews()->count();
+}
+    // ==========================================
+    // AVAILABILITY HELPERS
+    // ==========================================
+
+    /**
+     * Update book availability based on status and copies.
+     */
+    public function updateAvailability(): void
     {
-        return $this->hasMany(Review::class);
+        if ($this->isBorrowed()) {
+            $this->availability = 'borrowed';
+        } elseif ($this->copies_available > 0) {
+            $this->availability = 'available';
+        } else {
+            $this->availability = 'under_maintenance';
+        }
+        $this->save();
     }
 
-    // ========== RATINGS METHODS ==========
-    
-    public function averageRating(): float
+    /**
+     * Check if book is available to borrow.
+     */
+    public function isAvailableToBorrow(): bool
     {
-        return round($this->ratings()->avg('rating') ?? 0, 1);
+        return $this->status === 'approved' 
+            && $this->availability === 'available' 
+            && !$this->isBorrowed()
+            && $this->copies_available > 0;
     }
 
-    public function ratingCount(): int
+    /**
+     * Check if book is available for purchase.
+     */
+    public function isAvailableForPurchase(): bool
     {
-        return $this->ratings()->count();
+        return $this->status === 'approved' 
+            && ($this->availability === 'available' || $this->availability === 'borrowed');
     }
-    
-    public function getCommissionBreakdown($price)
+
+    // ==========================================
+    // SCOPES
+    // ==========================================
+
+    public function scopeApproved($query)
     {
-        $institutionCommission = CommissionSetting::getInstitutionCommission();
-        $platformCommission = CommissionSetting::getPlatformCommission();
-        $authorCommission = CommissionSetting::getAuthorCommission();
-        
-        return [
-            'price' => $price,
-            'institution_amount' => ($price * $institutionCommission) / 100,
-            'platform_amount' => ($price * $platformCommission) / 100,
-            'author_amount' => ($price * $authorCommission) / 100,
+        return $query->where('status', 'approved');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeFree($query)
+    {
+        return $query->where('is_paid', false);
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('is_paid', true);
+    }
+
+    public function scopeInInstitution($query, $institutionId)
+    {
+        return $query->where('institution_id', $institutionId);
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('availability', 'available')
+            ->where('status', 'approved');
+    }
+
+    public function scopeBorrowed($query)
+    {
+        return $query->where('availability', 'borrowed');
+    }
+
+    public function scopeSearch($query, $search)
+    {
+        if (empty($search)) {
+            return $query;
+        }
+
+        return $query->where(function($q) use ($search) {
+            $q->where('title', 'LIKE', "%{$search}%")
+              ->orWhere('author', 'LIKE', "%{$search}%")
+              ->orWhere('description', 'LIKE', "%{$search}%")
+              ->orWhere('category', 'LIKE', "%{$search}%")
+              ->orWhere('isbn', 'LIKE', "%{$search}%");
+        });
+    }
+
+    // ==========================================
+    // HELPERS
+    // ==========================================
+
+    public function isFree(): bool
+    {
+        return !$this->is_paid;
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->is_paid;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
+    }
+
+    public function getFullShelfLocation(): string
+    {
+        $parts = [];
+
+        if ($this->shelf_number) {
+            $parts[] = "Shelf: {$this->shelf_number}";
+        }
+        if ($this->shelf_name) {
+            $parts[] = $this->shelf_name;
+        }
+        if ($this->floor) {
+            $parts[] = "Floor: {$this->floor}";
+        }
+        if ($this->section) {
+            $parts[] = "Section: {$this->section}";
+        }
+        if ($this->column_location) {
+            $parts[] = "Column: {$this->column_location}";
+        }
+        if ($this->position) {
+            $parts[] = "Position: {$this->position}";
+        }
+
+        return implode(' | ', $parts) ?: 'Location not specified';
+    }
+
+    public function incrementViews(): void
+    {
+        $this->increment('views_count');
+    }
+
+    public function incrementDownloads(): void
+    {
+        $this->increment('downloads');
+    }
+
+    public function hasAvailableCopies(): bool
+    {
+        return $this->copies_available > 0;
+    }
+
+    public function getAvailableCopies(): int
+    {
+        return $this->copies_available ?? 0;
+    }
+
+    public function hasCover(): bool
+    {
+        return !empty($this->cover_image);
+    }
+
+    public function hasPdf(): bool
+    {
+        return !empty($this->file_path);
+    }
+
+    public function getCoverUrl(): ?string
+    {
+        if ($this->cover_image) {
+            return asset('storage/' . $this->cover_image);
+        }
+        return null;
+    }
+
+    public function getPdfUrl(): ?string
+    {
+        if ($this->file_path) {
+            return asset('storage/' . $this->file_path);
+        }
+        return null;
+    }
+
+    public function getStatusBadgeAttribute(): string
+    {
+        $badges = [
+            'approved' => 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20',
+            'pending' => 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/20',
+            'rejected' => 'bg-red-500/20 text-red-400 border border-red-500/20',
+            'available' => 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20',
+            'borrowed' => 'bg-blue-500/20 text-blue-400 border border-blue-500/20',
+            'reserved' => 'bg-amber-500/20 text-amber-400 border border-amber-500/20',
+            'under_maintenance' => 'bg-gray-500/20 text-gray-400 border border-gray-500/20',
         ];
-    }
-    
-    public function userRating($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        return $this->ratings()->where('user_id', $userId)->value('rating');
-    }
 
-    public function hasUserRated($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        return $this->ratings()->where('user_id', $userId)->exists();
-    }
+        $labels = [
+            'approved' => '✅ Approved',
+            'pending' => '⏳ Pending',
+            'rejected' => '❌ Rejected',
+            'available' => '✅ Available',
+            'borrowed' => '📖 Borrowed',
+            'reserved' => '🔖 Reserved',
+            'under_maintenance' => '🔧 Maintenance',
+        ];
 
-    public function getRatingDistributionAttribute(): array
-    {
-        $distribution = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
-        
-        $ratings = $this->ratings()
-            ->select('rating', \DB::raw('count(*) as count'))
-            ->groupBy('rating')
-            ->get();
-        
-        foreach ($ratings as $rating) {
-            $distribution[$rating->rating] = $rating->count;
-        }
-        
-        return $distribution;
-    }
+        $class = $badges[$this->status] ?? 'bg-gray-500/20 text-gray-400 border border-gray-500/20';
+        $label = $labels[$this->status] ?? ucfirst($this->status);
 
-    // ========== REVIEWS METHODS ==========
-    
-    public function userReview($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        return $this->allReviews()->where('user_id', $userId)->first();
+        return '<span class="px-2 py-1 rounded-full text-xs font-medium ' . $class . '">' . $label . '</span>';
     }
-
-    public function hasUserReviewed($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        return $this->allReviews()->where('user_id', $userId)->exists();
-    }
-
-    // ========== ACCESS METHODS ==========
-    
-    public function userHasAccess($userId): bool
-    {
-        if (!$this->is_paid) {
-            return true;
-        }
-        
-        return Payment::where('user_id', $userId)
-            ->where('payable_type', Book::class)
-            ->where('payable_id', $this->id)
-            ->where('status', 'completed')
-            ->exists();
-    }
-    
-    /**
-     * Check if user has purchased this book 
-     */
-    public function isPurchasedByUser($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        
-        if (!$userId) return false;
-        
-        // For free books, always return true for access check
-        if (!$this->is_paid) {
-            return true;
-        }
-        
-        return $this->userHasAccess($userId);
-    }
-    
-    /**
-     * Check if user can access this book (alias for userHasAccess)
-     */
-    public function canUserAccess($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        return $this->userHasAccess($userId);
-    }
-    
-    /**
-     * Get user's progress for this book
-     */
-    public function getUserProgress($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        
-        if (!$userId) return null;
-        
-        return $this->users()->where('user_id', $userId)->first();
-    }
-    
-    /**
-     * Purchase this book for a user
-     */
-    public function purchaseForUser($userId, $paymentMethod = 'wallet')
-    {
-        $user = User::find($userId);
-        
-        if (!$user) {
-            return ['success' => false, 'message' => 'User not found'];
-        }
-        
-        // Check if already purchased
-        if ($this->isPurchasedByUser($userId)) {
-            return ['success' => false, 'message' => 'Book already purchased'];
-        }
-        
-        // Use the user's purchase method
-        return $user->purchaseBookWithWallet($this, $paymentMethod);
-    }
-    
 }

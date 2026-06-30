@@ -25,6 +25,53 @@ class NotificationHelper
         return $notification;
     }
 
+    public static function joinRequestSent($adminId, $userName, $joinRequestId, $institutionId)
+{
+    self::send(
+        $adminId,
+        'join_request',
+        '👋 New Join Request',
+        "{$userName} wants to join your institution!",
+        [
+            'join_request_id' => $joinRequestId,
+            'institution_id' => $institutionId,
+            'type' => 'join_request',
+            'link' => route('institution.join-requests.index')
+        ]
+    );
+}
+
+public static function joinRequestApproved($userId, $institutionName, $institutionId)
+{
+    self::send(
+        $userId,
+        'join_approved',
+        '✅ Join Request Approved',
+        "Your request to join {$institutionName} has been approved!",
+        [
+            'institution_id' => $institutionId,
+            'type' => 'join_approved',
+            'link' => route('institution.dashboard')
+        ]
+    );
+}
+
+public static function joinRequestRejected($userId, $institutionName, $reason = null)
+{
+    $message = "Your request to join {$institutionName} was rejected.";
+    if ($reason) {
+        $message .= " Reason: {$reason}";
+    }
+    
+    self::send(
+        $userId,
+        'join_rejected',
+        '❌ Join Request Rejected',
+        $message,
+        ['type' => 'join_rejected']
+    );
+}
+
     public static function bookPurchased($buyerId, $sellerId, $bookTitle, $bookId)
     {
         // Notify seller

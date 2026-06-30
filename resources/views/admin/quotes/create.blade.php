@@ -13,7 +13,7 @@
     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
         <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
             <h1 class="text-xl font-bold text-white">✨ Add New Quote</h1>
-            @if(auth()->user()->role === 'institution_admin')
+            @if(auth()->user()->isAnyInstitutionAdmin())
                 <p class="text-purple-100 text-sm">Adding quote for {{ auth()->user()->institution->name }}</p>
             @else
                 <p class="text-purple-100 text-sm">Adding global quote (visible to users with no institution)</p>

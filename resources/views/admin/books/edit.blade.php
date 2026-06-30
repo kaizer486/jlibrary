@@ -1,10 +1,10 @@
-@extends('layouts.master')
+@extends('layouts.admin')
 
 
 
 @section('title', 'Edit Book')
 
-@section('page-content')
+@section('content')
 <div class="max-w-4xl mx-auto">
     <!-- Header -->
     <div class="mb-6">

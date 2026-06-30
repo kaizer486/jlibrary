@@ -21,11 +21,11 @@
                     <h1 class="text-2xl font-bold text-white">{{ $user->full_name }}</h1>
                     <p class="text-purple-200">{{ $user->email }}</p>
                     <div class="mt-2">
-                        @if($user->role === 'super_admin')
+                        @if($user->isSuperAdmin())
                             <span class="px-3 py-1 rounded-full text-xs font-semibold bg-red-500 text-white">👑 Super Admin</span>
-                        @elseif($user->role === 'admin')
+                        @elseif($user->isAdmin())
                             <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500 text-white">🛡️ Admin</span>
-                        @elseif($user->role === 'institution_admin')
+                        @elseif($user->isAnyInstitutionAdmin())
                             <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500 text-white">🏢 Institution Admin</span>
                         @else
                             <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-500 text-white">👤 User</span>

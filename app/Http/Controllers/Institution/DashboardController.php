@@ -82,12 +82,28 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
         
+        // ==========================================
+        // SUBSCRIPTION DATA
+        // ==========================================
+        $subscription = [
+            'is_active' => $institution->isSubscriptionActive(),
+            'days_left' => $institution->getDaysLeft(),
+            'progress' => $institution->getSubscriptionProgress(),
+            'status_color' => $institution->getSubscriptionStatusColor(),
+            'status_label' => $institution->getSubscriptionStatusLabel(),
+            'plan_label' => $institution->getPlanLabel(),
+            'plan' => $institution->subscription_tier,
+            'started_at' => $institution->subscription_started_at,
+            'expires_at' => $institution->subscription_expires_at,
+        ];
+        
         return view('institution.dashboard', compact(
             'institution', 
             'stats', 
             'recentMembers', 
             'recentBooks',
-            'recentRequests'
+            'recentRequests',
+            'subscription' 
         ));
     }
 }

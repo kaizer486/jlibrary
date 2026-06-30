@@ -24,10 +24,7 @@
         abort(403, 'You do not have access to this institution.');
     }
     
-    // Check if user has permission to create withdrawals
-    if (!auth()->user()->can('create', App\Models\WithdrawalRequest::class)) {
-        abort(403, 'You do not have permission to request withdrawals.');
-    }
+   
     
     // Get wallet balance with null safety
     $balance = $wallet?->balance ?? 0;

@@ -112,10 +112,7 @@
                     </div>
                     
                     <div class="flex items-center justify-between mb-6">
-                        <label class="flex items-center">
-                            <input type="checkbox" name="remember" class="rounded border-white/20 bg-white/10 text-orange-500">
-                            <span class="ml-2 text-sm text-purple-200">Remember me</span>
-                        </label>
+                    
                         @if (Route::has('password.request'))
                             <a href="{{ route('password.request') }}" class="text-sm text-purple-300 hover:text-white transition">
                                 Forgot password?

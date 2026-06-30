@@ -104,11 +104,11 @@
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $user->email }}</td>
                     <td class="px-6 py-4">
-                        @if($user->role === 'super_admin')
+                        @if($user->isSuperAdmin())
                             <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">👑 Super Admin</span>
-                        @elseif($user->role === 'admin')
+                        @elseif($user->isAdmin())
                             <span class="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">🛡️ Admin</span>
-                        @elseif($user->role === 'institution_admin')
+                        @elseif($user->isAnyInstitutionAdmin())
                             <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">🏢 Institution Admin</span>
                         @else
                             <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">👤 User</span>

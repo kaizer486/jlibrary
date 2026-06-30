@@ -1,4 +1,4 @@
-@extends('layouts.institution')
+@extends('layouts.librarian')
 
 @section('title', 'Join Request Details')
 

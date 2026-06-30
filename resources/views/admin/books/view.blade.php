@@ -1,10 +1,10 @@
-@extends('layouts.master')
+@extends('layouts.admin')
 
 
 
 @section('title', $book->title)
 
-@section('page-content')
+@section('content')
 
 <div class="max-w-6xl mx-auto">
     <!-- Breadcrumb -->

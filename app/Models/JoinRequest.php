@@ -5,68 +5,93 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int $institution_id
+ * @property string $status
+ * @property string|null $message
+ * @property string|null $rejection_reason
+ * @property int|null $approved_by
+ * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * 
+ * @property-read \App\Models\User $user
+ * @property-read \App\Models\Institution $institution
+ * @property-read \App\Models\User|null $approver
+ */
 class JoinRequest extends Model
 {
     protected $fillable = [
-        'user_id', 'institution_id', 'message', 'status', 
-        'reviewed_by', 'reviewed_at', 'admin_notes'
+        'user_id',
+        'institution_id',
+        'status',
+        'message',
+        'rejection_reason',
+        'approved_by',
+        'approved_at',
     ];
-    
+
     protected $casts = [
-        'reviewed_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
-    
+
+    // ==========================================
+    // RELATIONSHIPS
+    // ==========================================
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
-    
+
     public function institution(): BelongsTo
     {
         return $this->belongsTo(Institution::class);
     }
-    
-    public function reviewer(): BelongsTo
+
+    public function approver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reviewed_by');
+        return $this->belongsTo(User::class, 'approved_by');
     }
-    
-    public function approve($reviewerId, $notes = null)
+
+    // ==========================================
+    // HELPERS
+    // ==========================================
+
+    public function isPending(): bool
     {
-        $this->update([
-            'status' => 'approved',
-            'reviewed_by' => $reviewerId,
-            'reviewed_at' => now(),
-            'admin_notes' => $notes,
-        ]);
-        
-        // Update user's institution
-        $this->user->update([
-            'institution_id' => $this->institution_id,
-        ]);
-        
-        return $this;
+        return $this->status === 'pending';
     }
-    
-    public function reject($reviewerId, $notes)
+
+    public function isApproved(): bool
     {
-        $this->update([
-            'status' => 'rejected',
-            'reviewed_by' => $reviewerId,
-            'reviewed_at' => now(),
-            'admin_notes' => $notes,
-        ]);
-        
-        return $this;
+        return $this->status === 'approved';
     }
-    
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
+    }
+
     public function getStatusBadgeAttribute(): string
     {
-        return match($this->status) {
-            'pending' => '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">⏳ Pending</span>',
-            'approved' => '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">✅ Approved</span>',
-            'rejected' => '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">❌ Rejected</span>',
-            default => '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">Unknown</span>'
-        };
+        $badges = [
+            'pending' => 'bg-yellow-100 text-yellow-700',
+            'approved' => 'bg-green-100 text-green-700',
+            'rejected' => 'bg-red-100 text-red-700',
+        ];
+
+        $icons = [
+            'pending' => '⏳',
+            'approved' => '✅',
+            'rejected' => '❌',
+        ];
+
+        $class = $badges[$this->status] ?? 'bg-gray-100 text-gray-700';
+        $icon = $icons[$this->status] ?? '';
+
+        return '<span class="px-2 py-1 rounded-full text-xs font-medium ' . $class . '">' . $icon . ' ' . ucfirst($this->status) . '</span>';
     }
 }

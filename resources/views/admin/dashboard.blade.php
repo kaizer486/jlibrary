@@ -1,11 +1,32 @@
-@extends('layouts.master')
+@php
+    $layout = 'layouts.app'; 
+    
+    if (auth()->check()) {
+        if (auth()->user()->hasRole('super_admin')) {
+            $layout = 'layouts.super-admin';
+        } elseif (auth()->user()->hasRole('institution_admin')) {
+            $layout = 'layouts.institution';
+        } elseif (auth()->user()->hasRole('admin')) {
+            $layout = 'layouts.admin';
+        } elseif (auth()->user()->hasRole('instructor')) {
+            $layout = 'layouts.instructor';
+        } elseif (auth()->user()->hasRole('librarian')) {
+            $layout = 'layouts.librarian';
+        } else {
+            $layout = 'layouts.app';
+        }
+    }
+@endphp
 
-@section('page-content')
+@extends('layouts.admin')
 
+@section('title', 'Admin Dashboard')
+
+@section('content')
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
     <p class="text-gray-600 mt-1">Welcome back, {{ Auth::user()->full_name }}!</p>
-    <p class="text-sm text-jlibrary-600 mt-1">You have administrator privileges.</p>
+    <p class="text-sm text-purple-600 mt-1">You have administrator privileges.</p>
 </div>
 
 <!-- Stats Grid -->
@@ -77,7 +98,7 @@
     <div class="bg-white rounded-xl shadow-sm p-6">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-900">Recent Users</h2>
-            <a href="{{ route('admin.users.index') }}" class="text-sm text-jlibrary-600">View All →</a>
+            <a href="{{ route('admin.users.index') }}" class="text-sm text-purple-600">View All →</a>
         </div>
         <div class="space-y-3">
             @foreach(\App\Models\User::latest()->limit(5)->get() as $user)
@@ -86,8 +107,8 @@
                         <p class="font-medium text-gray-900">{{ $user->full_name }}</p>
                         <p class="text-sm text-gray-500">{{ $user->email }}</p>
                     </div>
-                    <span class="text-xs px-2 py-1 rounded-full {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700' }}">
-                        {{ ucfirst($user->role) }}
+                    <span class="text-xs px-2 py-1 rounded-full {{ $user->isAdmin() ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700' }}">
+                        {{ $user->getRoleLabel() }}
                     </span>
                 </div>
             @endforeach
@@ -98,7 +119,7 @@
     <div class="bg-white rounded-xl shadow-sm p-6">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-900">Pending Listings</h2>
-            <a href="{{ route('admin.marketplace.pending') }}" class="text-sm text-jlibrary-600">Review →</a>
+            <a href="{{ route('admin.marketplace.pending') }}" class="text-sm text-purple-600">Review →</a>
         </div>
         <div class="space-y-3">
             @forelse(\App\Models\MarketplaceListing::where('status', 'pending')->with('seller')->latest()->limit(5)->get() as $listing)

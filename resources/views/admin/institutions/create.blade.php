@@ -4,7 +4,7 @@
 
 @section('title', 'Add Institution')
 
-@section('page-content')
+@section('content')
 <div class="max-w-3xl mx-auto">
     <div class="mb-6">
         <a href="{{ route('admin.institutions.index') }}" class="text-purple-600 hover:text-purple-700">

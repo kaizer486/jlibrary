@@ -37,7 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Quiz extends Model
 {
     protected $fillable = [
-        'title', 'description', 'image', 'time_limit', 'passing_score', 'is_active'
+        'title', 'description', 'image', 'time_limit', 'passing_score', 'is_active', 'institution_id',
     ];
     
     public function questions(): HasMany

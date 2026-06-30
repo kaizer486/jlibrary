@@ -65,6 +65,13 @@
                             {{ __('Admin Panel') }}
                         </x-nav-link>
                     @endhasanyrole
+
+                    <!-- Institution Panel - All Institution Admin Roles -->
+                    @hasanyrole('institution_admin|school_admin|college_admin|university_admin|library_admin|bookstore_admin|publisher_admin|researcher')
+                        <x-nav-link :href="route('institution.dashboard')" :active="request()->routeIs('institution.dashboard')">
+                            {{ __('Institution Panel') }}
+                        </x-nav-link>
+                    @endhasanyrole
                 </div>
             </div>
 
@@ -85,31 +92,40 @@
                     <x-slot name="content">
                         <!-- Role Badge -->
                         <div class="px-4 py-2 text-xs text-gray-500 border-b">
-                            @role('super_admin')
+                            @php
+                                $user = auth()->user();
+                                $role = $user->getRoleNames()->first() ?? 'user';
+                            @endphp
+                            
+                            @if($user->hasRole('super_admin'))
                                 👑 Super Administrator
+                            @elseif($user->hasRole('admin'))
+                                🛡️ Administrator
+                            @elseif($user->hasRole('institution_admin'))
+                                🏢 Institution Admin
+                            @elseif($user->hasRole('school_admin'))
+                                🏫 School Admin
+                            @elseif($user->hasRole('college_admin'))
+                                🎓 College Admin
+                            @elseif($user->hasRole('university_admin'))
+                                🏛️ University Admin
+                            @elseif($user->hasRole('library_admin'))
+                                📚 Library Admin
+                            @elseif($user->hasRole('bookstore_admin'))
+                                📖 Bookstore Admin
+                            @elseif($user->hasRole('publisher_admin'))
+                                📰 Publisher Admin
+                            @elseif($user->hasRole('researcher'))
+                                🔬 Researcher
+                            @elseif($user->hasRole('author'))
+                                ✍️ Author
+                            @elseif($user->hasRole('librarian'))
+                                📚 Librarian
+                            @elseif($user->hasRole('instructor'))
+                                👨‍🏫 Instructor
                             @else
-                                @role('admin')
-                                    🛡️ Administrator
-                                @else
-                                    @role('institution_admin')
-                                        🏢 Institution Admin
-                                    @else
-                                        @role('author')
-                                            📚 Author
-                                        @else
-                                            @role('librarian')
-                                                📖 Librarian
-                                            @else
-                                                @role('instructor')
-                                                    👨‍🏫 Instructor
-                                                @else
-                                                    👤 Member
-                                                @endrole
-                                            @endrole
-                                        @endrole
-                                    @endrole
-                                @endrole
-                            @endrole
+                                👤 Member
+                            @endif
                         </div>
 
                         <x-dropdown-link :href="route('profile.edit')">
@@ -124,6 +140,13 @@
                             {{ __('Certificates') }}
                         </x-dropdown-link>
 
+                        <!-- My Institution -->
+                        @if(auth()->user()->institution_id)
+                            <x-dropdown-link :href="route('my.institution')">
+                                {{ __('My Institution') }}
+                            </x-dropdown-link>
+                        @endif
+
                         <!-- Admin Panel Link in Dropdown -->
                         @hasanyrole('admin|super_admin')
                             <x-dropdown-link :href="route('admin.dashboard')">
@@ -137,6 +160,13 @@
                                 👑 {{ __('Super Dashboard') }}
                             </x-dropdown-link>
                         @endrole
+
+                        <!-- Institution Panel Link in Dropdown -->
+                        @hasanyrole('institution_admin|school_admin|college_admin|university_admin|library_admin|bookstore_admin|publisher_admin|researcher')
+                            <x-dropdown-link :href="route('institution.dashboard')">
+                                🏛️ {{ __('Institution Panel') }}
+                            </x-dropdown-link>
+                        @endhasanyrole
 
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
@@ -181,6 +211,41 @@
             <x-responsive-nav-link :href="route('marketplace.index')" :active="request()->routeIs('marketplace.*')">
                 {{ __('Marketplace') }}
             </x-responsive-nav-link>
+
+            <!-- Author Dashboard - Only authors -->
+            @role('author')
+                <x-responsive-nav-link :href="route('author.dashboard')" :active="request()->routeIs('author.dashboard')">
+                    {{ __('Author Dashboard') }}
+                </x-responsive-nav-link>
+            @endrole
+
+            <!-- Instructor Dashboard - Only instructors -->
+            @role('instructor')
+                <x-responsive-nav-link :href="route('instructor.dashboard')" :active="request()->routeIs('instructor.dashboard')">
+                    {{ __('Instructor Dashboard') }}
+                </x-responsive-nav-link>
+            @endrole
+
+            <!-- Institution Panel - All Institution Admin Roles -->
+            @hasanyrole('institution_admin|school_admin|college_admin|university_admin|library_admin|bookstore_admin|publisher_admin|researcher')
+                <x-responsive-nav-link :href="route('institution.dashboard')" :active="request()->routeIs('institution.dashboard')">
+                    {{ __('Institution Panel') }}
+                </x-responsive-nav-link>
+            @endhasanyrole
+
+            <!-- Admin Panel - Admin and Super Admin -->
+            @hasanyrole('admin|super_admin')
+                <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                    {{ __('Admin Panel') }}
+                </x-responsive-nav-link>
+            @endhasanyrole
+
+            <!-- Super Admin Dashboard -->
+            @role('super_admin')
+                <x-responsive-nav-link :href="route('super-admin.dashboard')" :active="request()->routeIs('super-admin.dashboard')">
+                    👑 {{ __('Super Dashboard') }}
+                </x-responsive-nav-link>
+            @endrole
         </div>
 
         <!-- Responsive Settings Options -->
@@ -189,31 +254,39 @@
                 <div class="font-medium text-base text-gray-800">{{ Auth::user()->full_name ?? Auth::user()->name }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
                 <div class="text-xs text-gray-400 mt-1">
-                    @role('super_admin')
+                    @php
+                        $user = auth()->user();
+                    @endphp
+                    
+                    @if($user->hasRole('super_admin'))
                         👑 Super Administrator
+                    @elseif($user->hasRole('admin'))
+                        🛡️ Administrator
+                    @elseif($user->hasRole('institution_admin'))
+                        🏢 Institution Admin
+                    @elseif($user->hasRole('school_admin'))
+                        🏫 School Admin
+                    @elseif($user->hasRole('college_admin'))
+                        🎓 College Admin
+                    @elseif($user->hasRole('university_admin'))
+                        🏛️ University Admin
+                    @elseif($user->hasRole('library_admin'))
+                        📚 Library Admin
+                    @elseif($user->hasRole('bookstore_admin'))
+                        📖 Bookstore Admin
+                    @elseif($user->hasRole('publisher_admin'))
+                        📰 Publisher Admin
+                    @elseif($user->hasRole('researcher'))
+                        🔬 Researcher
+                    @elseif($user->hasRole('author'))
+                        ✍️ Author
+                    @elseif($user->hasRole('librarian'))
+                        📚 Librarian
+                    @elseif($user->hasRole('instructor'))
+                        👨‍🏫 Instructor
                     @else
-                        @role('admin')
-                            🛡️ Administrator
-                        @else
-                            @role('institution_admin')
-                                🏢 Institution Admin
-                            @else
-                                @role('author')
-                                    📚 Author
-                                @else
-                                    @role('librarian')
-                                        📖 Librarian
-                                    @else
-                                        @role('instructor')
-                                            👨‍🏫 Instructor
-                                        @else
-                                            👤 Member
-                                        @endrole
-                                    @endrole
-                                @endrole
-                            @endrole
-                        @endrole
-                    @endrole
+                        👤 Member
+                    @endif
                 </div>
             </div>
 
@@ -226,6 +299,16 @@
                     {{ __('Wallet') }}
                 </x-responsive-nav-link>
 
+                <x-responsive-nav-link :href="route('certificates.index')">
+                    {{ __('Certificates') }}
+                </x-responsive-nav-link>
+
+                @if(auth()->user()->institution_id)
+                    <x-responsive-nav-link :href="route('my.institution')">
+                        {{ __('My Institution') }}
+                    </x-responsive-nav-link>
+                @endif
+
                 @hasanyrole('admin|super_admin')
                     <x-responsive-nav-link :href="route('admin.dashboard')">
                         {{ __('Admin Panel') }}
@@ -237,6 +320,12 @@
                         👑 {{ __('Super Dashboard') }}
                     </x-responsive-nav-link>
                 @endrole
+
+                @hasanyrole('institution_admin|school_admin|college_admin|university_admin|library_admin|bookstore_admin|publisher_admin|researcher')
+                    <x-responsive-nav-link :href="route('institution.dashboard')">
+                        🏛️ {{ __('Institution Panel') }}
+                    </x-responsive-nav-link>
+                @endhasanyrole
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">

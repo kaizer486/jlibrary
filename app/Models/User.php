@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Payment;
 use App\Models\Certificate;  
@@ -48,6 +49,17 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $referral_code
  * @property int|null $referred_by
  * @property numeric $referral_earnings
+ * @property int|null $institution_id 
+ * @property bool $is_institution_admin
+ * @property string|null $position
+ * @property string|null $subscription_tier
+ * @property \Illuminate\Support\Carbon|null $subscription_expires_at
+ * @property \Illuminate\Support\Carbon|null $reminder_30_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_15_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_7_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_3_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_1_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_expired_sent_at
  * @property-read int $xp_points
  * @property-read int $level
  * @property-read int $streak_days
@@ -138,7 +150,7 @@ use Laravel\Sanctum\HasApiTokens;
  */
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable, HasRoles, HasXpRewards;
+    use HasApiTokens, Notifiable, HasRoles, HasXpRewards,SoftDeletes;
 
     protected $table = 'users';
 
@@ -150,7 +162,6 @@ class User extends Authenticatable
         'role',
         'wallet_balance',
         'avatar',
-        // Profile Fields
         'bio',
         'cover_photo',
         'facebook_url',
@@ -162,15 +173,31 @@ class User extends Authenticatable
         'location',
         'occupation',
         'birth_date',
-        // Referral Fields
         'referral_code',
         'referred_by',
         'referral_earnings',
         'institution_id',
         'position',
         'is_institution_admin',
+        // ==========================================
+        // SUBSCRIPTION & REMINDER FIELDS
+        // ==========================================
+        'subscription_tier',
+        'subscription_expires_at',
+        'reminder_30_sent_at',
+        'reminder_15_sent_at',
+        'reminder_7_sent_at',
+        'reminder_3_sent_at',
+        'reminder_1_sent_at',
+        'reminder_expired_sent_at',
+           // ==========================================
+    // SELLER APPROVAL FIELDS - ADD THIS
+    // ==========================================
+    'author_approved_at',
+    'bookseller_approved_at',
+    'author_approved_by',
+    'bookseller_approved_by',
     ];
-    
 
     protected $hidden = [
         'password',
@@ -182,8 +209,27 @@ class User extends Authenticatable
         'wallet_balance' => 'float',
         'birth_date' => 'date',
         'referral_earnings' => 'decimal:2',
+        // ==========================================
+        // SUBSCRIPTION & REMINDER CASTS
+        // ==========================================
+        'subscription_expires_at' => 'datetime',
+        'reminder_30_sent_at' => 'datetime',
+        'reminder_15_sent_at' => 'datetime',
+        'reminder_7_sent_at' => 'datetime',
+        'reminder_3_sent_at' => 'datetime',
+        'reminder_1_sent_at' => 'datetime',
+        'reminder_expired_sent_at' => 'datetime',
+        'deleted_at' => 'datetime',
+           // ==========================================
+    // SELLER APPROVAL CAST
+    // ==========================================
+    'author_approved_at' => 'datetime',
+    'bookseller_approved_at' => 'datetime',
     ];
 
+    // ==========================================
+    // API TOKEN METHODS
+    // ==========================================
 
     /**
      * Create a new API token for the user
@@ -195,7 +241,7 @@ class User extends Authenticatable
         return [
             'access_token' => $token->plainTextToken,
             'token_type' => 'Bearer',
-            'expires_at' => null, // Sanctum tokens don't expire by default
+            'expires_at' => null,
         ];
     }
     
@@ -206,6 +252,7 @@ class User extends Authenticatable
     {
         $this->tokens()->delete();
     }
+
     // ========== APPLICATION RELATIONSHIPS ==========
     
     public function applications()
@@ -213,26 +260,107 @@ class User extends Authenticatable
         return $this->hasMany(Application::class);
     }
 
-    public function hasPendingApplication($type = null)
-    {
-        $query = $this->applications()->where('status', 'pending');
-        if ($type) {
-            $query->where('type', $type);
-        }
-        return $query->exists();
-    }
 
-    public function isApprovedAuthor()
-    {
-        return $this->hasRole('author') || 
-               $this->applications()->where('type', 'author')->where('status', 'approved')->exists();
-    }
+// ==========================================
+// MARKETPLACE ORDERS - ADD THIS ENTIRE BLOCK
+// ==========================================
 
-    public function isApprovedBookseller()
-    {
-        return $this->hasRole('bookseller') || 
-               $this->applications()->where('type', 'bookseller')->where('status', 'approved')->exists();
+/**
+ * Orders where user is the seller
+ */
+public function sellerOrders()
+{
+    return $this->hasMany(MarketplaceOrder::class, 'seller_id');
+}
+
+/**
+ * Orders where user is the buyer
+ */
+public function buyerOrders()
+{
+    return $this->hasMany(MarketplaceOrder::class, 'buyer_id');
+}
+
+/**
+ * Add user to an institution (handles both pivot and legacy field).
+ */
+public function addToInstitution($institutionId, $role = 'member')
+{
+    // Add to pivot table
+    $this->institutions()->syncWithoutDetaching([
+        $institutionId => [
+            'role' => $role,
+            'status' => 'active',
+            'joined_at' => now(),
+        ]
+    ]);
+    
+    // Update legacy field
+    $this->institution_id = $institutionId;
+    if ($role === 'admin' || $role === 'institution_admin') {
+        $this->is_institution_admin = true;
     }
+    $this->save();
+    
+    return $this;
+}
+
+/**
+ * Remove user from an institution.
+ */
+public function removeFromInstitution($institutionId)
+{
+    // Remove from pivot table
+    $this->institutions()->detach($institutionId);
+    
+    // If this was the primary institution, clear legacy field
+    if ($this->institution_id == $institutionId) {
+        $this->institution_id = null;
+        $this->is_institution_admin = false;
+        $this->save();
+    }
+    
+    return $this;
+}
+/**
+ * Alias for sellerOrders (for consistency with other parts of the app)
+ */
+
+
+// ==========================================
+// MARKETPLACE EARNINGS METHODS - ADD THIS
+// ==========================================
+
+/**
+ * Get total marketplace earnings (completed orders only)
+ */
+public function getTotalMarketplaceEarningsAttribute()
+{
+    return $this->sellerOrders()
+        ->where('status', 'completed')
+        ->sum('seller_earnings');
+}
+
+/**
+ * Get pending marketplace orders count
+ */
+public function getPendingMarketplaceOrdersAttribute()
+{
+    return $this->sellerOrders()
+        ->where('status', 'pending')
+        ->count();
+}
+
+/**
+ * Get total sales count
+ */
+public function getTotalSalesAttribute()
+{
+    return $this->sellerOrders()
+        ->where('status', 'completed')
+        ->count();
+}
+
 
     // ========== ROLE METHODS (Using Spatie) ==========
     
@@ -276,27 +404,238 @@ class User extends Authenticatable
         return $this->hasRole('bookseller');
     }
 
-    public function isResearcher(): bool
-    {
-        return $this->hasRole('researcher');
-    }
-
     public function isPublisher(): bool
     {
         return $this->hasRole('publisher');
     }
 
+    // ==========================================
+    // ROLE METHODS (Institution Type Based)
+    // ==========================================
+
+    /**
+     * Get role name based on institution type.
+     */
+    public static function getRoleForInstitutionType(string $type): string
+    {
+        return match($type) {
+            'school' => 'school_admin',
+            'college' => 'college_admin',
+            'university' => 'university_admin',
+            'library' => 'library_admin',
+            'bookstore' => 'bookstore_admin',
+            'publisher' => 'publisher_admin',
+            'research_center' => 'researcher',
+            default => 'institution_admin',
+        };
+    }
+
+    /**
+     * Get the role label for display.
+     */
+    public function getRoleLabel(): string
+    {
+        $role = $this->getRoleNames()->first() ?? 'user';
+        
+        return match($role) {
+            'super_admin' => '👑 Super Admin',
+            'admin' => '🛡️ Admin',
+            'institution_admin' => '🏢 Institution Admin',
+            'school_admin' => '🏫 School Admin',
+            'college_admin' => '🎓 College Admin',
+            'university_admin' => '🏛️ University Admin',
+            'library_admin' => '📚 Library Admin',
+            'bookstore_admin' => '📖 Bookstore Admin',
+            'publisher_admin' => '📰 Publisher Admin',
+            'researcher' => '🔬 Researcher',
+            'librarian' => '📚 Librarian',
+            'instructor' => '👨‍🏫 Instructor',
+            'author' => '✍️ Author',
+            'bookseller' => '📖 Bookseller',
+            default => '👤 Member',
+        };
+    }
+
+    /**
+     * Get role badge class.
+     */
+    public function getRoleBadgeClass(): string
+    {
+        $role = $this->getRoleNames()->first() ?? 'user';
+        
+        return match($role) {
+            'super_admin' => 'bg-red-100 text-red-700',
+            'admin' => 'bg-purple-100 text-purple-700',
+            'institution_admin' => 'bg-blue-100 text-blue-700',
+            'school_admin' => 'bg-green-100 text-green-700',
+            'college_admin' => 'bg-cyan-100 text-cyan-700',
+            'university_admin' => 'bg-indigo-100 text-indigo-700',
+            'library_admin' => 'bg-sky-100 text-sky-700',
+            'bookstore_admin' => 'bg-amber-100 text-amber-700',
+            'publisher_admin' => 'bg-fuchsia-100 text-fuchsia-700',
+            'researcher' => 'bg-teal-100 text-teal-700',
+            'librarian' => 'bg-blue-100 text-blue-700',
+            'instructor' => 'bg-green-100 text-green-700',
+            'author' => 'bg-purple-100 text-purple-700',
+            'bookseller' => 'bg-orange-100 text-orange-700',
+            default => 'bg-gray-100 text-gray-700',
+        };
+    }
+
+    /**
+     * Check if user is a specific type of institution admin.
+     */
+    public function isSchoolAdmin(): bool
+    {
+        return $this->hasRole('school_admin');
+    }
+
+    public function isCollegeAdmin(): bool
+    {
+        return $this->hasRole('college_admin');
+    }
+
+    public function isUniversityAdmin(): bool
+    {
+        return $this->hasRole('university_admin');
+    }
+
+    public function isLibraryAdmin(): bool
+    {
+        return $this->hasRole('library_admin');
+    }
+
+    public function isBookstoreAdmin(): bool
+    {
+        return $this->hasRole('bookstore_admin');
+    }
+
+    public function isPublisherAdmin(): bool
+    {
+        return $this->hasRole('publisher_admin');
+    }
+
+    public function isResearcher(): bool
+    {
+        return $this->hasRole('researcher');
+    }
+
+    /**
+     * Check if user has any institution admin role.
+     */
+    public function isAnyInstitutionAdmin(): bool
+    {
+        return $this->isInstitutionAdmin() || 
+               $this->isSchoolAdmin() || 
+               $this->isCollegeAdmin() || 
+               $this->isUniversityAdmin() || 
+               $this->isLibraryAdmin() || 
+               $this->isBookstoreAdmin() || 
+               $this->isPublisherAdmin() || 
+               $this->isResearcher();
+    }
+
+    /**
+     * Get the user's institution type based on their role.
+     */
+    public function getInstitutionTypeFromRole(): ?string
+    {
+        $role = $this->getRoleNames()->first();
+        
+        return match($role) {
+            'school_admin' => 'school',
+            'college_admin' => 'college',
+            'university_admin' => 'university',
+            'library_admin' => 'library',
+            'bookstore_admin' => 'bookstore',
+            'publisher_admin' => 'publisher',
+            'researcher' => 'research_center',
+            default => null,
+        };
+    }
+
     // ========== INSTITUTION RELATIONSHIPS ==========
+// ========== INSTITUTION RELATIONSHIPS ==========
 
-    public function institution(): BelongsTo
-    {
-        return $this->belongsTo(Institution::class);
-    }
+public function institution(): BelongsTo
+{
+    return $this->belongsTo(Institution::class);
+}
 
-    public function hasInstitution(): bool
-    {
-        return !is_null($this->institution_id);
-    }
+// ========== MULTIPLE INSTITUTIONS (Many-to-Many) ==========
+
+/**
+ * Get all institutions the user belongs to.
+ */
+public function institutions()
+{
+    return $this->belongsToMany(Institution::class, 'institution_members')
+                ->withPivot('role', 'status', 'joined_at')
+                ->withTimestamps();
+}
+
+/**
+ * Get the user's role in a specific institution.
+ */
+public function roleInInstitution($institutionId)
+{
+    $member = $this->institutions()->where('institution_id', $institutionId)->first();
+    return $member ? $member->pivot->role : null;
+}
+
+/**
+ * Check if user belongs to any institution.
+ */
+public function hasInstitutions(): bool
+{
+    return $this->institutions()->count() > 0;
+}
+
+/**
+ * Check if user is an admin of any institution.
+ */
+public function isAdminOfAnyInstitution(): bool
+{
+    return $this->institutions()->wherePivot('role', 'admin')->exists();
+}
+
+/**
+ * Check if user is a member of a specific institution.
+ */
+public function isMemberOf($institutionId): bool
+{
+    return $this->institutions()->where('institution_id', $institutionId)->exists();
+}
+
+/**
+ * Get all institution IDs the user belongs to.
+ */
+public function getInstitutionIdsAttribute()
+{
+    return $this->institutions()->pluck('institution_id')->toArray();
+}
+
+/**
+ * Get the primary/current institution (first one).
+ */
+public function currentInstitution()
+{
+    return $this->institutions()->first();
+}
+
+/**
+ * Get the count of institutions the user belongs to.
+ */
+public function getInstitutionCountAttribute()
+{
+    return $this->institutions()->count();
+}
+
+public function hasInstitution(): bool
+{
+    return !is_null($this->institution_id);
+}
+
 
     public function canManageInstitution($institution): bool
     {
@@ -345,8 +684,150 @@ class User extends Authenticatable
     {
         return $this->isSuperAdmin() && $this->id !== $user->id;
     }
+
+
     
-    // ========== BOOK RELATIONSHIPS ==========
+    // ==========================================
+    // SUBSCRIPTION RELATIONSHIPS (Polymorphic)
+    // ==========================================
+
+    /**
+     * Get all subscriptions for this user.
+     */
+    public function subscriptions()
+    {
+        return $this->morphMany(Subscription::class, 'subscribable');
+    }
+
+    /**
+     * Get the active subscription.
+     */
+    public function activeSubscription()
+    {
+        return $this->morphOne(Subscription::class, 'subscribable')
+            ->where('status', 'active')
+            ->where(function($query) {
+                $query->whereNull('ends_at')
+                      ->orWhere('ends_at', '>', now());
+            })
+            ->latest();
+    }
+
+    /**
+     * Get the latest subscription.
+     */
+    public function latestSubscription()
+    {
+        return $this->morphOne(Subscription::class, 'subscribable')->latest();
+    }
+
+    /**
+     * Get subscription history.
+     */
+    public function subscriptionHistory()
+    {
+        return $this->morphMany(Subscription::class, 'subscribable')
+            ->orderBy('created_at', 'desc');
+    }
+
+    // ==========================================
+    // SUBSCRIPTION METHODS
+    // ==========================================
+
+    /**
+     * Check if user has active subscription.
+     */
+    public function hasActiveSubscription(): bool
+    {
+        $active = $this->activeSubscription;
+        return $active && $active->isActive();
+    }
+
+    /**
+     * Get days left in subscription.
+     */
+    public function getSubscriptionDaysLeft(): int
+    {
+        $active = $this->activeSubscription;
+        if (!$active) {
+            return 0;
+        }
+        return $active->daysRemaining();
+    }
+
+    /**
+     * Get subscription status color.
+     */
+    public function getSubscriptionStatusColor(): string
+    {
+        $daysLeft = $this->getSubscriptionDaysLeft();
+        
+        if ($daysLeft <= 0) {
+            return 'red';
+        } elseif ($daysLeft <= 7) {
+            return 'red';
+        } elseif ($daysLeft <= 30) {
+            return 'yellow';
+        } elseif ($daysLeft <= 60) {
+            return 'orange';
+        }
+        return 'green';
+    }
+
+    /**
+     * Get subscription status label.
+     */
+    public function getSubscriptionStatusLabel(): string
+    {
+        if (!$this->hasActiveSubscription()) {
+            return '⚠️ No Active Subscription';
+        }
+        
+        $daysLeft = $this->getSubscriptionDaysLeft();
+        
+        if ($daysLeft <= 7) {
+            return "🔴 Expires in {$daysLeft} days";
+        } elseif ($daysLeft <= 30) {
+            return "🟡 Expires in {$daysLeft} days";
+        } elseif ($daysLeft <= 60) {
+            return "🟠 Expires in {$daysLeft} days";
+        }
+        return "✅ Active ({$daysLeft} days left)";
+    }
+
+    /**
+     * Get user plan label.
+     */
+    public function getPlanLabel(): string
+    {
+        $active = $this->activeSubscription;
+        if ($active) {
+            return $active->getPlanLabel();
+        }
+        return '🆓 Free';
+    }
+
+    /**
+     * Check if user can access premium feature.
+     */
+    public function canAccessPremium(): bool
+    {
+        return $this->hasActiveSubscription() && 
+               in_array($this->activeSubscription?->plan, ['premium', 'pro']);
+    }
+
+    /**
+     * Check if user can access pro feature.
+     */
+    public function canAccessPro(): bool
+    {
+        return $this->hasActiveSubscription() && 
+               $this->activeSubscription?->plan === 'pro';
+    }
+
+    // ==========================================
+    // BOOK RELATIONSHIPS
+    // ==========================================
     
     public function books()
     {
@@ -438,8 +919,10 @@ class User extends Authenticatable
                     ->wherePivotNotNull('purchased_at')
                     ->withPivot('progress_percent', 'current_page', 'status', 'purchased_at');
     }
-    
-    // ========== COMMUNITY RELATIONSHIPS ==========
+
+    // ==========================================
+    // COMMUNITY RELATIONSHIPS
+    // ==========================================
     
     public function groups()
     {
@@ -452,87 +935,217 @@ class User extends Authenticatable
     {
         return $this->hasMany(GroupMessage::class);
     }
-    
-   // ========== PAYMENT & CERTIFICATE RELATIONSHIPS ==========
 
-public function payments()
-{
-    return $this->hasMany(\App\Models\Payment::class);
-}
+    // ==========================================
+    // PAYMENT & CERTIFICATE RELATIONSHIPS
+    // ==========================================
 
-/**
- * Get all wallet transactions for this user
- */
-public function transactions()
-{
-    return $this->hasMany(\App\Models\Transaction::class);
-}
-
-/**
- * Get completed credit transactions (deposits only)
- */
-public function deposits()
-{
-    return $this->transactions()
-        ->where('type', 'credit')
-        ->where('status', 'completed');
-}
-
-/**
- * Get completed debit transactions (purchases only)
- */
-public function purchases()
-{
-    return $this->transactions()
-        ->where('type', 'debit')
-        ->where('status', 'completed');
-}
-
-/**
- * Get pending withdrawals
- */
-public function pendingWithdrawals()
-{
-    return $this->transactions()
-        ->where('type', 'debit')
-        ->where('method', 'withdrawal')
-        ->where('status', 'pending');
-}
-
-public function certificates()
-{
-    return $this->hasMany(Certificate::class);
-}
-    
-    // ========== MARKETPLACE RELATIONSHIPS ==========
-    
-    public function marketplaceListings()
+    public function payments()
     {
-        return $this->hasMany(MarketplaceListing::class, 'seller_id');
+        return $this->hasMany(\App\Models\Payment::class);
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(\App\Models\Transaction::class);
+    }
+
+    public function deposits()
+    {
+        return $this->transactions()
+            ->where('type', 'credit')
+            ->where('status', 'completed');
+    }
+
+    public function purchases()
+    {
+        return $this->transactions()
+            ->where('type', 'debit')
+            ->where('status', 'completed');
+    }
+
+    public function pendingWithdrawals()
+    {
+        return $this->transactions()
+            ->where('type', 'debit')
+            ->where('method', 'withdrawal')
+            ->where('status', 'pending');
+    }
+
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+  // ==========================================
+// MARKETPLACE RELATIONSHIPS
+// ==========================================
     
-    // ========== AI CHAT RELATIONSHIPS ==========
+public function marketplaceListings()
+{
+    return $this->hasMany(MarketplaceListing::class, 'seller_id');
+}
+// ==========================================
+// MARKETPLACE SELLER METHODS
+// ==========================================
+
+/**
+ * Check if user can sell on marketplace
+ * User must have author OR bookseller role
+ */
+public function canSellOnMarketplace(): bool
+{
+    return $this->hasRole('author') || $this->hasRole('bookseller');
+}
+
+/**
+ * Check if user is an approved author
+ */
+public function isApprovedAuthor(): bool
+{
+    return $this->hasRole('author') && $this->author_approved_at !== null;
+}
+
+/**
+ * Check if user is an approved bookseller
+ */
+public function isApprovedBookseller(): bool
+{
+    return $this->hasRole('bookseller') && $this->bookseller_approved_at !== null;
+}
+
+/**
+ * Get the user's seller type for display
+ */
+public function getSellerType(): ?string
+{
+    $isAuthor = $this->isApprovedAuthor();
+    $isBookseller = $this->isApprovedBookseller();
+    
+    if ($isAuthor && $isBookseller) {
+        return 'Author & Bookseller';
+    }
+    if ($isAuthor) {
+        return 'Author';
+    }
+    if ($isBookseller) {
+        return 'Bookseller';
+    }
+    return null;
+}
+/**
+ * Check if user has pending application to become author/bookseller
+ */
+public function hasPendingApplication($type = null): bool
+{
+    $query = $this->applications()->where('status', 'pending');
+    if ($type) {
+        $query->where('type', $type);
+    }
+    return $query->exists();
+}
+
+/**
+ * Get user's active seller role (for permissions)
+ */
+public function getSellerRoles(): array
+{
+    $roles = [];
+    if ($this->isApprovedAuthor()) {
+        $roles[] = 'author';
+    }
+    if ($this->isApprovedBookseller()) {
+        $roles[] = 'bookseller';
+    }
+    return $roles;
+}
+
+/**
+ * Get seller dashboard stats
+ */
+public function getSellerStats(): array
+{
+    $listings = $this->marketplaceListings();
+    
+    return [
+        'total_listings' => $listings->count(),
+        'pending_listings' => $listings->where('status', 'pending')->count(),
+        'approved_listings' => $listings->where('status', 'approved')->count(),
+        'total_sales' => $this->marketplaceOrders()->count(),
+        'total_earnings' => $this->marketplaceOrders()->sum('seller_earnings'),
+        'pending_orders' => $this->marketplaceOrders()->where('status', 'pending')->count(),
+    ];
+}
+
+// ==========================================
+// MARKETPLACE ORDER RELATIONSHIPS - ADD THIS
+// ==========================================
+
+/**
+ * Orders where user is the seller
+ */
+public function marketplaceOrders()
+{
+    return $this->hasMany(MarketplaceOrder::class, 'seller_id');
+}
+
+/**
+ * Orders where user is the buyer
+ */
+public function marketplacePurchases()
+{
+    return $this->hasMany(MarketplaceOrder::class, 'buyer_id');
+}
+
+/**
+ * Get seller earnings total
+ */
+public function getTotalSellerEarningsAttribute(): float
+{
+    return $this->marketplaceOrders()
+        ->where('status', 'completed')
+        ->sum('seller_earnings');
+}
+
+/**
+ * Get pending seller orders count
+ */
+public function getPendingSellerOrdersAttribute(): int
+{
+    return $this->marketplaceOrders()
+        ->where('status', 'pending')
+        ->count();
+}
+    // ==========================================
+    // AI CHAT RELATIONSHIPS
+    // ==========================================
     
     public function aiChats()
     {
         return $this->hasMany(AiChat::class);
     }
-    
-    // ========== QUIZ RELATIONSHIPS ==========
+
+    // ==========================================
+    // QUIZ RELATIONSHIPS
+    // ==========================================
     
     public function quizAttempts()
     {
         return $this->hasMany(QuizAttempt::class);
     }
-    
-    // ========== BOOKMARK RELATIONSHIPS ==========
+
+    // ==========================================
+    // BOOKMARK RELATIONSHIPS
+    // ==========================================
     
     public function bookmarks()
     {
         return $this->hasMany(Bookmark::class);
     }
-    
-    // ========== XP, LEVEL & STREAK METHODS ==========
+
+    // ==========================================
+    // XP, LEVEL & STREAK METHODS
+    // ==========================================
 
     public function getCombinedScoreAttribute()
     {
@@ -622,7 +1235,9 @@ public function certificates()
         return $levelThresholds[$this->level] - $this->xp_points;
     }
 
-    // ========== RATINGS & REVIEWS RELATIONSHIPS ==========
+    // ==========================================
+    // RATINGS & REVIEWS RELATIONSHIPS
+    // ==========================================
     
     public function ratings()
     {
@@ -633,8 +1248,10 @@ public function certificates()
     {
         return $this->hasMany(Review::class);
     }
-    
-    // ========== RATINGS & REVIEWS METHODS ==========
+
+    // ==========================================
+    // RATINGS & REVIEWS METHODS
+    // ==========================================
     
     public function ratingForBook($bookId)
     {
@@ -655,8 +1272,10 @@ public function certificates()
     {
         return $this->reviews()->where('book_id', $bookId)->first();
     }
-    
-    // ========== WALLET METHODS ==========
+
+    // ==========================================
+    // WALLET METHODS
+    // ==========================================
     
     public function getWalletBalanceAttribute($value)
     {
@@ -685,8 +1304,10 @@ public function certificates()
         
         return false;
     }
-    
-    // ========== PROFILE HELPER METHODS ==========
+
+    // ==========================================
+    // PROFILE HELPER METHODS
+    // ==========================================
     
     public function getAvatarUrlAttribute()
     {
@@ -727,8 +1348,10 @@ public function certificates()
     {
         return $this->books()->wherePivot('status', 'completed')->count();
     }
-    
-    // ========== STATISTICS METHODS ==========
+
+    // ==========================================
+    // STATISTICS METHODS
+    // ==========================================
     
     public function getTotalQuizzesTakenAttribute()
     {
@@ -754,8 +1377,10 @@ public function certificates()
     {
         return ucwords($value);
     }
-    
-    // ========== REFERRAL METHODS ==========
+
+    // ==========================================
+    // REFERRAL METHODS
+    // ==========================================
     
     public function referrals()
     {

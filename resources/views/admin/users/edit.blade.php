@@ -1,6 +1,6 @@
-@extends('layouts.master')
+@extends('layouts.admin')
 
-@section('page-content')
+@section('content')
 
 <div class="max-w-2xl mx-auto">
     <div class="mb-6">

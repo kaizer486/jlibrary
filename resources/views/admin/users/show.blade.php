@@ -1,6 +1,6 @@
-@extends('layouts.master')
+@extends('layouts.admin')
 
-@section('page-content')
+@section('content')
 
 <div class="max-w-4xl mx-auto">
     <div class="mb-6">
@@ -17,8 +17,8 @@
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">{{ $user->full_name }}</h1>
                 <p class="text-gray-500">{{ $user->email }}</p>
-                <span class="px-2 py-1 rounded-full text-xs {{ $user->role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700' }}">
-                    {{ ucfirst($user->role) }}
+                <span class="px-2 py-1 rounded-full text-xs {{ $user->isAdmin() ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700' }}">
+                    {{ $user->getRoleLabel() }}
                 </span>
             </div>
         </div>

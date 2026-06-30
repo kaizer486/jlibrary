@@ -8,7 +8,7 @@
         <div>
             <h1 class="text-2xl font-bold text-gray-900">✨ Quote Management</h1>
             <p class="text-gray-500 text-sm mt-1">
-                @if(auth()->user()->role === 'institution_admin')
+                @if(auth()->user()->isAnyInstitutionAdmin())
                     Managing quotes for <strong>{{ auth()->user()->institution->name }}</strong>
                 @else
                     Managing global quotes (visible to users with no institution)
@@ -22,7 +22,7 @@
 </div>
 
 <!-- Info Banner for Institution Admin -->
-@if(auth()->user()->role === 'institution_admin')
+@if(auth()->user()->isAnyInstitutionAdmin())
 <div class="bg-blue-50 border-l-4 border-blue-500 rounded-xl p-4 mb-6">
     <div class="flex items-center gap-3">
         <i class="ti ti-info-circle text-blue-500 text-xl"></i>
@@ -55,15 +55,15 @@
     </div>
     <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
         <p class="text-gray-500 text-sm">Active Quotes</p>
-        <p class="text-2xl font-bold text-green-600">{{ \App\Models\Quote::where('status', 'active')->when(auth()->user()->role === 'institution_admin', function($q) { return $q->where('institution_id', auth()->user()->institution_id); }, function($q) { return $q->whereNull('institution_id'); })->count() }}</p>
+        <p class="text-2xl font-bold text-green-600">{{ \App\Models\Quote::where('status', 'active')->when(auth()->user()->isAnyInstitutionAdmin(), function($q) { return $q->where('institution_id', auth()->user()->institution_id); }, function($q) { return $q->whereNull('institution_id'); })->count() }}</p>
     </div>
     <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-500">
         <p class="text-gray-500 text-sm">Total Saves</p>
-        <p class="text-2xl font-bold text-blue-600">{{ \App\Models\Quote::when(auth()->user()->role === 'institution_admin', function($q) { return $q->where('institution_id', auth()->user()->institution_id); }, function($q) { return $q->whereNull('institution_id'); })->sum('saves_count') }}</p>
+        <p class="text-2xl font-bold text-blue-600">{{ \App\Models\Quote::when(auth()->user()->isAnyInstitutionAdmin(), function($q) { return $q->where('institution_id', auth()->user()->institution_id); }, function($q) { return $q->whereNull('institution_id'); })->sum('saves_count') }}</p>
     </div>
     <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-yellow-500">
         <p class="text-gray-500 text-sm">Total Shares</p>
-        <p class="text-2xl font-bold text-yellow-600">{{ \App\Models\Quote::when(auth()->user()->role === 'institution_admin', function($q) { return $q->where('institution_id', auth()->user()->institution_id); }, function($q) { return $q->whereNull('institution_id'); })->sum('shares_count') }}</p>
+        <p class="text-2xl font-bold text-yellow-600">{{ \App\Models\Quote::when(auth()->user()->isAnyInstitutionAdmin(), function($q) { return $q->where('institution_id', auth()->user()->institution_id); }, function($q) { return $q->whereNull('institution_id'); })->sum('shares_count') }}</p>
     </div>
 </div>
 

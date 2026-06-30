@@ -132,9 +132,9 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs px-2 py-1 rounded-full {{ $user->role === 'institution_admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }}">
-                                    {{ ucfirst($user->role) }}
-                                </span>
+                             <span class="text-xs px-2 py-1 rounded-full {{ $user->getRoleBadgeClass() }}">
+    {{ $user->getRoleLabel() }}
+</span>
                                 <a href="{{ route('super-admin.users.show', $user) }}" class="text-purple-600 hover:text-purple-800">
                                     <i class="ti ti-eye"></i>
                                 </a>

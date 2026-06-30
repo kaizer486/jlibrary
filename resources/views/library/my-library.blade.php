@@ -3,7 +3,7 @@
 @section('content')
 <div class="container mx-auto px-4 py-8 max-w-7xl">
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">My Library</h1>
+        <h1 class="text-3xl font-bold text-gray-900">📚 My Library</h1>
         <p class="text-gray-600">Track your reading journey</p>
     </div>
     
@@ -140,20 +140,17 @@
 
 <script>
     function showTab(tab) {
-        // Hide all tabs
         document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(el => {
             el.classList.remove('text-purple-600', 'border-purple-600');
             el.classList.add('text-gray-500');
         });
         
-        // Show selected tab
         document.getElementById(tab + '-tab').style.display = 'block';
         document.getElementById('tab-' + tab).classList.add('text-purple-600', 'border-b-2', 'border-purple-600');
         document.getElementById('tab-' + tab).classList.remove('text-gray-500');
     }
     
-    // Show reading tab by default
     showTab('reading');
 </script>
 @endsection

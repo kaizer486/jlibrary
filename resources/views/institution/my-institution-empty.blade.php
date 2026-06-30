@@ -1,5 +1,8 @@
 @extends('layouts.app')
 
+@section('title', 'No Institution')
+@section('page-title', '🏛️ No Institution')
+
 @section('content')
 <div class="fixed inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 -z-10"></div>
 

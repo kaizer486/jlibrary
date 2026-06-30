@@ -1,8 +1,10 @@
-@extends('layouts.master')
+
+
+@extends('layouts.admin')
 
 @section('title', 'Admin - Payments Management')
 
-@section('page-content')
+@section('content')
 
 <div class="container mx-auto px-4 py-8 max-w-7xl">
     
@@ -11,7 +13,7 @@
         <h1 class="text-3xl font-bold text-gray-800">Payments Management</h1>
         <p class="text-gray-600">View deposits, withdrawals, and all financial transactions</p>
         <div class="mt-2 text-sm text-amber-600 bg-amber-50 inline-block px-3 py-1 rounded-lg">
-            <i class="ti ti-info-circle"></i> Note: Financial approvals are handled by SuperAdmin only
+        
         </div>
     </div>
     

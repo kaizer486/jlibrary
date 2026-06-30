@@ -1,60 +1,112 @@
 @extends('layouts.app')
 
+@section('title', 'Certificate - ' . $certificate->certificate_number)
+
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-3xl mx-auto">
+<div class="fixed inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 -z-10"></div>
+
+<div class="relative z-10 min-h-screen py-8">
+    <div class="container mx-auto px-4 max-w-4xl">
+        
+        <!-- Back Button -->
         <div class="mb-6">
-            <a href="{{ route('certificates.index') }}" class="text-jlibrary-600 hover:text-jlibrary-700">
+            <a href="{{ route('certificates.index') }}" class="text-gray-400 hover:text-white transition">
                 <i class="ti ti-arrow-left"></i> Back to Certificates
             </a>
         </div>
-        
-        <!-- Certificate Preview -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 p-8 text-white text-center">
-                <i class="ti ti-certificate text-6xl mb-3 block"></i>
-                <h1 class="text-3xl font-bold">Certificate of Completion</h1>
-                <p class="text-yellow-100 mt-2">This certificate is proudly presented to</p>
-            </div>
-            
-            <div class="p-8 text-center">
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">{{ $certificate->user->full_name }}</h2>
-                <p class="text-gray-600 mb-6">For successfully completing</p>
+
+        <!-- Certificate Display -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden p-8 md:p-12">
+            <!-- Certificate Content -->
+            <div class="text-center border-4 border-double border-purple-300 p-8 md:p-12 relative">
+                <!-- Decorative Border -->
+                <div class="absolute inset-2 border border-purple-200 pointer-events-none"></div>
                 
-                <div class="border-t border-b border-gray-200 py-6 my-4">
-                    <h3 class="text-2xl font-semibold text-jlibrary-600">{{ $certificate->book->title }}</h3>
-                    <p class="text-gray-500">by {{ $certificate->book->author }}</p>
+                <!-- Logo -->
+                <div class="flex justify-center items-center gap-3 mb-6">
+                    <img src="{{ asset('images/jlibrary.jpeg') }}" alt="JLIBRARY" class="h-12 w-auto">
+                    <span class="text-2xl font-bold text-purple-700">JLIBRARY</span>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-4 mb-6 text-sm">
+                <p class="text-sm text-gray-500 italic">Learn. Share. Grow Together.</p>
+                <p class="text-xs text-gray-400 mb-8">Education Empowers All.</p>
+                
+                <hr class="border-purple-200 my-4">
+                
+                <!-- Title -->
+                <h1 class="text-3xl md:text-4xl font-serif font-bold text-purple-800 my-6">
+                    JLIBRARY LEARNING CERTIFICATE
+                </h1>
+                
+                <!-- Body -->
+                <p class="text-gray-600 text-lg">This is to certify that</p>
+                <h2 class="text-2xl md:text-3xl font-bold text-purple-700 my-3">
+                    {{ $certificate->user->full_name }}
+                </h2>
+                
+                <p class="text-gray-600 text-lg mt-4">
+                    has successfully completed reading
+                </p>
+                <h3 class="text-xl md:text-2xl font-bold text-purple-600 my-2">
+                    "{{ $certificate->book->title ?? 'Book' }}"
+                </h3>
+                <p class="text-gray-600 text-lg">
+                    written by <span class="font-semibold">{{ $certificate->book->author ?? 'Unknown' }}</span>
+                </p>
+                
+                <p class="text-gray-600 text-lg mt-4">
+                    through JLIBRARY and has met all requirements for certification.
+                </p>
+                
+                <!-- Score -->
+                <div class="my-6 inline-block bg-purple-50 px-6 py-3 rounded-lg border border-purple-200">
+                    <p class="text-sm text-gray-600">Quiz Score</p>
+                    <p class="text-2xl font-bold text-purple-700">
+                        {{ $certificate->quiz_score }}/{{ $certificate->total_questions }}
+                        <span class="text-lg font-normal text-gray-500">({{ $certificate->percentage }}%)</span>
+                    </p>
+                </div>
+                
+                <hr class="border-purple-200 my-6">
+                
+                <!-- Footer -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center text-sm text-gray-500 mt-6">
                     <div>
-                        <p class="text-gray-500">Score</p>
-                        <p class="font-semibold text-lg">{{ $certificate->quiz_score }}/{{ $certificate->total_questions }}</p>
+                        <p class="font-semibold">Date</p>
+                        <p>{{ $certificate->created_at->format('d / m / Y') }}</p>
                     </div>
-                    <div>
-                        <p class="text-gray-500">Percentage</p>
-                        <p class="font-semibold text-lg text-green-600">{{ $certificate->percentage }}%</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Date</p>
-                        <p class="font-semibold text-sm">{{ $certificate->created_at->format('F d, Y') }}</p>
+                    <div class="text-right">
+                        <p class="font-semibold">Certificate ID</p>
+                        <p>{{ $certificate->certificate_number }}</p>
                     </div>
                 </div>
                 
-                <div class="text-center text-gray-400 text-xs mt-6 pt-4 border-t">
-                    <p>Certificate Number: {{ $certificate->certificate_number }}</p>
-                    <p class="mt-1">JLIBRARY - Learn. Share. Grow Together.</p>
+                <!-- Signature -->
+                <div class="mt-8 pt-4 border-t border-gray-200 flex justify-between items-end">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700">JLIBRARY Administration</p>
+                        <p class="text-xs text-gray-400">Authorized Signature</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="w-32 h-12 border-b-2 border-purple-400 mx-auto"></div>
+                        <p class="text-xs text-gray-400 mt-1">Signature</p>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="text-center mt-6">
+        <!-- Actions -->
+        <div class="mt-6 flex flex-wrap gap-3">
             <a href="{{ route('certificates.download', $certificate) }}" 
-               class="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition">
-                <i class="ti ti-download"></i>
-                Download PDF Certificate
+               class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition flex items-center gap-2">
+                <i class="ti ti-download"></i> Download PDF
+            </a>
+            <a href="{{ route('certificates.index') }}" 
+               class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg transition flex items-center gap-2">
+                <i class="ti ti-arrow-left"></i> All Certificates
             </a>
         </div>
+        
     </div>
 </div>
 @endsection

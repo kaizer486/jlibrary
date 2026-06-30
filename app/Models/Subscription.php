@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
@@ -13,34 +12,43 @@ class Subscription extends Model
     protected $table = 'subscriptions';
     
     protected $fillable = [
-        'subscribable_type', 'subscribable_id',
-        'subscription_plan_id', 'status', 'payment_method',
-        'gateway_subscription_id', 'start_date', 'end_date',
-        'cancelled_at', 'trial_ends_at', 'auto_renew'
+        'subscribable_type',
+        'subscribable_id',
+        'institution_id',
+        'plan',
+        'amount',
+        'status',
+        'starts_at',
+        'ends_at',      // ✅ Use ends_at (matches your migration)
+        'cancelled_at',
+        'auto_renew',
     ];
     
     protected $casts = [
-        'start_date' => 'datetime',
-        'end_date' => 'datetime',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',    // ✅ Use ends_at
         'cancelled_at' => 'datetime',
-        'trial_ends_at' => 'datetime',
+        'amount' => 'decimal:2',
         'auto_renew' => 'boolean',
     ];
+    
+    // ==========================================
+    // RELATIONSHIPS
+    // ==========================================
     
     public function subscribable(): MorphTo
     {
         return $this->morphTo();
     }
     
-    public function plan(): BelongsTo
+    public function institution(): BelongsTo
     {
-        return $this->belongsTo(SubscriptionPlan::class, 'subscription_plan_id');
+        return $this->belongsTo(Institution::class);
     }
     
-    public function payments(): HasMany
-    {
-        return $this->hasMany(SubscriptionPayment::class);
-    }
+    // ==========================================
+    // HELPERS
+    // ==========================================
     
     public function isActive(): bool
     {
@@ -48,43 +56,76 @@ class Subscription extends Model
             return false;
         }
         
-        if ($this->end_date && $this->end_date->isPast()) {
+        if ($this->ends_at && $this->ends_at->isPast()) {  // ✅ Use ends_at
             return false;
         }
         
         return true;
     }
     
-    public function isTrialing(): bool
-    {
-        return $this->status === 'trialing' && 
-               $this->trial_ends_at && 
-               $this->trial_ends_at->isFuture();
-    }
-    
     public function isExpired(): bool
     {
-        return $this->end_date && $this->end_date->isPast();
+        if ($this->status === 'expired') {
+            return true;
+        }
+        
+        if ($this->ends_at && $this->ends_at->isPast()) {  // ✅ Use ends_at
+            return true;
+        }
+        
+        return false;
     }
     
     public function daysRemaining(): int
     {
-        if (!$this->end_date) {
+        if (!$this->ends_at) {  // ✅ Use ends_at
             return 0;
         }
         
-        return Carbon::now()->diffInDays($this->end_date, false);
+        if ($this->ends_at->isPast()) {  // ✅ Use ends_at
+            return 0;
+        }
+        
+        return max(0, Carbon::now()->diffInDays($this->ends_at, false));  // ✅ Use ends_at
     }
+    
+    public function getPlanLabel(): string
+    {
+        return match($this->plan) {
+            'basic' => '📘 Basic',
+            'premium' => '📚 Premium',
+            'enterprise' => '🏢 Enterprise',
+            'free' => '🆓 Free',
+            default => '📘 Basic'
+        };
+    }
+    
+    public function getStatusBadgeAttribute(): string
+    {
+        $colors = [
+            'active' => 'bg-green-100 text-green-700',
+            'pending' => 'bg-yellow-100 text-yellow-700',
+            'expired' => 'bg-red-100 text-red-700',
+            'cancelled' => 'bg-gray-100 text-gray-700',
+            'suspended' => 'bg-orange-100 text-orange-700',
+        ];
+        
+        $color = $colors[$this->status] ?? 'bg-gray-100 text-gray-700';
+        return '<span class="px-2 py-1 rounded-full text-xs font-medium ' . $color . '">' . ucfirst($this->status) . '</span>';
+    }
+    
+    // ==========================================
+    // ACTIONS
+    // ==========================================
     
     public function activate(): self
     {
         $this->status = 'active';
-        $this->start_date = Carbon::now();
-        $this->end_date = Carbon::now()->addMonth();
+        $this->starts_at = Carbon::now();
+        $this->ends_at = Carbon::now()->addMonth();  // ✅ Use ends_at
         $this->save();
         
-        // Update the subscribable's tier field
-        $this->updateSubscribableTier($this->plan->slug);
+        $this->updateSubscribableTier($this->plan);
         
         return $this;
     }
@@ -104,20 +145,21 @@ class Subscription extends Model
         $this->status = 'expired';
         $this->save();
         
-        // Reset subscribable's tier to free
         $this->updateSubscribableTier('free');
         
         return $this;
     }
     
-    public function renew(): self
+    public function renew(string $period = 'monthly'): self
     {
         $this->status = 'active';
-        $this->start_date = Carbon::now();
-        $this->end_date = Carbon::now()->addMonth();
+        $this->starts_at = Carbon::now();
+        $this->ends_at = Carbon::now()->addMonth();  // ✅ Use ends_at
         $this->cancelled_at = null;
         $this->auto_renew = true;
         $this->save();
+        
+        $this->updateSubscribableTier($this->plan);
         
         return $this;
     }
@@ -126,13 +168,20 @@ class Subscription extends Model
     {
         $subscribable = $this->subscribable;
         
+        if (!$subscribable) {
+            return;
+        }
+        
+        if ($subscribable instanceof Institution) {
+            $subscribable->subscription_tier = $tier;
+            $subscribable->subscription_expires_at = $this->ends_at;  // ✅ Use ends_at
+            $subscribable->subscription_status = $this->status;
+            $subscribable->save();
+        }
+        
         if ($subscribable instanceof User) {
             $subscribable->subscription_tier = $tier;
-            $subscribable->subscription_expires_at = $this->end_date;
-            $subscribable->save();
-        } elseif ($subscribable instanceof Institution) {
-            $subscribable->subscription_tier = $tier;
-            $subscribable->subscription_expires_at = $this->end_date;
+            $subscribable->subscription_expires_at = $this->ends_at;  // ✅ Use ends_at
             $subscribable->save();
         }
     }

@@ -20,10 +20,25 @@
             @endif
         </div>
 
+        <!-- Filter Tabs -->
+        <div class="flex gap-2 mb-4">
+            <button onclick="filterNotifications('all')" class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white">
+                All
+            </button>
+            <button onclick="filterNotifications('library')" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-200 text-gray-600 hover:bg-gray-300 transition">
+                📚 Library
+            </button>
+            <button onclick="filterNotifications('platform')" class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-200 text-gray-600 hover:bg-gray-300 transition">
+                🌐 Platform
+            </button>
+        </div>
+
         <!-- Notifications List -->
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden" id="notifications-list">
             @forelse($notifications as $notification)
-                <div class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition {{ $notification->is_read ? '' : 'bg-purple-50/30' }}">
+                <div class="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition {{ $notification->is_read ? '' : 'bg-purple-50/30' }} 
+                    @if($notification->isLibraryNotification()) library-notification @else platform-notification @endif"
+                    data-type="{{ $notification->isLibraryNotification() ? 'library' : 'platform' }}">
                     <div class="p-5">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
@@ -31,13 +46,21 @@
                                     @if(!$notification->is_read)
                                         <span class="w-2 h-2 bg-purple-600 rounded-full"></span>
                                     @endif
+                                    <span class="text-xs px-2 py-0.5 rounded-full {{ $notification->badge_class }}">
+                                        @if($notification->isLibraryNotification())
+                                            📚
+                                        @else
+                                            🌐
+                                        @endif
+                                        {{ ucfirst(str_replace('library_', '', $notification->type)) }}
+                                    </span>
                                     <h3 class="font-semibold text-gray-800">{{ $notification->title }}</h3>
                                     <span class="text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</span>
                                 </div>
                                 <p class="text-gray-600 text-sm">{{ $notification->message }}</p>
                                 
                                 @if($notification->data)
-                                    <div class="mt-3">
+                                    <div class="mt-3 flex flex-wrap gap-2">
                                         @if(isset($notification->data['book_id']))
                                             <a href="{{ route('library.show', $notification->data['book_id']) }}" 
                                                class="text-purple-600 text-sm hover:underline inline-flex items-center gap-1">
@@ -56,10 +79,22 @@
                                                 View Results <i class="ti ti-arrow-right text-xs"></i>
                                             </a>
                                         @endif
+                                        @if(isset($notification->data['institution_id']) && isset($notification->data['institution_name']))
+                                            <a href="{{ route('institutions.show', $notification->data['institution_id']) }}" 
+                                               class="text-purple-600 text-sm hover:underline inline-flex items-center gap-1">
+                                                View Institution <i class="ti ti-arrow-right text-xs"></i>
+                                            </a>
+                                        @endif
+                                      @if(isset($notification->data['join_request_id']))
+    <a href="{{ route('institution.join-requests.index') }}" 
+       class="text-purple-600 text-sm hover:underline inline-flex items-center gap-1">
+        View Requests <i class="ti ti-arrow-right text-xs"></i>
+    </a>
+@endif
                                     </div>
                                 @endif
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 flex-shrink-0">
                                 @if(!$notification->is_read)
                                     <button onclick="markAsRead({{ $notification->id }})" 
                                             class="text-xs text-purple-600 hover:underline">
@@ -93,6 +128,30 @@
 </div>
 
 <script>
+function filterNotifications(type) {
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active', 'bg-purple-600', 'text-white'));
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.add('bg-gray-200', 'text-gray-600');
+        btn.classList.remove('bg-purple-600', 'text-white');
+    });
+    
+    if (type === 'all') {
+        document.querySelectorAll('.filter-btn')[0].classList.add('bg-purple-600', 'text-white');
+        document.querySelectorAll('.filter-btn')[0].classList.remove('bg-gray-200', 'text-gray-600');
+        document.querySelectorAll('.notification-item').forEach(el => el.style.display = 'block');
+    } else if (type === 'library') {
+        document.querySelectorAll('.filter-btn')[1].classList.add('bg-purple-600', 'text-white');
+        document.querySelectorAll('.filter-btn')[1].classList.remove('bg-gray-200', 'text-gray-600');
+        document.querySelectorAll('.platform-notification').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.library-notification').forEach(el => el.style.display = 'block');
+    } else {
+        document.querySelectorAll('.filter-btn')[2].classList.add('bg-purple-600', 'text-white');
+        document.querySelectorAll('.filter-btn')[2].classList.remove('bg-gray-200', 'text-gray-600');
+        document.querySelectorAll('.library-notification').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.platform-notification').forEach(el => el.style.display = 'block');
+    }
+}
+
 function markAsRead(id) {
     fetch(`/notifications/${id}/read`, {
         method: 'POST',
@@ -146,4 +205,11 @@ function deleteNotification(id) {
     }
 }
 </script>
+
+<style>
+.filter-btn.active {
+    background-color: #7c3aed !important;
+    color: white !important;
+}
+</style>
 @endsection

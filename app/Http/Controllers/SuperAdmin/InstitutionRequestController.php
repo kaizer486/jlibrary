@@ -61,6 +61,9 @@ class InstitutionRequestController extends Controller
     /**
      * Approve an institution creation request.
      */
+    /**
+     * Approve an institution creation request.
+     */
     public function approve($id)
     {
         $creationRequest = InstitutionCreationRequest::with(['user'])->findOrFail($id);
@@ -70,7 +73,6 @@ class InstitutionRequestController extends Controller
                 ->with('error', 'This request has already been processed.');
         }
 
-        // Check if user is already in an institution
         if ($creationRequest->user->institution_id) {
             return redirect()->back()
                 ->with('error', 'User is already a member of an institution.');
@@ -96,16 +98,21 @@ class InstitutionRequestController extends Controller
         // Create institution wallet
         $institution->createWallet();
 
-        // Assign user as institution admin
+        // ==========================================
+        // ASSIGN ROLE BASED ON INSTITUTION TYPE
+        // ==========================================
         $user = $creationRequest->user;
+        $role = User::getRoleForInstitutionType($creationRequest->type);
+
+        // Update user
         $user->update([
             'institution_id' => $institution->id,
             'is_institution_admin' => true,
-            'role' => 'institution_admin',
+            'role' => $role, // Set the role column
         ]);
 
         // Assign Spatie role
-        $user->assignRole('institution_admin');
+        $user->assignRole($role);
 
         // Update the request
         $creationRequest->update([
@@ -114,14 +121,9 @@ class InstitutionRequestController extends Controller
             'approved_at' => now(),
         ]);
 
-        // Fire event (you can implement this later)
-        // event(new InstitutionCreated($institution, $user));
-
         return redirect()->route('super-admin.institution-requests.index')
-            ->with('success', "Institution '{$institution->name}' has been created successfully!");
-    }
-
-    /**
+            ->with('success', "Institution '{$institution->name}' has been created successfully! User is now a {$role}.");
+    }   /**
      * Reject an institution creation request.
      */
     public function reject(Request $request, $id)

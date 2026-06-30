@@ -1,10 +1,11 @@
-@extends('layouts.master')
+@extends('layouts.admin')
 
-@section('page-content')
+@section('title', 'Pending Marketplace Listings')
 
+@section('content')
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-900">Pending Marketplace Listings</h1>
-    <a href="{{ route('admin.marketplace.all') }}" class="text-jlibrary-600 hover:text-jlibrary-700">
+    <a href="{{ route('admin.marketplace.all') }}" class="text-purple-600 hover:text-purple-700">
         View All Listings
     </a>
 </div>
@@ -14,13 +15,13 @@
     @foreach($listings as $listing)
     <div class="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
         <div class="flex items-center gap-4">
-            <div class="w-16 h-20 bg-jlibrary-100 rounded-lg flex items-center justify-center">
-                <i class="ti ti-book text-2xl text-jlibrary-600"></i>
+            <div class="w-16 h-20 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="ti ti-book text-2xl text-purple-600"></i>
             </div>
             <div>
                 <h3 class="font-semibold text-gray-900">{{ $listing->title }}</h3>
                 <p class="text-sm text-gray-500">by {{ $listing->seller->full_name }}</p>
-                <p class="text-sm text-jlibrary-600 font-semibold">${{ number_format($listing->price, 2) }}</p>
+                <p class="text-sm text-purple-600 font-semibold">${{ number_format($listing->price, 2) }}</p>
             </div>
         </div>
         <div class="flex gap-2">

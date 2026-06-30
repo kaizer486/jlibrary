@@ -14,8 +14,16 @@ class AdminMiddleware
         
         $user = auth()->user();
         
-        // Allow super_admin, admin, AND institution_admin to access admin panel
-        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isInstitutionAdmin()) {
+        // Log the user's roles for debugging
+        // \Log::info('AdminMiddleware: User roles', ['roles' => $user->getRoleNames()->toArray()]);
+        
+        // Check if user has admin or super_admin role using Spatie
+        if ($user->hasRole(['admin', 'super_admin'])) {
+            return $next($request);
+        }
+        
+        // If user doesn't have the role, try checking the role column
+        if ($user->role === 'admin' || $user->role === 'superadmin') {
             return $next($request);
         }
         

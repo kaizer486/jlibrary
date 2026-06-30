@@ -2,130 +2,165 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MarketplaceCategory;
 use App\Models\MarketplaceListing;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class MarketplaceController extends Controller
 {
-    // Display all approved listings
-    public function index()
-    {
-        $listings = MarketplaceListing::where('status', 'approved')
-                                     ->with('seller')
-                                     ->latest()
-                                     ->paginate(12);
-        
-        return view('marketplace.index', compact('listings'));
-    }
-    
-    // Show create listing form
+    // REMOVE THE INDEX METHOD - Regular users shouldn't see marketplace listings
+    // Books should be viewed in the GENERAL LIBRARY
+
+    /**
+     * Show the form for creating a new listing
+     */
     public function create()
     {
-        return view('marketplace.create');
+        $categories = MarketplaceCategory::all();
+        return view('marketplace.create', compact('categories'));
     }
-    
-    // Store new listing
+
+    /**
+     * Store a newly created listing
+     */
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'author' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'book_file' => 'required|file|mimes:pdf|max:20480',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'book_type' => 'required|in:digital,physical,both',
+            'category_id' => 'nullable|exists:marketplace_categories,id',
+            'file' => 'nullable|file|mimes:pdf,epub,mobi|max:51200',
+            'cover_image' => 'nullable|image|max:5120',
+            'stock' => 'nullable|integer|min:0',
         ]);
-        
-        // Upload book file
-        $bookPath = $request->file('book_file')->store('marketplace/books', 'public');
-        
-        // Upload cover image if provided
-        $coverPath = null;
+
+        $data = $request->all();
+        $data['seller_id'] = auth()->id();
+        $data['status'] = 'pending'; // Needs admin approval
+
+        if ($request->hasFile('file')) {
+            $data['file_path'] = $request->file('file')->store('marketplace/books', 'public');
+        }
+
         if ($request->hasFile('cover_image')) {
-            $coverPath = $request->file('cover_image')->store('marketplace/covers', 'public');
+            $data['cover_image'] = $request->file('cover_image')->store('marketplace/covers', 'public');
+        }
+
+        $listing = MarketplaceListing::create($data);
+
+        return redirect()->route('seller.listings')
+            ->with('success', 'Book uploaded successfully! Waiting for admin approval.');
+    }
+
+    /**
+     * Show a specific listing (for editing or viewing by seller)
+     */
+    public function show(MarketplaceListing $listing)
+    {
+        // Only the seller or admin can view this
+        if ($listing->seller_id !== auth()->id() && !auth()->user()->isAdmin()) {
+            abort(403, 'You do not have permission to view this listing.');
         }
         
-        // Create listing
-        $listing = MarketplaceListing::create([
-            'seller_id' => Auth::id(),
-            'title' => $request->title,
-            'description' => $request->description,
-            'price' => $request->price,
-            'book_file' => $bookPath,
-            'cover_image' => $coverPath,
-            'status' => 'pending'
+        return view('marketplace.show', compact('listing'));
+    }
+
+    /**
+     * Show the form for editing a listing
+     */
+    public function edit(MarketplaceListing $listing)
+    {
+        if ($listing->seller_id !== auth()->id()) {
+            abort(403, 'You do not own this listing.');
+        }
+        
+        $categories = MarketplaceCategory::all();
+        return view('marketplace.edit', compact('listing', 'categories'));
+    }
+
+    /**
+     * Update a listing
+     */
+    public function update(Request $request, MarketplaceListing $listing)
+    {
+        if ($listing->seller_id !== auth()->id()) {
+            abort(403, 'You do not own this listing.');
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'author' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'book_type' => 'required|in:digital,physical,both',
+            'category_id' => 'nullable|exists:marketplace_categories,id',
+            'file' => 'nullable|file|mimes:pdf,epub,mobi|max:51200',
+            'cover_image' => 'nullable|image|max:5120',
+            'stock' => 'nullable|integer|min:0',
         ]);
-        
-        return redirect()->route('marketplace.show', $listing)
-                         ->with('success', 'Your book has been submitted for admin approval!');
-    }
-    
-    // Show single listing
-    public function show($id)
-    {
-        $listing = MarketplaceListing::with('seller')->findOrFail($id);
-        
-        // Increment views
-        $listing->increment('views');
-        
-        // Check if current user is the seller
-        $isSeller = Auth::check() && $listing->seller_id === Auth::id();
-        
-        return view('marketplace.show', compact('listing', 'isSeller'));
-    }
-    
-    // Download book
-    public function download($id)
-    {
-        $listing = MarketplaceListing::findOrFail($id);
-        
-        // Only approved listings can be downloaded
-        if ($listing->status !== 'approved') {
-            abort(404, 'This book is not yet available for download.');
+
+        $data = $request->all();
+
+        if ($request->hasFile('file')) {
+            if ($listing->file_path) {
+                Storage::disk('public')->delete($listing->file_path);
+            }
+            $data['file_path'] = $request->file('file')->store('marketplace/books', 'public');
         }
-        
-        // Increment downloads
-        $listing->increment('downloads');
-        
-        $filePath = storage_path('app/public/' . $listing->book_file);
-        
-        if (!file_exists($filePath)) {
-            abort(404, 'Book file not found.');
+
+        if ($request->hasFile('cover_image')) {
+            if ($listing->cover_image) {
+                Storage::disk('public')->delete($listing->cover_image);
+            }
+            $data['cover_image'] = $request->file('cover_image')->store('marketplace/covers', 'public');
         }
-        
-        return response()->download($filePath, $listing->title . '.pdf');
-    }
-    
-    // My listings (seller dashboard)
-    public function myListings()
-    {
-        $listings = MarketplaceListing::where('seller_id', Auth::id())
-                                     ->latest()
-                                     ->get();
-        
-        return view('marketplace.my-listings', compact('listings'));
-    }
-    
-    // Delete listing
-    public function destroy($id)
-    {
-        $listing = MarketplaceListing::findOrFail($id);
-        
-        // Only seller can delete
-        if ($listing->seller_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
+
+        if ($request->hasFile('file') || $request->hasFile('cover_image')) {
+            $data['status'] = 'pending';
         }
-        
-        // Delete files
-        Storage::disk('public')->delete($listing->book_file);
+
+        $listing->update($data);
+
+        return redirect()->route('seller.listings')
+            ->with('success', 'Book updated successfully!');
+    }
+
+    /**
+     * Delete a listing
+     */
+    public function destroy(MarketplaceListing $listing)
+    {
+        if ($listing->seller_id !== auth()->id()) {
+            abort(403, 'You do not own this listing.');
+        }
+
+        if ($listing->file_path) {
+            Storage::disk('public')->delete($listing->file_path);
+        }
         if ($listing->cover_image) {
             Storage::disk('public')->delete($listing->cover_image);
         }
-        
+
         $listing->delete();
-        
-        return redirect()->route('marketplace.my-listings')
-                         ->with('success', 'Listing deleted successfully.');
+
+        return redirect()->route('seller.listings')
+            ->with('success', 'Book deleted successfully!');
+    }
+
+    /**
+     * Get seller's listings (My Books)
+     */
+    public function myListings()
+    {
+        $listings = auth()->user()
+            ->marketplaceListings()
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('seller.listings', compact('listings'));
     }
 }

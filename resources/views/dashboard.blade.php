@@ -25,11 +25,12 @@
                         <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
                             Level {{ Auth::user()->level ?? 1 }} Learner
                         </div>
-                        @if(Auth::user()->institution_id && Auth::user()->institution)
-                        <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
-                            <i class="ti ti-building"></i> {{ Auth::user()->institution->name }}
-                        </div>
-                        @endif
+                      @if(Auth::user()->institution_id && Auth::user()->institution)
+    <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
+        <i class="ti ti-building"></i> {{ Auth::user()->institution->name }}
+        <span class="ml-1 text-xs opacity-75">({{ auth()->user()->getRoleLabel() }})</span>
+    </div>
+@endif
                     </div>
                 </div>
                 <div class="mt-4 md:mt-0">
@@ -96,89 +97,46 @@
         </div>
 
 
-    <!-- ============================================ -->
-<!-- INSTITUTIONS SECTION - THREE OPTIONS         -->
-<!-- ============================================ -->
-<div class="mb-8">
-    <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-xl border border-white/20">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2 mb-2">
-                    <i class="ti ti-building-community text-3xl"></i>
-                    <h3 class="text-2xl font-bold">Institutions</h3>
+        @if(!auth()->user()->isApprovedAuthor() && !auth()->user()->isApprovedBookseller())
+    <!-- Pending Application Alert -->
+    @if(auth()->user()->hasPendingApplication())
+    <div class="mb-8">
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 rounded-xl p-4 shadow-md">
+            <div class="flex items-center">
+                <i class="ti ti-alert-circle text-yellow-500 text-2xl mr-3"></i>
+                <div>
+                    <p class="font-semibold text-yellow-800">Application Pending Review</p>
+                    <p class="text-sm text-yellow-700">Your application is being reviewed by our team. You'll be notified once approved.</p>
                 </div>
-                <p class="text-indigo-100 text-sm">Connect with learning communities and access exclusive resources</p>
-            </div>
-            <div class="flex gap-3 flex-wrap">
-                <!-- Option 1: My Institution -->
-                <a href="{{ route('my.institution') }}" 
-                   class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
-                    <i class="ti ti-building"></i>
-                    My Institution
-                </a>
-                <!-- Option 2: Discover Institutions -->
-                <a href="{{ route('discover.institutions') }}" 
-                   class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
-                    <i class="ti ti-building-community"></i>
-                    Discover Institutions
-                </a>
-                <!-- Option 3: Request to Create Institution -->
-                <a href="{{ route('institution.create-request') }}" 
-                   class="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold text-sm flex items-center gap-2">
-                    <i class="ti ti-file-plus"></i>
-                    Register institution
-                </a>
             </div>
         </div>
     </div>
-</div>
-
-        <!-- ============================================ -->
-        <!-- BECOME A CREATOR SECTION - ONLY FOR REGULAR USERS -->
-        <!-- ============================================ -->
-        @if(auth()->user()->role === 'user')
-            <!-- Pending Application Alert -->
-            @if(auth()->user()->hasPendingApplication())
-            <div class="mb-8">
-                <div class="bg-yellow-100 border-l-4 border-yellow-500 rounded-xl p-4 shadow-md">
-                    <div class="flex items-center">
-                        <i class="ti ti-alert-circle text-yellow-500 text-2xl mr-3"></i>
-                        <div>
-                            <p class="font-semibold text-yellow-800">Application Pending Review</p>
-                            <p class="text-sm text-yellow-700">Your application is being reviewed by our team. You'll be notified once approved.</p>
-                        </div>
+    @else
+    <!-- Become a Creator Banner -->
+    <div class="mb-8">
+        <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-6 text-white shadow-xl">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="ti ti-rocket text-3xl"></i>
+                        <h3 class="text-2xl font-bold">Become a Creator</h3>
                     </div>
+                    <p class="text-amber-100 text-sm">Share your knowledge and earn money by becoming an author or bookseller</p>
+                 
+                </div>
+                <div class="flex gap-3 mt-4 md:mt-0 flex-wrap">
+                    <a href="{{ route('applications.create', 'author') }}" class="bg-white text-amber-600 px-5 py-2.5 rounded-lg hover:shadow-lg transition font-semibold text-sm flex items-center gap-2">
+                        <i class="ti ti-edit"></i> Become an Author
+                    </a>
+                    <a href="{{ route('applications.create', 'bookseller') }}" class="bg-white text-amber-600 px-5 py-2.5 rounded-lg hover:shadow-lg transition font-semibold text-sm flex items-center gap-2">
+                        <i class="ti ti-shopping-cart"></i> Become a Bookseller
+                    </a>
                 </div>
             </div>
-            @endif
-
-            <!-- Become a Creator Banner -->
-            @if(!auth()->user()->hasPendingApplication() && !auth()->user()->isApprovedAuthor() && !auth()->user()->isApprovedBookseller())
-            <div class="mb-8">
-                <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-6 text-white shadow-xl">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <i class="ti ti-rocket text-3xl"></i>
-                                <h3 class="text-2xl font-bold">Become a Creator</h3>
-                            </div>
-                            <p class="text-amber-100 text-sm">Share your knowledge and earn money by becoming an author or bookseller</p>
-                        </div>
-                        <div class="flex gap-3 mt-4 md:mt-0">
-                            <a href="{{ route('applications.create', 'author') }}" class="bg-white text-amber-600 px-5 py-2.5 rounded-lg hover:shadow-lg transition font-semibold text-sm flex items-center gap-2">
-                                <i class="ti ti-edit"></i> Become an Author
-                            </a>
-                            <a href="{{ route('applications.create', 'bookseller') }}" class="bg-white text-amber-600 px-5 py-2.5 rounded-lg hover:shadow-lg transition font-semibold text-sm flex items-center gap-2">
-                                <i class="ti ti-shopping-cart"></i> Become a Bookseller
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
-        @endif
-
-        <!-- Continue Learning -->
+        </div>
+    </div>
+    @endif
+@endif        <!-- Continue Learning -->
         <div class="mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-white"> Continue Learning</h2>
@@ -408,25 +366,7 @@
             </div>
         </div>
 
-        <!-- Marketplace CTA -->
-        <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-xl p-6 text-white shadow-xl border border-white/20">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <i class="ti ti-shopping-cart text-2xl"></i>
-                        <h3 class="text-2xl font-bold">Marketplace</h3>
-                    </div>
-                    <p class="text-amber-100">Student Notes & Lecture Guides</p>
-                    <p class="text-amber-100 text-sm">Find quality notes and study quizzes or sell your own.</p>
-                </div>
-                <div class="mt-4 md:mt-0">
-                    <a href="{{ route('marketplace.index') }}" class="inline-flex items-center gap-2 bg-white text-orange-600 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                        Go to Marketplace
-                        <i class="ti ti-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
+       
 
     </div>
 </div>

@@ -26,9 +26,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Illuminate\Support\Carbon|null $approved_at
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  * 
- * @property-read User $user
- * @property-read User|null $approver
+ * @property-read \App\Models\User $user
+ * @property-read \App\Models\User|null $approver
  */
 class InstitutionCreationRequest extends Model
 {

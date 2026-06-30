@@ -52,7 +52,8 @@ class MarketplaceListing extends Model
         'status',
         'admin_notes',
         'views',
-        'downloads'
+        'downloads',
+         'institution_id',
     ];
     
     protected $casts = [
@@ -66,6 +67,30 @@ class MarketplaceListing extends Model
         return $this->belongsTo(User::class, 'seller_id');
     }
     
+// ==========================================
+// ORDER RELATIONSHIPS - ADD THIS
+// ==========================================
+
+public function orders()
+{
+    return $this->hasMany(MarketplaceOrder::class, 'listing_id');
+}
+
+public function completedOrders()
+{
+    return $this->hasMany(MarketplaceOrder::class, 'listing_id')->where('status', 'completed');
+}
+
+public function getTotalSalesAttribute()
+{
+    return $this->completedOrders()->count();
+}
+
+public function getTotalEarningsAttribute()
+{
+    return $this->completedOrders()->sum('seller_earnings');
+}
+
     public function isApproved(): bool
     {
         return $this->status === 'approved';
