@@ -16,14 +16,14 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-purple-900 via-purple-700 to-pink-800 min-h-screen">
+<body style="background: linear-gradient(135deg, #040547f3, #03023fe1); min-height: 100vh;">
 
     <div class="min-h-screen flex items-center justify-center px-4 py-8">
         <div class="max-w-md w-full">
             <!-- Logo Section -->
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-2xl mb-4 backdrop-blur-sm">
-                    <i class="ti ti-book text-4xl text-white"></i>
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 backdrop-blur-sm">
+                    <img src="{{ asset('images/logo.jpeg') }}" alt="JLIBRARY Logo" class="h-20 w-auto rounded-2xl">
                 </div>
                 <h1 class="text-4xl font-bold text-white">JLIBRARY</h1>
                 <p class="text-purple-200 mt-1">Join our learning community</p>
@@ -42,7 +42,7 @@
                             <i class="ti ti-user absolute left-3 top-1/2 -translate-y-1/2 text-purple-300"></i>
                             <input type="text" name="name" value="{{ old('name') }}" required
                                    class="w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                                   >
+                                   placeholder="Enter your full name">
                         </div>
                         @error('name')
                             <p class="text-red-300 text-xs mt-1">{{ $message }}</p>
@@ -55,59 +55,61 @@
                             <i class="ti ti-mail absolute left-3 top-1/2 -translate-y-1/2 text-purple-300"></i>
                             <input type="email" name="email" value="{{ old('email') }}" required
                                    class="w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                                   >
+                                   placeholder="Enter your email">
                         </div>
                         @error('email')
                             <p class="text-red-300 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                     
-                  <div class="mb-4">
-    <label class="block text-sm font-medium text-white mb-2">Password</label>
-    <div class="relative">
-        <i class="ti ti-lock absolute left-3 top-1/2 -translate-y-1/2 text-purple-300"></i>
-        <input type="password" name="password" id="password" required
-               class="w-full pl-10 pr-10 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
-        <button type="button" onclick="togglePassword('password', 'eye-password')"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 hover:text-white transition">
-            <i id="eye-password" class="ti ti-eye"></i>
-        </button>
-    </div>
-    @error('password')
-        <p class="text-red-300 text-xs mt-1">{{ $message }}</p>
-    @enderror
-</div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-white mb-2">Password</label>
+                        <div class="relative">
+                            <i class="ti ti-lock absolute left-3 top-1/2 -translate-y-1/2 text-purple-300"></i>
+                            <input type="password" name="password" id="password" required
+                                   class="w-full pl-10 pr-10 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                                   placeholder="Enter your password">
+                            <button type="button" onclick="togglePassword('password', 'eye-password')"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 hover:text-white transition">
+                                <i id="eye-password" class="ti ti-eye"></i>
+                            </button>
+                        </div>
+                        @error('password')
+                            <p class="text-red-300 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
 
-<div class="mb-6">
-    <label class="block text-sm font-medium text-white mb-2">Confirm Password</label>
-    <div class="relative">
-        <i class="ti ti-check absolute left-3 top-1/2 -translate-y-1/2 text-purple-300"></i>
-        <input type="password" name="password_confirmation" id="password_confirmation" required
-               class="w-full pl-10 pr-10 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400">
-        <button type="button" onclick="togglePassword('password_confirmation', 'eye-confirm')"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 hover:text-white transition">
-            <i id="eye-confirm" class="ti ti-eye"></i>
-        </button>
-    </div>
-</div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-white mb-2">Confirm Password</label>
+                        <div class="relative">
+                            <i class="ti ti-check absolute left-3 top-1/2 -translate-y-1/2 text-purple-300"></i>
+                            <input type="password" name="password_confirmation" id="password_confirmation" required
+                                   class="w-full pl-10 pr-10 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                                   placeholder="Confirm your password">
+                            <button type="button" onclick="togglePassword('password_confirmation', 'eye-confirm')"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 hover:text-white transition">
+                                <i id="eye-confirm" class="ti ti-eye"></i>
+                            </button>
+                        </div>
+                    </div>
 
-<script>
-function togglePassword(inputId, iconId) {
-    const input = document.getElementById(inputId);
-    const icon = document.getElementById(iconId);
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('ti-eye');
-        icon.classList.add('ti-eye-off');
-    } else {
-        input.type = 'password';
-        icon.classList.remove('ti-eye-off');
-        icon.classList.add('ti-eye');
-    }
-}
-</script>
+                    <script>
+                    function togglePassword(inputId, iconId) {
+                        const input = document.getElementById(inputId);
+                        const icon = document.getElementById(iconId);
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            icon.classList.remove('ti-eye');
+                            icon.classList.add('ti-eye-off');
+                        } else {
+                            input.type = 'password';
+                            icon.classList.remove('ti-eye-off');
+                            icon.classList.add('ti-eye');
+                        }
+                    }
+                    </script>
                     
-                    <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
                         <i class="ti ti-user-plus"></i>
                         Create Account
                     </button>

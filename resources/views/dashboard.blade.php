@@ -1,363 +1,519 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Perfect Balance Dark Blue Background - Full Page -->
-<div class="fixed inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 -z-10"></div>
-
-<div class="relative z-10 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
+<!-- ========================================== -->
+<!-- BACKGROUND: Light Bisque                   -->
+<!-- ========================================== -->
+<div class="min-h-screen" style="background: #e9e8e6; padding-top: 0; margin-top: 0;">
+    <div class="container mx-auto px-4 py-0 max-w-7xl" style="padding-top: 0; margin-top: 0;">
         
-        <!-- Welcome Banner -->
-        <div class="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-6 mb-8 text-white shadow-xl border border-white/20">
-            <div class="absolute inset-0 bg-black/10"></div>
-            <div class="relative flex flex-col md:flex-row md:items-center md:justify-between">
+        <!-- ========================================== -->
+        <!-- WELCOME BANNER - Warm Orange/Amber Style   -->
+        <!-- ========================================== -->
+        <div class="rounded-2xl p-6 mb-4 border-2 border-orange-200/80 shadow-md" style="
+            background: white;
+            border-radius: 20px;
+            margin-top: 0;
+        ">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                 <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-3xl"></span>
-                        <h1 class="text-2xl md:text-3xl font-bold">Welcome back, {{ Auth::user()->full_name }}!</h1>
-                        <span class="text-2xl"></span>
-                    </div>
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <div class="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                            <span class="text-yellow-300"></span>
-                            <span class="text-sm">{{ Auth::user()->streak_days ?? 0 }}-day streak</span>
-                        </div>
-                        <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
-                            Level {{ Auth::user()->level ?? 1 }} Learner
-                        </div>
-                      @if(Auth::user()->institution_id && Auth::user()->institution)
-    <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
-        <i class="ti ti-building"></i> {{ Auth::user()->institution->name }}
-        <span class="ml-1 text-xs opacity-75">({{ auth()->user()->getRoleLabel() }})</span>
-    </div>
-@endif
-                    </div>
+                    <h1 class="text-2xl font-extrabold" style="color: #1E293B;">Welcome back, {{ Auth::user()->full_name }}.</h1>
+                    <p class="text-sm font-medium mt-1" style="
+                        background: linear-gradient(135deg, #db570a, #e87a2a, #f59e4c);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    ">
+                        Great to see you again! Ready to continue learning?
+                    </p>
                 </div>
                 <div class="mt-4 md:mt-0">
-                    <a href="{{ route('ai.chat') }}" class="inline-flex items-center gap-2 bg-white text-purple-600 px-5 py-2.5 rounded-xl hover:shadow-lg transition-all hover:scale-105 font-semibold">
-                        <i class="ti ti-robot text-lg"></i>
+                    <a href="{{ route('ai.chat') }}" class="inline-flex items-center gap-2 text-white font-medium px-5 py-2.5 transition-all duration-300 hover:-translate-y-1 border-2 border-orange-400/30" style="
+                        background: linear-gradient(135deg, #db570a, #e87a2a);
+                        box-shadow: 0 4px 16px rgba(219,87,10,0.2);
+                        border-radius: 14px;
+                    ">
+                        <i class="ti ti-robot"></i>
                         Ask AI Assistant
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Books Card -->
-            <div class="bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" style="box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(59, 130, 246, 0.12);">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-gray-500 text-sm font-medium">Total Books</span>
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
-                        <i class="ti ti-books text-white text-xl"></i>
+        <!-- ========================================== -->
+        <!-- QUOTE - Glassmorphic with Dark Blue Text  -->
+        <!-- ========================================== -->
+        @php
+            $quote = \App\Models\Quote::where('status', 'active')
+                ->inRandomOrder()
+                ->first();
+        @endphp
+
+        @if($quote)
+            <div class="mb-2" style="
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border-radius: 20px; 
+                padding: 20px 24px;
+                border: 2px solid rgba(255, 255, 255, 0.8);
+                box-shadow: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+                position: relative;
+                overflow: hidden;
+                text-align: center;
+                font-style: italic;
+            ">
+                <div class="relative z-10">
+                    <p style="
+                        font-size: 14px; 
+                        text-transform: uppercase; 
+                        letter-spacing: 3px; 
+                        font-weight: 600; 
+                        color: #db570a;
+                        margin-bottom: 6px;
+                        font-family: 'Poppins', sans-serif;
+                        font-style: italic;
+                    ">
+                        Daily Quote
+                    </p>
+                    
+                    <p class="text-base md:text-lg font-medium leading-relaxed" style="
+                        font-family: 'Poppins', sans-serif;
+                        color: #0f172a;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                        font-size: 20px;
+                    ">
+                        "{{ $quote->quote_text }}"
+                    </p>
+                    
+                    <p class="text-sm font-medium mt-3" style="
+                        color: #1e293b !important; 
+                        font-family: 'Inter', sans-serif; 
+                        font-weight: 500;
+                    ">
+                        — {{ $quote->author ?? 'Unknown' }}
+                    </p>
+                </div>
+            </div>
+        @else
+            <div class="mb-4" style="
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border-radius: 20px; 
+                padding: 24px 28px;
+                border: 2px solid rgba(255, 255, 255, 0.8);
+                box-shadow: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+                position: relative;
+                overflow: hidden;
+                text-align: center;
+            ">
+                <div class="relative z-10">
+                    <p style="
+                        font-size: 14px; 
+                        text-transform: uppercase; 
+                        letter-spacing: 3px; 
+                        font-weight: 600; 
+                        color: #db570a;
+                        margin-bottom: 6px;
+                        font-family: 'Inter', sans-serif;
+                    ">
+                        Daily Quote
+                    </p>
+                    
+                    <div style="margin-bottom: 4px;">
+                        <i class="ti ti-quote" style="color: #db570a; font-size: 28px; opacity: 0.2;"></i>
+                    </div>
+                    
+                    <p class="text-base md:text-lg font-medium leading-relaxed" style="
+                        font-family: 'Georgia', 'Times New Roman', serif;
+                        color: #0f172a;
+                        font-weight: 500;
+                        letter-spacing: 0.3px;
+                        font-size: 20px;
+                    ">
+                        "The only way to do great work is to love what you do."
+                    </p>
+                    
+                    <p class="text-sm font-medium mt-3" style="
+                        color: #1e293b !important; 
+                        font-family: 'Inter', sans-serif; 
+                        font-weight: 500;
+                    ">
+                        — Steve Jobs
+                    </p>
+                </div>
+            </div>
+        @endif
+
+        <!-- ========================================== -->
+        <!-- STATS CARDS - Glass Card Style            -->
+        <!-- ========================================== -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-5 mb-6">
+            <!-- Total Books -->
+            <div class="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 border-2 border-slate-200/80 shadow-md" style="
+                background: white;
+                border-radius: 20px;
+            ">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium" style="color: #64748B;">Total Books</p>
+                        <p class="text-2xl font-bold mt-1" style="color: #1E293B;">{{ Auth::user()->books()->count() }}</p>
+                    </div>
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center" style="
+                        background: linear-gradient(135deg, #db570a, #e87a2a);
+                        box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                    ">
+                        <i class="ti ti-books text-white text-lg"></i>
                     </div>
                 </div>
-                <p class="text-3xl font-bold text-gray-800">{{ Auth::user()->books()->count() }}</p>
-                <p class="text-gray-400 text-sm mt-2">In your library</p>
             </div>
 
-            <!-- Reading Card -->
-            <div class="bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" style="box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(16, 185, 129, 0.12);">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-gray-500 text-sm font-medium">Currently Reading</span>
-                    <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
-                        <i class="ti ti-book-open text-white text-xl"></i>
+            <!-- Currently Reading -->
+            <div class="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 border-2 border-slate-200/80 shadow-md" style="
+                background: white;
+                border-radius: 20px;
+            ">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium" style="color: #64748B;">Currently Reading</p>
+                        <p class="text-2xl font-bold mt-1" style="color: #1E293B;">{{ Auth::user()->books()->wherePivot('status', 'reading')->count() }}</p>
                     </div>
-                </div>
-                <p class="text-3xl font-bold text-gray-800">{{ Auth::user()->books()->wherePivot('status', 'reading')->count() }}</p>
-                <p class="text-gray-400 text-sm mt-2">Books in progress</p>
-            </div>
-
-            <!-- Wallet Card -->
-            <div class="bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" style="box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(245, 158, 11, 0.12);">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-gray-500 text-sm font-medium">Wallet Balance</span>
-                    <div class="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-md">
-                        <i class="ti ti-wallet text-white text-xl"></i>
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center" style="
+                        background: linear-gradient(135deg, #db570a, #e87a2a);
+                        box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                    ">
+                       <i class="ti ti-book text-white text-lg"></i>
                     </div>
-                </div>
-                <p class="text-3xl font-bold text-gray-800">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</p>
-                <p class="text-gray-400 text-sm mt-2">From referrals & quizzes</p>
-                <div class="mt-2">
-                    <a href="{{ route('withdrawals.index') }}" class="text-sm text-purple-600 hover:text-purple-700 underline">Request Withdrawal →</a>
                 </div>
             </div>
 
-            <!-- Certificates Card -->
-            <div class="bg-white rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" style="box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(236, 72, 153, 0.12);">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-gray-500 text-sm font-medium">Certificates</span>
-                    <div class="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl flex items-center justify-center shadow-md">
-                        <i class="ti ti-certificate text-white text-xl"></i>
+            <!-- Wallet Balance -->
+            <div class="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 border-2 border-slate-200/80 shadow-md" style="
+                background: white;
+                border-radius: 20px;
+            ">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium" style="color: #64748B;">Wallet Balance</p>
+                        <p class="text-2xl font-bold mt-1" style="color: #1E293B;">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</p>
+                    </div>
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center" style="
+                        background: linear-gradient(135deg, #db570a, #e87a2a);
+                        box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                    ">
+                        <i class="ti ti-wallet text-white text-lg"></i>
                     </div>
                 </div>
-                <p class="text-3xl font-bold text-gray-800">{{ Auth::user()->certificates()->count() }}</p>
-                <p class="text-gray-400 text-sm mt-2">Earned so far</p>
+            </div>
+
+            <!-- Certificates -->
+            <div class="rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 border-2 border-slate-200/80 shadow-md" style="
+                background: white;
+                border-radius: 20px;
+            ">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium" style="color: #64748B;">Certificates</p>
+                        <p class="text-2xl font-bold mt-1" style="color: #1E293B;">{{ Auth::user()->certificates()->count() }}</p>
+                    </div>
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center" style="
+                        background: linear-gradient(135deg, #db570a, #e87a2a);
+                        box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                    ">
+                        <i class="ti ti-certificate text-white text-lg"></i>
+                    </div>
+                </div>
             </div>
         </div>
 
-
-        @if(!auth()->user()->isApprovedAuthor() && !auth()->user()->isApprovedBookseller())
-    <!-- Pending Application Alert -->
-    @if(auth()->user()->hasPendingApplication())
-    <div class="mb-8">
-        <div class="bg-yellow-100 border-l-4 border-yellow-500 rounded-xl p-4 shadow-md">
-            <div class="flex items-center">
-                <i class="ti ti-alert-circle text-yellow-500 text-2xl mr-3"></i>
-                <div>
-                    <p class="font-semibold text-yellow-800">Application Pending Review</p>
-                    <p class="text-sm text-yellow-700">Your application is being reviewed by our team. You'll be notified once approved.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    @else
-    <!-- Become a Creator Banner -->
-    <div class="mb-8">
-        <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-6 text-white shadow-xl">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <i class="ti ti-rocket text-3xl"></i>
-                        <h3 class="text-2xl font-bold">Become a Creator</h3>
-                    </div>
-                    <p class="text-amber-100 text-sm">Share your knowledge and earn money by becoming an author or bookseller</p>
-                 
-                </div>
-                <div class="flex gap-3 mt-4 md:mt-0 flex-wrap">
-                    <a href="{{ route('applications.create', 'author') }}" class="bg-white text-amber-600 px-5 py-2.5 rounded-lg hover:shadow-lg transition font-semibold text-sm flex items-center gap-2">
-                        <i class="ti ti-edit"></i> Become an Author
-                    </a>
-                    <a href="{{ route('applications.create', 'bookseller') }}" class="bg-white text-amber-600 px-5 py-2.5 rounded-lg hover:shadow-lg transition font-semibold text-sm flex items-center gap-2">
-                        <i class="ti ti-shopping-cart"></i> Become a Bookseller
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
-@endif        <!-- Continue Learning -->
-        <div class="mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-white"> Continue Learning</h2>
-                <a href="#" class="text-indigo-300 text-sm hover:underline">View All →</a>
-            </div>
-            <div class="grid md:grid-cols-2 gap-4">
-                <div class="bg-white rounded-xl transition-all duration-300 overflow-hidden group hover:shadow-xl">
-                    <div class="h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                    <div class="p-5">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="font-semibold text-gray-800 text-lg">Intermediate AI Systems</h3>
-                                <p class="text-sm text-gray-500 mt-1">Lesson 3 of 10 • 45 min remaining</p>
-                                <div class="flex items-center gap-2 mt-3">
-                                    <div class="w-40 bg-gray-200 rounded-full h-2">
-                                        <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full" style="width: 25%"></div>
-                                    </div>
-                                    <span class="text-xs font-medium text-gray-600">25%</span>
-                                </div>
-                            </div>
-                            <a href="#" class="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center group-hover:bg-indigo-500 transition-all">
-                                <i class="ti ti-arrow-right text-indigo-600 group-hover:text-white"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl transition-all duration-300 overflow-hidden group hover:shadow-xl">
-                    <div class="h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
-                    <div class="p-5">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="font-semibold text-gray-800 text-lg">Network Security Basics</h3>
-                                <p class="text-sm text-gray-500 mt-1">Lesson 2 of 8 • 30 min remaining</p>
-                                <div class="flex items-center gap-2 mt-3">
-                                    <div class="w-40 bg-gray-200 rounded-full h-2">
-                                        <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full" style="width: 15%"></div>
-                                    </div>
-                                    <span class="text-xs font-medium text-gray-600">15%</span>
-                                </div>
-                            </div>
-                            <a href="#" class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center group-hover:bg-emerald-500 transition-all">
-                                <i class="ti ti-arrow-right text-emerald-600 group-hover:text-white"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Browse Library -->
-        <div class="mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-white"> Browse Library</h2>
-                <a href="{{ route('library.index') }}" class="text-indigo-300 text-sm hover:underline">View Library →</a>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <span class="px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 text-purple-700 rounded-full text-sm font-medium shadow-sm">Popular This Week</span>
-                <span class="px-4 py-2 bg-gradient-to-r from-pink-100 to-rose-100 text-rose-700 rounded-full text-sm font-medium shadow-sm">Trending Now</span>
-                <span class="px-4 py-2 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-700 rounded-full text-sm font-medium shadow-sm">Data Science</span>
-                <span class="px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 rounded-full text-sm font-medium shadow-sm">Deep Learning</span>
-                <span class="px-4 py-2 bg-gradient-to-r from-orange-100 to-amber-100 text-orange-700 rounded-full text-sm font-medium shadow-sm">SQL for Beginners</span>
-                <span class="px-4 py-2 bg-gradient-to-r from-teal-100 to-green-100 text-teal-700 rounded-full text-sm font-medium shadow-sm">Mobile App Development</span>
-                <span class="px-4 py-2 bg-gradient-to-r from-slate-100 to-gray-200 text-gray-700 rounded-full text-sm font-medium shadow-sm">Computer Science</span>
-
-            </div>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div class="grid lg:grid-cols-3 gap-6 mb-8">
-            <!-- Left Column -->
+        <!-- ========================================== -->
+        <!-- MAIN TWO COLUMN LAYOUT                     -->
+        <!-- ========================================== -->
+        <div class="grid lg:grid-cols-3 gap-6 mb-6">
+            
+            <!-- LEFT COLUMN (2/3) -->
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-5 border border-indigo-200">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <i class="ti ti-users text-indigo-600 text-xl"></i>
-                                <h3 class="font-semibold text-gray-800">Community Groups</h3>
+                
+                <!-- Become a Creator -->
+                @if(!auth()->user()->isApprovedAuthor() && !auth()->user()->isApprovedBookseller())
+                    @if(auth()->user()->hasPendingApplication())
+                        <div class="rounded-2xl p-5 border-2 border-amber-200/80 shadow-md" style="
+                            background: #FEFCE8;
+                            border-radius: 20px;
+                        ">
+                            <div class="flex items-center gap-3">
+                                <i class="ti ti-alert-circle text-2xl" style="color: #F59E0B;"></i>
+                                <div>
+                                    <p class="font-semibold" style="color: #92400E;">Application Pending Review</p>
+                                    <p class="text-sm" style="color: #B45309;">Your application is being reviewed by our team. You'll be notified once approved.</p>
+                                </div>
                             </div>
-                            <p class="text-gray-600 text-sm">Join study groups and track the most active communities.</p>
                         </div>
-                        <a href="{{ route('community.index') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition shadow-md">
-                            Find Groups →
-                        </a>
+                    @else
+                        <div class="rounded-2xl p-5 border-2 border-orange-200/80 shadow-md" style="
+                            background: #FFF7ED;
+                            border-radius: 20px;
+                        ">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <i class="ti ti-rocket text-xl" style="color: #EA580C;"></i>
+                                        <h3 class="text-xl font-bold" style="color: #1E293B;">Become a Creator</h3>
+                                    </div>
+                                    <p class="text-sm font-medium" style="color: #64748B;">Share your knowledge and earn money by becoming an author or bookseller</p>
+                                </div>
+                                <div class="flex gap-3 mt-3 md:mt-0">
+                                    <a href="{{ route('applications.create', 'author') }}" class="text-white font-medium px-4 py-2 transition-all duration-300 hover:-translate-y-1 flex items-center gap-1 border-2 border-orange-400/30" style="
+                                        background: linear-gradient(135deg, #db570a, #e87a2a);
+                                        box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                                        border-radius: 14px;
+                                    ">
+                                        <i class="ti ti-edit"></i> Author
+                                    </a>
+                                    <a href="{{ route('applications.create', 'bookseller') }}" class="text-white font-medium px-4 py-2 transition-all duration-300 hover:-translate-y-1 flex items-center gap-1 border-2 border-orange-400/30" style="
+                                        background: linear-gradient(135deg, #db570a, #e87a2a);
+                                        box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                                        border-radius: 14px;
+                                    ">
+                                        <i class="ti ti-shopping-cart"></i> Bookseller
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endif
+
+                <!-- Continue Learning -->
+                <div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="
+                    background: white;
+                    border-radius: 20px;
+                ">
+                    <div class="px-6 py-4 flex items-center justify-between" style="border-bottom: 2px solid #e9e8e6;">
+                        <h2 class="text-xl font-bold flex items-center gap-2" style="color: #1E293B;">
+                            <i class="ti ti-book-2" style="color: #db570a;"></i>
+                            Continue Learning
+                        </h2>
+                        <a href="{{ route('library.my-library') }}" class="text-sm font-medium hover:underline" style="color: #db570a;">View All →</a>
+                    </div>
+                    <div class="p-6">
+                        @php
+                            $readingBooks = Auth::user()->books()->wherePivot('status', 'reading')->take(3)->get();
+                        @endphp
+                        @if($readingBooks->count() > 0)
+                            <div class="space-y-4">
+                                @foreach($readingBooks as $book)
+                                <div class="rounded-xl p-4 transition-all hover:bg-orange-50/50 border border-slate-200/60" style="background: rgba(255, 255, 255, 0.4); border-radius: 16px;">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex-1">
+                                            <p class="font-semibold text-sm" style="color: #1E293B;">{{ $book->title }}</p>
+                                            <div class="flex items-center gap-2 mt-2">
+                                                <div class="flex-1 max-w-xs rounded-full" style="background: #E2E8F0; height: 8px; border-radius: 999px;">
+                                                    <div class="rounded-full" style="
+                                                        background: linear-gradient(90deg, #db570a, #e87a2a);
+                                                        height: 8px;
+                                                        border-radius: 999px;
+                                                        width: {{ $book->pivot->progress_percent ?? 0 }}%;
+                                                    "></div>
+                                                </div>
+                                                <span class="text-xs font-medium" style="color: #64748B;">{{ $book->pivot->progress_percent ?? 0 }}%</span>
+                                            </div>
+                                        </div>
+                                        <a href="{{ route('library.read', $book) }}" class="text-white text-xs font-medium px-4 py-2 transition-all duration-300 hover:-translate-y-1 border-2 border-orange-400/30" style="
+                                            background: linear-gradient(135deg, #db570a, #e87a2a);
+                                            box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                                            border-radius: 14px;
+                                        ">Continue</a>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm font-medium text-center py-4" style="color: #64748B;">No books in progress. <a href="{{ route('library.index') }}" class="font-semibold hover:underline" style="color: #db570a;">Browse library →</a></p>
+                        @endif
                     </div>
                 </div>
-                
-                <!-- Quiz Section -->
-                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-200">
-                    <div class="flex justify-between items-center mb-3">
-                        <div class="flex items-center gap-2">
-                            <i class="ti ti-brain text-purple-600 text-xl"></i>
-                            <h3 class="font-semibold text-gray-800">Interactive Quizzes</h3>
-                        </div>
-                        <a href="{{ route('quizzes.index') }}" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 transition shadow-md">
-                            View All →
-                        </a>
+
+                <!-- Interactive Quizzes -->
+                <div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="
+                    background: white;
+                    border-radius: 20px;
+                ">
+                    <div class="px-6 py-4 flex items-center justify-between" style="border-bottom: 2px solid #e9e8e6;">
+                        <h2 class="text-xl font-bold flex items-center gap-2" style="color: #1E293B;">
+                            <i class="ti ti-brain" style="color: #db570a;"></i>
+                            Interactive Quizzes
+                        </h2>
+                        <a href="{{ route('quizzes.index') }}" class="text-sm font-medium hover:underline" style="color: #db570a;">View All →</a>
                     </div>
-                    <p class="text-gray-600 text-sm mb-3">Challenge yourself, earn certificates, and track your progress.</p>
-                    
-                    @php
-                        $recentQuizAttempt = App\Models\QuizAttempt::where('user_id', auth()->id())
-                                            ->with('quiz')
-                                            ->latest()
-                                            ->first();
-                        $totalQuizzes = App\Models\Quiz::count();
-                        $passedQuizzes = App\Models\QuizAttempt::where('user_id', auth()->id())
-                                            ->where('passed', true)
-                                            ->count();
-                    @endphp
-                    
-                    <div class="grid grid-cols-3 gap-3 mt-3 pt-2 border-t border-purple-200">
-                        <div class="text-center">
-                            <p class="text-2xl font-bold text-purple-700">{{ $totalQuizzes }}</p>
-                            <p class="text-xs text-gray-500">Total Quizzes</p>
+                    <div class="p-6">
+                        @php
+                            $totalQuizzes = App\Models\Quiz::count();
+                            $passedQuizzes = App\Models\QuizAttempt::where('user_id', auth()->id())->where('passed', true)->count();
+                            $recentQuiz = App\Models\QuizAttempt::where('user_id', auth()->id())->with('quiz')->latest()->first();
+                        @endphp
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="text-center p-3 rounded-xl border-2 border-orange-200/60" style="background: #FFF7ED;">
+                                <p class="text-2xl font-bold" style="color: #db570a;">{{ $totalQuizzes }}</p>
+                                <p class="text-xs font-medium" style="color: #64748B;">Total Quizzes</p>
+                            </div>
+                            <div class="text-center p-3 rounded-xl border-2 border-emerald-200/60" style="background: #F0FDF4;">
+                                <p class="text-2xl font-bold" style="color: #16A34A;">{{ $passedQuizzes }}</p>
+                                <p class="text-xs font-medium" style="color: #64748B;">Completed</p>
+                            </div>
+                            <div class="text-center p-3 rounded-xl border-2 border-red-200/60" style="background: #FEF2F2;">
+                                <p class="text-2xl font-bold" style="color: #DC2626;">{{ $totalQuizzes - $passedQuizzes }}</p>
+                                <p class="text-xs font-medium" style="color: #64748B;">Remaining</p>
+                            </div>
                         </div>
-                        <div class="text-center">
-                            <p class="text-2xl font-bold text-green-600">{{ $passedQuizzes }}</p>
-                            <p class="text-xs text-gray-500">Completed</p>
-                        </div>
-                        <div class="text-center">
-                            <a href="{{ route('quizzes.history') }}" class="text-purple-600 text-xs hover:underline flex items-center justify-center gap-1">
-                                History
-                                <i class="ti ti-arrow-right text-xs"></i>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    @if($recentQuizAttempt)
-                    <div class="mt-3 p-2 bg-white/60 rounded-lg">
-                        <p class="text-xs text-gray-500">Last attempt</p>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-medium text-gray-700">{{ $recentQuizAttempt->quiz->title }}</span>
-                            <span class="text-xs {{ $recentQuizAttempt->passed ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $recentQuizAttempt->percentage }}%
+                        @if($recentQuiz)
+                        <div class="mt-3 p-3 rounded-xl flex items-center justify-between border border-slate-200/60" style="background: rgba(255, 255, 255, 0.4); border-radius: 16px;">
+                            <div>
+                                <p class="text-xs font-medium" style="color: #64748B;">Last attempt</p>
+                                <p class="text-sm font-semibold" style="color: #1E293B;">{{ $recentQuiz->quiz->title }}</p>
+                            </div>
+                            <span class="text-sm font-bold {{ $recentQuiz->passed ? 'text-emerald-600' : 'text-red-600' }}">
+                                {{ $recentQuiz->percentage }}%
                             </span>
                         </div>
+                        @else
+                        <a href="{{ route('quizzes.index') }}" class="mt-3 block text-center font-medium py-2 transition-all hover:bg-opacity-80 border-2 border-orange-200/60" style="
+                            background: #FFF7ED;
+                            color: #db570a;
+                            border-radius: 14px;
+                        ">
+                            <i class="ti ti-plus"></i> Take Your First Quiz
+                        </a>
+                        @endif
                     </div>
+                </div>
+
+                <!-- Achievements -->
+                <div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="
+                    background: white;
+                    border-radius: 20px;
+                ">
+                    <div class="px-6 py-4" style="border-bottom: 2px solid #e9e8e6;">
+                        <h2 class="text-xl font-bold flex items-center gap-2" style="color: #1E293B;">
+                            <i class="ti ti-trophy" style="color: #F59E0B;"></i>
+                            Achievements
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="text-center">
+                                <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto border-2 border-orange-200/60" style="
+                                    background: linear-gradient(135deg, #db570a, #e87a2a);
+                                    box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                                ">
+                                    <i class="ti ti-certificate text-white text-xl"></i>
+                                </div>
+                                <p class="text-lg font-bold mt-2" style="color: #1E293B;">{{ Auth::user()->certificates()->count() }}</p>
+                                <p class="text-xs font-medium" style="color: #64748B;">Certificates</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto border-2 border-orange-200/60" style="
+                                    background: linear-gradient(135deg, #db570a, #e87a2a);
+                                    box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                                ">
+                                    <i class="ti ti-star text-white text-xl"></i>
+                                </div>
+                                <p class="text-lg font-bold mt-2" style="color: #1E293B;">{{ Auth::user()->average_quiz_score ?? 0 }}%</p>
+                                <p class="text-xs font-medium" style="color: #64748B;">Quiz Avg</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto border-2 border-orange-200/60" style="
+                                    background: linear-gradient(135deg, #db570a, #e87a2a);
+                                    box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                                ">
+                                    <i class="ti ti-flame text-white text-xl"></i>
+                                </div>
+                                <p class="text-lg font-bold mt-2" style="color: #1E293B;">{{ Auth::user()->streak_days ?? 0 }}</p>
+                                <p class="text-xs font-medium" style="color: #64748B;">Day Streak</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN (1/3) -->
+            <div class="space-y-6">
+                
+                <!-- Latest Updates -->
+                <div class="rounded-2xl p-6 border-2 border-slate-200/80 shadow-md" style="
+                    background: white;
+                    border-radius: 20px;
+                ">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-14 h-14 rounded-full flex items-center justify-center border-2 border-orange-200/60" style="
+                            background: linear-gradient(135deg, #db570a, #e87a2a);
+                            box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                        ">
+                            <i class="ti ti-news text-white text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold" style="color: #1E293B;">Latest Updates</h3>
+                    </div>
+
+                    @php
+                        $newsItems = \App\Models\NewsItem::active()->ordered()->latestPublished()->limit(6)->get();
+                    @endphp
+
+                    @if($newsItems->count() > 0)
+                        <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+                            @foreach($newsItems as $item)
+                                <div class="rounded-xl p-3 transition-all hover:bg-orange-50/50 border border-slate-200/60" style="background: rgba(255, 255, 255, 0.4); border-radius: 16px;">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-xs font-medium px-2 py-0.5 rounded-full border" style="
+                                            @if($item->category == 'Books') background: #F3E8FF; color: #7E22CE; border-color: #E9D5FF;
+                                            @elseif($item->category == 'Events') background: #F0FDF4; color: #16A34A; border-color: #BBF7D0;
+                                            @elseif($item->category == 'Certificates') background: #FFF7ED; color: #EA580C; border-color: #FED7AA;
+                                            @elseif($item->category == 'Announcements') background: #F3E8FF; color: #7E22CE; border-color: #E9D5FF;
+                                            @elseif($item->category == 'Authors') background: #FCE7F3; color: #DB2777; border-color: #F9A8D4;
+                                            @else background: #F1F5F9; color: #64748B; border-color: #E2E8F0; @endif
+                                            border-radius: 999px;
+                                        ">
+                                            {{ $item->category ?? 'General' }}
+                                        </span>
+                                        @if($item->is_featured)
+                                            <span class="text-xs">⭐</span>
+                                        @endif
+                                    </div>
+                                    @if($item->link)
+                                        <a href="{{ $item->link }}" class="text-sm font-semibold hover:underline block" style="color: #1E293B;">{{ $item->title }}</a>
+                                    @else
+                                        <p class="text-sm font-semibold" style="color: #1E293B;">{{ $item->title }}</p>
+                                    @endif
+                                    <p class="text-xs font-medium mt-1 flex items-center gap-1" style="color: #64748B;">
+                                        <i class="ti ti-clock"></i> {{ $item->published_at->format('M d, Y') }}
+                                    </p>
+                                </div>
+                            @endforeach
+                        </div>
                     @else
-                    <a href="{{ route('quizzes.index') }}" class="mt-3 block text-center bg-purple-100 text-purple-700 py-2 rounded-lg text-sm font-medium hover:bg-purple-200 transition">
-                        <i class="ti ti-plus"></i> Take Your First Quiz
-                    </a>
+                        <p class="text-sm font-medium text-center py-6" style="color: #64748B;">No updates yet</p>
                     @endif
                 </div>
             </div>
-
-            <!-- Right Column -->
-            <div class="space-y-6">
-                <!-- Achievements -->
-                <div class="bg-white rounded-xl shadow-md p-5">
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="ti ti-trophy text-yellow-500 text-xl"></i>
-                        <h3 class="font-semibold text-gray-800">Achievements</h3>
-                    </div>
-                    <div class="flex justify-around">
-                        <div class="text-center">
-                            <div class="w-14 h-14 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center mx-auto">
-                                <i class="ti ti-certificate text-yellow-600 text-xl"></i>
-                            </div>
-                            <p class="text-xs text-gray-600 mt-1 font-semibold">{{ Auth::user()->certificates()->count() }}</p>
-                            <p class="text-xs text-gray-400">Certificates</p>
-                        </div>
-                        <div class="text-center">
-                            <div class="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto">
-                                <i class="ti ti-star text-purple-600 text-xl"></i>
-                            </div>
-                            <p class="text-xs text-gray-600 mt-1 font-semibold">{{ Auth::user()->average_quiz_score }}%</p>
-                            <p class="text-xs text-gray-400">Quiz Avg</p>
-                        </div>
-                        <div class="text-center">
-                            <div class="w-14 h-14 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto">
-                                <i class="ti ti-flame text-orange-600 text-xl"></i>
-                            </div>
-                            <p class="text-xs text-gray-600 mt-1 font-semibold">{{ Auth::user()->streak_days ?? 0 }}</p>
-                            <p class="text-xs text-gray-400">Day Streak</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Top Learner Card -->
-                <div class="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-xl p-5 text-white shadow-xl border border-white/20">
-                    <div class="absolute inset-0 bg-black/10"></div>
-                    <div class="relative">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                <i class="ti ti-user text-2xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-lg">{{ Auth::user()->full_name }}</h4>
-                                <p class="text-xs text-purple-200">Level {{ Auth::user()->level ?? 1 }} Learner </p>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <p class="text-sm text-purple-100">{{ Auth::user()->xp_points ?? 0 }} XP Total</p>
-                            <div class="flex items-center justify-between mt-2">
-                                <span class="text-xs text-purple-200">Progress to Level {{ (Auth::user()->level ?? 1) + 1 }}</span>
-                                <span class="text-sm font-semibold">{{ Auth::user()->level_progress ?? 0 }}%</span>
-                            </div>
-                            <div class="mt-1 w-full bg-white/20 rounded-full h-1.5">
-                                <div class="bg-gradient-to-r from-yellow-400 to-orange-500 h-1.5 rounded-full" style="width: {{ Auth::user()->level_progress ?? 0 }}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-           
-        
-         <!-- QUOTE OF THE DAY SECTION -->
-        <!-- ============================================ -->
-         @include('components.quote-of-the-day')
 
-
-        <!-- Knowledge Tips -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 mb-8 text-white shadow-xl border border-white/20">
+        <!-- ========================================== -->
+        <!-- KNOWLEDGE TIPS                            -->
+        <!-- ========================================== -->
+        <div class="rounded-2xl p-6 mb-6 border-2 border-slate-200/80 shadow-md" style="
+            background: white;
+            border-radius: 20px;
+        ">
             <div class="flex items-start gap-3">
-                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <i class="ti ti-lightbulb text-white text-xl"></i>
+                <div class="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 border-2 border-orange-200/60" style="
+                    background: linear-gradient(135deg, #db570a, #e87a2a);
+                    box-shadow: 0 4px 12px rgba(219,87,10,0.15);
+                ">
+                    <i class="ti ti-bulb text-white text-xl"></i>
                 </div>
                 <div>
-                    <h4 class="font-semibold text-lg">💡 Knowledge Tips</h4>
-                    <ul class="text-sm text-blue-100 mt-1 space-y-1">
+                    <h4 class="font-bold text-lg" style="color: #1E293B;">💡 Knowledge Tips</h4>
+                    <ul class="text-sm font-medium mt-1 space-y-1" style="color: #64748B;">
                         <li>• Review your quizzes to see correct answers and explanations</li>
                         <li>• Ask the AI Assistant for help in explaining difficult topics</li>
                         <li>• Join study groups to discuss materials with other learners</li>
@@ -366,68 +522,49 @@
             </div>
         </div>
 
-       
-
-    </div>
-</div>
-
-<!-- Join Request Modal -->
-<div id="joinModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
-            <div class="flex justify-between items-center">
-                <h3 class="text-xl font-bold text-white">📝 Request to Join</h3>
-                <button onclick="closeJoinModal()" class="text-white/80 hover:text-white">
-                    <i class="ti ti-x text-2xl"></i>
-                </button>
+        <!-- ========================================== -->
+        <!-- BROWSE LIBRARY TAGS                        -->
+        <!-- ========================================== -->
+        <div class="rounded-2xl p-6 border-2 border-slate-200/80 shadow-md" style="
+            background: white;
+            border-radius: 20px;
+        ">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold flex items-center gap-2" style="color: #1E293B;">
+                    <i class="ti ti-search" style="color: #db570a;"></i>
+                    Browse Library
+                </h2>
+                <a href="{{ route('library.index') }}" class="text-sm font-medium hover:underline" style="color: #db570a;">View Library →</a>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-purple-200/60" style="background: #F3E8FF; color: #7E22CE; border-radius: 999px;">Popular This Week</span>
+                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-red-200/60" style="background: #FEF2F2; color: #DC2626; border-radius: 999px;">Trending Now</span>
+                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-orange-200/60" style="background: #FFF7ED; color: #EA580C; border-radius: 999px;">Data Science</span>
+                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-emerald-200/60" style="background: #F0FDF4; color: #16A34A; border-radius: 999px;">Deep Learning</span>
+                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-blue-200/60" style="background: #EFF6FF; color: #2563EB; border-radius: 999px;">SQL for Beginners</span>
+                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-indigo-200/60" style="background: #F5F3FF; color: #7C3AED; border-radius: 999px;">Mobile App Dev</span>
+                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-slate-200/60" style="background: #F1F5F9; color: #475569; border-radius: 999px;">Computer Science</span>
             </div>
         </div>
-        <form method="POST" action="{{ route('join-requests.store') }}" class="p-6">
-            @csrf
-            <input type="hidden" name="institution_id" id="join_institution_id">
-            
-            <div class="mb-4 p-4 bg-purple-50 rounded-xl">
-                <p class="text-sm text-gray-600 mb-1">You are requesting to join:</p>
-                <p class="font-bold text-gray-800 text-lg" id="join_institution_name"></p>
-            </div>
-            
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Optional Message</label>
-                <textarea name="message" rows="3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
-                          placeholder="Why do you want to join this institution? (Optional)"></textarea>
-                <p class="text-xs text-gray-400 mt-1">This message will be sent to the institution admin</p>
-            </div>
-            
-            <div class="flex gap-3 mt-6">
-                <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2.5 rounded-lg hover:shadow-lg transition font-semibold">
-                    Send Request
-                </button>
-                <button type="button" onclick="closeJoinModal()" class="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                    Cancel
-                </button>
-            </div>
-        </form>
+
     </div>
 </div>
 
-<script>
-function openJoinModal(institutionId, institutionName) {
-    document.getElementById('join_institution_id').value = institutionId;
-    document.getElementById('join_institution_name').textContent = institutionName;
-    document.getElementById('joinModal').classList.remove('hidden');
-    document.getElementById('joinModal').classList.add('flex');
-}
-
-function closeJoinModal() {
-    document.getElementById('joinModal').classList.add('hidden');
-    document.getElementById('joinModal').classList.remove('flex');
-}
-
-// Close modal on click outside
-document.getElementById('joinModal')?.addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeJoinModal();
+<style>
+    /* Custom scrollbar for Latest Updates */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
     }
-});
-</script>
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #F1F5F9;
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #FED7AA;
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #FCD34D;
+    }
+</style>
 @endsection

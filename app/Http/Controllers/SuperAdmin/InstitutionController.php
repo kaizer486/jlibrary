@@ -52,6 +52,55 @@ class InstitutionController extends Controller
         return view('super-admin.institutions.create');
     }
     
+/**
+ * Activate subscription for institution (Super Admin override)
+ */
+public function activateSubscription(Request $request, Institution $institution)
+{
+    $request->validate([
+        'plan' => 'required|in:basic,premium,enterprise',
+        'period' => 'required|in:monthly,quarterly,semi_annual,annual',
+        'payment_method' => 'required|in:mpesa,tigopesa,halopesa,pesapal,bank',
+        'amount_paid' => 'required|numeric|min:0',
+    ]);
+    
+    $amount = $this->calculateAmount($request->plan, $request->period);
+    $endDate = $this->calculateExpiry(now(), $request->period);
+    
+    DB::transaction(function () use ($institution, $request, $amount, $endDate) {
+        // Cancel existing subscriptions
+        $institution->subscriptions()->update(['status' => 'cancelled']);
+        
+        // Create new subscription
+        $subscription = Subscription::create([
+            'subscribable_type' => Institution::class,
+            'subscribable_id' => $institution->id,
+            'institution_id' => $institution->id,
+            'plan' => $request->plan,
+            'amount' => $request->amount_paid,
+            'status' => 'active',
+            'payment_status' => 'paid',
+            'payment_method' => $request->payment_method,
+            'starts_at' => now(),
+            'ends_at' => $endDate,
+            'auto_renew' => false,
+            'transaction_reference' => 'ADMIN-' . Str::random(12),
+        ]);
+        
+        // Update institution
+        $institution->update([
+            'subscription_tier' => $request->plan,
+            'subscription_expires_at' => $endDate,
+            'subscription_status' => 'active',
+            'subscription_price_paid' => $request->amount_paid,
+            'subscription_payment_method' => $request->payment_method,
+        ]);
+    });
+    
+    return redirect()->route('super-admin.institutions.show', $institution)
+        ->with('success', 'Subscription activated successfully!');
+}
+
     public function store(Request $request)
     {
         $request->validate([

@@ -3,17 +3,17 @@
 @section('content')
 <style>
     /* ========================================== */
-    /* HERO BACKGROUND - Purple-Pink Gradient     */
+    /* HERO BACKGROUND - Deep Navy                */
     /* ========================================== */
     .hero-gradient {
-        background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+        background: linear-gradient(135deg, #0a1628 0%, #0d1b3e 100%);
         position: relative;
         overflow: hidden;
         padding-top: 0;
         margin-top: 0;
     }
 
-    /* Bubbles Animation - Smaller */
+    /* Bubbles Animation - Soft Blue */
     .bubble {
         position: absolute;
         border-radius: 50%;
@@ -43,6 +43,7 @@
             opacity: 0.3;
         }
     }
+    
 
     @keyframes bubbleFloat2 {
         0% {
@@ -74,44 +75,39 @@
         animation-name: bubbleFloat2;
     }
 
-    /* Deep Blue Bubbles - Smaller */
+    /* Soft Blue Bubbles */
     .bubble-blue-1 {
-        background: rgba(37, 99, 235, 0.45);
-        border: 2px solid rgba(37, 99, 235, 0.3);
+        background: rgba(96, 165, 250, 0.25);
+        border: 2px solid rgba(96, 165, 250, 0.2);
         animation-duration: 14s;
     }
     .bubble-blue-2 {
-        background: rgba(59, 130, 246, 0.40);
-        border: 2px solid rgba(59, 130, 246, 0.3);
+        background: rgba(147, 197, 253, 0.2);
+        border: 2px solid rgba(147, 197, 253, 0.15);
         animation-duration: 12s;
     }
     .bubble-blue-3 {
-        background: rgba(29, 78, 216, 0.45);
-        border: 2px solid rgba(29, 78, 216, 0.3);
+        background: rgba(59, 130, 246, 0.2);
+        border: 2px solid rgba(59, 130, 246, 0.15);
         animation-duration: 16s;
     }
     .bubble-blue-4 {
-        background: rgba(96, 165, 250, 0.35);
-        border: 2px solid rgba(96, 165, 250, 0.3);
+        background: rgba(191, 219, 254, 0.15);
+        border: 2px solid rgba(191, 219, 254, 0.1);
         animation-duration: 10s;
     }
     .bubble-blue-5 {
-        background: rgba(30, 58, 138, 0.50);
-        border: 2px solid rgba(30, 58, 138, 0.3);
+        background: rgba(37, 99, 235, 0.2);
+        border: 2px solid rgba(37, 99, 235, 0.15);
         animation-duration: 18s;
     }
-    .bubble-blue-6 {
-        background: rgba(147, 197, 253, 0.30);
-        border: 2px solid rgba(147, 197, 253, 0.3);
-        animation-duration: 11s;
-    }
 
-    /* Dashboard Image - Fixed Height, Cover */
+    /* Dashboard Image */
     .dashboard-image {
         border-radius: 20px;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         width: 100%;
         height: 420px;
         background: rgba(0, 0, 0, 0.1);
@@ -144,52 +140,66 @@
     }
 
     /* ========================================== */
-    /* LIGHT BACKGROUND SECTIONS                 */
+    /* BUTTONS - Orange                           */
     /* ========================================== */
-    .light-body-bg {
-        background: #f0f2f5;
-    }
-
-    /* Glass Cards */
-    .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-        border-radius: 20px;
+    .btn-primary {
+        background: linear-gradient(135deg, #F97316, #EA580C);
+        color: white;
+        border: none;
         transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(249, 115, 22, 0.3);
     }
 
-    .glass-card:hover {
-        background: rgba(255, 255, 255, 0.85);
-        box-shadow: 0 12px 48px rgba(124, 58, 237, 0.12);
+    .btn-primary:hover {
         transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(249, 115, 22, 0.4);
+        background: linear-gradient(135deg, #FB923C, #EA580C);
     }
 
-    .glass-card-light {
-        background: rgba(255, 255, 255, 0.5);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 16px;
+    .btn-secondary {
+        background: transparent;
+        color: white;
+        border: 1.5px solid rgba(255, 255, 255, 0.4);
         transition: all 0.3s ease;
     }
 
-    .glass-card-light:hover {
-        background: rgba(255, 255, 255, 0.7);
-        border-color: rgba(124, 58, 237, 0.2);
+    .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #F97316;
     }
 
-    /* Purple Gradient Icons */
+    /* Navigation Buttons - Orange */
+    .nav-btn-primary {
+        background: linear-gradient(135deg, #F97316, #EA580C);
+        color: white;
+        border: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(249, 115, 22, 0.3);
+    }
+
+    .nav-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(249, 115, 22, 0.4);
+        background: linear-gradient(135deg, #FB923C, #EA580C);
+    }
+
+    /* ========================================== */
+    /* ICONS - Blue (as used on hero)             */
+    /* ========================================== */
     .icon-gradient {
-        background: linear-gradient(135deg, #7c3aed, #ec4899);
+        background: linear-gradient(135deg, #04065cc9, #362504);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         flex-shrink: 0;
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    }
+
+    .icon-gradient:hover {
+        background: linear-gradient(135deg, #60A5FA, #3B82F6);
+        box-shadow: 0 4px 24px rgba(59, 130, 246, 0.4);
     }
 
     .icon-gradient-sm {
@@ -198,15 +208,19 @@
         font-size: 20px;
     }
 
-    /* Gradient Text */
+    /* ========================================== */
+    /* GRADIENT TEXT - Orange                    */
+    /* ========================================== */
     .gradient-text {
-        background: linear-gradient(135deg, #7c3aed, #ec4899);
+        background: linear-gradient(135deg, #F97316, #EA580C);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
 
-    /* Founder - Gradient Border Card */
+    /* ========================================== */
+    /* FOUNDER CARD - Orange Border              */
+    /* ========================================== */
     .founder-card-gradient {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(12px);
@@ -214,13 +228,13 @@
         border-radius: 20px;
         padding: 3px;
         transition: all 0.3s ease;
-      
+        background: linear-gradient(135deg, #1125686b, #0805308e);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
     }
 
     .founder-card-gradient:hover {
         transform: translateY(-4px);
-        box-shadow: 0 12px 48px rgba(124, 58, 237, 0.25);
+        box-shadow: 0 12px 48px rgba(249, 115, 22, 0.25);
     }
 
     .founder-card-inner {
@@ -228,7 +242,6 @@
         border-radius: 17px;
         overflow: hidden;
         height: 100%;
-        
     }
 
     .founder-image-wrap {
@@ -251,7 +264,50 @@
     .founder-image-wrap .placeholder {
         font-size: 80px;
         font-weight: 700;
-        color: #7c3aed;
+        color: #3B82F6;
+    }
+
+    /* ========================================== */
+    /* LIGHT BACKGROUND SECTIONS                 */
+    /* ========================================== */
+    .light-body-bg {
+        background: #f0f2f5;
+    }
+
+    /* Glass Cards - Blue Hover */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .glass-card:hover {
+        background: rgba(255, 255, 255, 0.85);
+        box-shadow: 0 12px 48px rgba(59, 130, 246, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .glass-card-light {
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .glass-card-light:hover {
+        background: rgba(255, 255, 255, 0.7);
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    /* CTA - Orange */
+    .cta-gradient {
+        background: linear-gradient(135deg, #F97316, #EA580C);
     }
 </style>
 
@@ -261,39 +317,52 @@
 <nav class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
     <div class="container mx-auto px-4 md:px-8">
         <div class="flex items-center justify-between h-16 md:h-20">
+            <!-- Logo -->
             <div class="flex items-center gap-2">
-                <img src="{{ asset('images/jlibrary.jpeg') }}" alt="JLIBRARY" class="h-10 w-auto md:h-12">
-                <span class="text-xl md:text-2xl font-bold text-gray-800">JLIBRARY</span>
+                <img src="{{ asset('images/logo.jpeg') }}" alt="JLIBRARY" class="h-8 w-auto md:h-10">
+                <span class="text-lg md:text-xl font-bold text-gray-800">JLIBRARY</span>
             </div>
 
+            <!-- Desktop Navigation - Blue -->
             <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-gray-600">
-                <a href="{{ route('welcome') }}" class="text-purple-600 font-semibold hover:text-purple-700 transition">Home</a>
+                <a href="{{ route('welcome') }}" class="text-blue-600 font-semibold hover:text-blue-700 transition">Home</a>
                 @auth
-                    <a href="{{ route('library.index') }}" class="hover:text-purple-600 transition">Browse Library</a>
-                    <a href="{{ route('community.index') }}" class="hover:text-purple-600 transition">Community</a>
-                    <a href="{{ route('certificates.index') }}" class="hover:text-purple-600 transition">Certificates</a>
-                    <a href="{{ route('marketplace.listings') }}" class="hover:text-purple-600 transition">Marketplace</a>
+                    <a href="{{ route('library.index') }}" class="hover:text-blue-600 transition">Browse Library</a>
+                    <a href="{{ route('community.index') }}" class="hover:text-blue-600 transition">Community</a>
+                    <a href="{{ route('certificates.index') }}" class="hover:text-blue-600 transition">Certificates</a>
+                    <a href="{{ route('marketplace.listings') }}" class="hover:text-blue-600 transition">Marketplace</a>
                 @else
-                    <a href="{{ route('login') }}" class="hover:text-purple-600 transition">Browse Library</a>
-                    <a href="{{ route('login') }}" class="hover:text-purple-600 transition">Community</a>
-                    <a href="{{ route('login') }}" class="hover:text-purple-600 transition">Certificates</a>
-                    <a href="{{ route('login') }}" class="hover:text-purple-600 transition">Marketplace</a>
+                    <a href="{{ route('login') }}" class="hover:text-blue-600 transition">Browse Library</a>
+                    <a href="{{ route('login') }}" class="hover:text-blue-600 transition">Community</a>
+                    <a href="{{ route('login') }}" class="hover:text-blue-600 transition">Certificates</a>
+                    <a href="{{ route('login') }}" class="hover:text-blue-600 transition">Marketplace</a>
                 @endauth
-                <a href="#about" class="hover:text-purple-600 transition">About</a>
-                <a href="#founders" class="hover:text-purple-600 transition">Founders</a>
+                <a href="#about" class="hover:text-blue-600 transition">About</a>
+                <a href="#founders" class="hover:text-blue-600 transition">Founders</a>
             </div>
 
-            <div class="flex items-center gap-3">
+            <!-- Right Side Buttons - Orange -->
+            <div class="flex items-center gap-2">
                 @guest
-                    <a href="{{ route('login') }}" class="hidden md:inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-600 transition">
-                        <i class="ti ti-login"></i> Login
-                    </a>
-                    <a href="{{ route('register') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-full hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-                        <i class="ti ti-rocket"></i> Get Started
+                  <a href="{{ route('login') }}" 
+   class="inline-flex items-center gap-1 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-bold text-white transition rounded-full"
+   style=" background: linear-gradient(135deg, #04065cc9, #362504);">
+    <i class="ti ti-login text-sm md:text-base"></i>
+    <span class="hidden sm:inline">Login</span>
+</a>
+                    
+                    <a href="{{ route('register') }}" 
+                       class="inline-flex items-center gap-1 px-3 py-1.5 md:px-5 md:py-2.5 nav-btn-primary text-white text-xs md:text-sm font-semibold rounded-full">
+                        <i class="ti ti-rocket text-sm md:text-base"></i>
+                        <span class="hidden sm:inline">Get Started</span>
+                        <span class="sm:hidden">Join</span>
                     </a>
                 @else
-                    <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-full hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
-                        <i class="ti ti-dashboard"></i> Dashboard
+                    <a href="{{ route('dashboard') }}" 
+                       class="inline-flex items-center gap-1 px-3 py-1.5 md:px-5 md:py-2.5 nav-btn-primary text-white text-xs md:text-sm font-semibold rounded-full">
+                        <i class="ti ti-dashboard text-sm md:text-base"></i>
+                        <span class="hidden sm:inline">Dashboard</span>
+                        <span class="sm:hidden">Dash</span>
                     </a>
                 @endguest
 
@@ -303,54 +372,69 @@
             </div>
         </div>
 
+        <!-- Mobile Navigation -->
         <div id="mobile-menu" class="lg:hidden hidden pb-4 border-t border-gray-100">
-            <div class="flex flex-col gap-2 pt-4">
-                <a href="{{ route('welcome') }}" class="px-3 py-2 text-purple-600 font-semibold hover:bg-purple-50 rounded-lg transition">Home</a>
+            <div class="flex flex-col gap-1 pt-4">
+                <a href="{{ route('welcome') }}" class="px-3 py-2 text-blue-600 font-semibold hover:bg-blue-50 rounded-lg transition">Home</a>
                 @auth
-                    <a href="{{ route('library.index') }}" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Browse Library</a>
-                    <a href="{{ route('community.index') }}" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Community</a>
-                    <a href="{{ route('certificates.index') }}" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Certificates</a>
-                    <a href="{{ route('marketplace.listings') }}" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Marketplace</a>
+                    <a href="{{ route('library.index') }}" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Browse Library</a>
+                    <a href="{{ route('community.index') }}" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Community</a>
+                    <a href="{{ route('certificates.index') }}" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Certificates</a>
+                    <a href="{{ route('marketplace.listings') }}" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Marketplace</a>
                 @else
-                    <a href="{{ route('login') }}" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Browse Library</a>
-                    <a href="{{ route('login') }}" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Community</a>
-                    <a href="{{ route('login') }}" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Certificates</a>
-                    <a href="{{ route('login') }}" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Marketplace</a>
+                    <a href="{{ route('login') }}" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Browse Library</a>
+                    <a href="{{ route('login') }}" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Community</a>
+                    <a href="{{ route('login') }}" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Certificates</a>
+                    <a href="{{ route('login') }}" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Marketplace</a>
                 @endauth
-                <a href="#about" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">About</a>
-                <a href="#founders" class="px-3 py-2 hover:bg-purple-50 rounded-lg transition">Founders</a>
+                <a href="#about" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">About</a>
+                <a href="#founders" class="px-3 py-2 hover:bg-blue-50 rounded-lg transition">Founders</a>
+                
+                <div class="mt-2 pt-2 border-t border-gray-100 flex flex-col gap-2">
+                    @guest
+                        <a href="{{ route('login') }}" class="px-3 py-2 text-center text-blue-600 font-semibold hover:bg-blue-50 rounded-lg transition">
+                            <i class="ti ti-login"></i> Login
+                        </a>
+                        <a href="{{ route('register') }}" class="px-3 py-2 text-center nav-btn-primary text-white font-semibold rounded-lg">
+                            <i class="ti ti-rocket"></i> Get Started
+                        </a>
+                    @else
+                        <a href="{{ route('dashboard') }}" class="px-3 py-2 text-center nav-btn-primary text-white font-semibold rounded-lg">
+                            <i class="ti ti-dashboard"></i> Dashboard
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}" class="w-full">
+                            @csrf
+                            <button type="submit" class="w-full px-3 py-2 text-center text-red-600 font-semibold hover:bg-red-50 rounded-lg transition">
+                                <i class="ti ti-logout"></i> Logout
+                            </button>
+                        </form>
+                    @endguest
+                </div>
             </div>
         </div>
     </div>
 </nav>
 
 <!-- ========================================== -->
-<!-- HERO SLIDER - NO SPACE ABOVE               -->
+<!-- HERO SLIDER                                -->
 <!-- ========================================== -->
 <section class="hero-gradient relative overflow-hidden" id="hero-slider-container" style="padding-top: 0 !important; margin-top: 0 !important;">
-    <!-- Deep Blue Bubbles - Smaller -->
+    <!-- Soft Blue Bubbles -->
     <div class="absolute inset-0 pointer-events-none z-0">
-        <div class="bubble bubble-blue-1 w-10 h-10 top-[8%] left-[5%]" style="animation-duration: 14s;"></div>
-        <div class="bubble bubble-blue-2 w-7 h-7 top-[18%] right-[8%]" style="animation-duration: 12s;"></div>
-        <div class="bubble bubble-blue-3 w-12 h-12 bottom-[15%] left-[15%]" style="animation-duration: 18s;"></div>
-        <div class="bubble bubble-blue-4 w-5 h-5 top-[50%] right-[5%]" style="animation-duration: 10s;"></div>
-        <div class="bubble bubble-blue-5 w-9 h-9 bottom-[25%] right-[20%]" style="animation-duration: 15s;"></div>
-        <div class="bubble bubble-blue-6 w-11 h-11 top-[5%] left-[30%]" style="animation-duration: 20s;"></div>
-        <div class="bubble bubble-blue-1 w-6 h-6 top-[70%] left-[45%]" style="animation-duration: 13s;"></div>
-        <div class="bubble bubble-blue-2 w-14 h-14 bottom-[10%] left-[60%]" style="animation-duration: 22s;"></div>
-        <div class="bubble bubble-blue-3 w-8 h-8 top-[30%] left-[75%]" style="animation-duration: 11s;"></div>
-        <div class="bubble bubble-blue-4 w-10 h-10 bottom-[40%] right-[40%]" style="animation-duration: 17s;"></div>
-        <div class="bubble bubble-blue-5 w-5 h-5 top-[15%] left-[50%]" style="animation-duration: 9s;"></div>
-        <div class="bubble bubble-blue-6 w-13 h-13 bottom-[5%] left-[35%]" style="animation-duration: 25s;"></div>
-        <div class="bubble bubble-blue-1 w-4 h-4 top-[45%] right-[25%]" style="animation-duration: 8s;"></div>
-        <div class="bubble bubble-blue-2 w-10 h-10 top-[80%] right-[10%]" style="animation-duration: 16s;"></div>
-        <div class="bubble bubble-blue-3 w-6 h-6 top-[60%] left-[10%]" style="animation-duration: 19s;"></div>
-        <div class="bubble bubble-blue-4 w-11 h-11 top-[25%] right-[45%]" style="animation-duration: 21s;"></div>
-        <div class="bubble bubble-blue-5 w-8 h-8 top-[40%] left-[20%]" style="animation-duration: 14s;"></div>
-        <div class="bubble bubble-blue-6 w-7 h-7 bottom-[30%] right-[55%]" style="animation-duration: 12s;"></div>
-        <div class="bubble bubble-blue-1 w-9 h-9 top-[10%] right-[30%]" style="animation-duration: 24s;"></div>
-        <div class="bubble bubble-blue-2 w-4 h-4 bottom-[20%] left-[25%]" style="animation-duration: 7s;"></div>
-        <div class="bubble bubble-blue-3 w-12 h-12 top-[55%] left-[55%]" style="animation-duration: 23s;"></div>
+        
+        <div class="bubble bubble-blue-4 w-8 h-8 top-[30%] left-[75%]" style="animation-duration: 11s;"></div>
+        <div class="bubble bubble-blue-5 w-10 h-10 bottom-[40%] right-[40%]" style="animation-duration: 17s;"></div>
+        <div class="bubble bubble-blue-1 w-5 h-5 top-[15%] left-[50%]" style="animation-duration: 9s;"></div>
+        <div class="bubble bubble-blue-2 w-13 h-13 bottom-[5%] left-[35%]" style="animation-duration: 25s;"></div>
+        <div class="bubble bubble-blue-3 w-4 h-4 top-[45%] right-[25%]" style="animation-duration: 8s;"></div>
+        <div class="bubble bubble-blue-4 w-10 h-10 top-[80%] right-[10%]" style="animation-duration: 16s;"></div>
+        <div class="bubble bubble-blue-5 w-6 h-6 top-[60%] left-[10%]" style="animation-duration: 19s;"></div>
+        <div class="bubble bubble-blue-1 w-11 h-11 top-[25%] right-[45%]" style="animation-duration: 21s;"></div>
+        <div class="bubble bubble-blue-2 w-8 h-8 top-[40%] left-[20%]" style="animation-duration: 14s;"></div>
+        <div class="bubble bubble-blue-3 w-7 h-7 bottom-[30%] right-[55%]" style="animation-duration: 12s;"></div>
+        <div class="bubble bubble-blue-4 w-9 h-9 top-[10%] right-[30%]" style="animation-duration: 24s;"></div>
+        <div class="bubble bubble-blue-5 w-4 h-4 bottom-[20%] left-[25%]" style="animation-duration: 7s;"></div>
+        <div class="bubble bubble-blue-1 w-12 h-12 top-[55%] left-[55%]" style="animation-duration: 23s;"></div>
     </div>
 
     @php
@@ -362,7 +446,7 @@
             @foreach($slides as $index => $slide)
             <div class="hero-slide {{ $index === 0 ? 'active' : 'inactive' }}" data-index="{{ $index }}" data-duration="{{ $slide->slide_duration ?? 5 }}">
                 <div class="container mx-auto px-4 md:px-8 h-full flex items-center">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-1 lg:gap-1 items-center w-full">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-center w-full">
                         <!-- Text Content -->
                         <div class="text-white z-20 space-y-3">
                             <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
@@ -378,8 +462,12 @@
                             @if($slide->cta_text && $slide->cta_url)
                                 <div class="flex flex-wrap gap-3 pt-1">
                                     <a href="{{ $slide->cta_url }}" 
-                                       class="inline-flex items-center gap-2 px-6 md:px-8 py-2.5 bg-white text-purple-700 font-semibold rounded-full hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 text-sm">
+                                       class="inline-flex items-center gap-2 px-6 md:px-8 py-2.5 btn-primary text-white font-semibold rounded-full text-sm">
                                         <i class="ti ti-arrow-right"></i> {{ $slide->cta_text }}
+                                    </a>
+                                    <a href="#about" 
+                                       class="inline-flex items-center gap-2 px-6 md:px-8 py-2.5 btn-secondary text-white font-semibold rounded-full text-sm">
+                                        <i class="ti ti-info-circle"></i> Learn More
                                     </a>
                                 </div>
                             @endif
@@ -421,15 +509,23 @@
                     <p class="text-base md:text-lg text-white/80 mb-6 max-w-lg leading-relaxed">
                         Your all-in-one digital library platform. Read thousands of books, connect with a global community, earn recognized certificates, and sell your own work.
                     </p>
-                    <a href="{{ route('register') }}" 
-                       class="inline-flex items-center gap-2 px-6 py-2.5 bg-white text-purple-700 font-semibold rounded-full hover:shadow-2xl hover:-translate-y-0.5 transition-all text-sm">
-                        <i class="ti ti-rocket"></i> Get Started Free
-                    </a>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{{ route('register') }}" 
+                           class="inline-flex items-center gap-2 px-6 md:px-8 py-2.5 btn-primary text-white font-semibold rounded-full text-sm">
+                            <i class="ti ti-rocket"></i> Get Started Free
+                        </a>
+                        <a href="#about" 
+                           class="inline-flex items-center gap-2 px-6 md:px-8 py-2.5 btn-secondary text-white font-semibold rounded-full text-sm">
+                            <i class="ti ti-info-circle"></i> Learn More
+                        </a>
+                    </div>
                 </div>
             </div>
         @endif
     </div>
 </section>
+
+
 
 <!-- ========================================== -->
 <!-- MAIN CONTENT - Light Background            -->
@@ -448,6 +544,7 @@
                     $announcement3 = \App\Models\SiteSetting::getValue('announcement_3');
                 @endphp
 
+                <!-- Vision, Mission, Motto - Blue Icons -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     @if($vision)
                         <div class="glass-card p-6">
@@ -479,7 +576,7 @@
                                 </div>
                                 <h3 class="text-xl font-bold text-gray-800">Our Motto</h3>
                             </div>
-                            <p class="text-gray-600 text-base leading-relaxed font-semibold text-purple-600">{{ $motto }}</p>
+                            <p class="text-gray-600 text-base leading-relaxed font-semibold text-black-600">{{ $motto }}</p>
                         </div>
                     @endif
                 </div>
@@ -499,29 +596,29 @@
                 @endif
 
                 @if($announcement1 || $announcement2 || $announcement3)
-                    <div class="glass-card p-6" style="border-color: rgba(168, 85, 247, 0.2);">
+                    <div class="glass-card p-6" style="border-color: rgba(59, 130, 246, 0.2);">
                         <div class="flex items-center gap-3 mb-4">
                             <div class="icon-gradient icon-gradient-sm">
-                                <i class="ti ti-bullhorn text-xl"></i>
+                          <i class="ti ti-speakerphone"></i>
                             </div>
                             <h3 class="text-xl font-bold text-gray-800">Announcements</h3>
                         </div>
                         <div class="space-y-3">
                             @if($announcement1)
                                 <div class="glass-card-light p-3 flex items-start gap-3">
-                                    <span class="text-purple-500 mt-0.5">•</span>
+                                    <span class="text-blue-500 mt-0.5">•</span>
                                     <span class="text-gray-600 text-base">{{ $announcement1 }}</span>
                                 </div>
                             @endif
                             @if($announcement2)
                                 <div class="glass-card-light p-3 flex items-start gap-3">
-                                    <span class="text-purple-500 mt-0.5">•</span>
+                                    <span class="text-blue-500 mt-0.5">•</span>
                                     <span class="text-gray-600 text-base">{{ $announcement2 }}</span>
                                 </div>
                             @endif
                             @if($announcement3)
                                 <div class="glass-card-light p-3 flex items-start gap-3">
-                                    <span class="text-purple-500 mt-0.5">•</span>
+                                    <span class="text-blue-500 mt-0.5">•</span>
                                     <span class="text-gray-600 text-base">{{ $announcement3 }}</span>
                                 </div>
                             @endif
@@ -530,6 +627,7 @@
                 @endif
             </div>
 
+            <!-- Latest Updates - Blue Icons -->
             <div class="lg:col-span-1">
                 <div class="glass-card p-6 sticky top-24">
                     <div class="flex items-center gap-3 mb-4">
@@ -546,13 +644,13 @@
                     @if($newsItems->count() > 0)
                         <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                             @foreach($newsItems as $item)
-                                <div class="glass-card-light p-3 transition-all hover:border-purple-300">
+                                <div class="glass-card-light p-3 transition-all hover:border-blue-300">
                                     <div class="flex items-center gap-2 mb-1">
                                         <span class="text-xs px-2 py-0.5 rounded-full 
                                             @if($item->category == 'Books') bg-blue-100 text-blue-700
                                             @elseif($item->category == 'Events') bg-green-100 text-green-700
-                                            @elseif($item->category == 'Certificates') bg-purple-100 text-purple-700
-                                            @elseif($item->category == 'Announcements') bg-yellow-100 text-yellow-700
+                                            @elseif($item->category == 'Certificates') bg-orange-100 text-orange-700
+                                            @elseif($item->category == 'Announcements') bg-blue-100 text-blue-700
                                             @elseif($item->category == 'Authors') bg-pink-100 text-pink-700
                                             @else bg-gray-100 text-gray-700 @endif">
                                             {{ $item->category ?? 'General' }}
@@ -562,7 +660,7 @@
                                         @endif
                                     </div>
                                     @if($item->link)
-                                        <a href="{{ $item->link }}" class="text-base font-semibold text-gray-800 hover:text-purple-600 transition block">
+                                        <a href="{{ $item->link }}" class="text-base font-semibold text-gray-800 hover:text-blue-600 transition block">
                                             {{ $item->title }}
                                         </a>
                                     @else
@@ -584,19 +682,21 @@
 </section>
 
 <!-- ========================================== -->
-<!-- CTA SECTION                                -->
+<!-- CTA SECTION - Glassmorphism Pale Dark Blue -->
 <!-- ========================================== -->
-<section class="py-16 relative overflow-hidden" style="background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);">
+<section class="py-16 relative overflow-hidden" style="background: linear-gradient(135deg, #0a1628 0%, #0d1b3e 100%); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 2px solid rgba(255, 255, 255, 0.27);">
     <div class="absolute inset-0 pointer-events-none">
-        <div class="absolute -top-16 -left-16 w-64 h-64 rounded-full opacity-10" style="background:#fff; filter:blur(48px);"></div>
-        <div class="absolute -bottom-16 -right-16 w-64 h-64 rounded-full opacity-10" style="background:#fff; filter:blur(48px);"></div>
+        <div class="absolute -top-16 -left-16 w-64 h-64 rounded-full opacity-10" style="background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent); filter:blur(48px);"></div>
+        <div class="absolute -bottom-16 -right-16 w-64 h-64 rounded-full opacity-10" style="background: radial-gradient(circle, rgba(59, 130, 246, 0.2), transparent); filter:blur(48px);"></div>
+        <!-- Subtle grid overlay -->
+        <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 50px 50px; pointer-events: none;"></div>
     </div>
 
-    <div class="relative container mx-auto px-4 md:px-8">
+    <div class="relative container mx-auto px-4 md:px-8 z-10">
         <div class="max-w-3xl mx-auto text-center">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 text-sm font-medium mb-4">
-                <i class="ti ti-sparkles text-yellow-400"></i>
-                Join 12,000+ Learners
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style="background: rgba(255,255,255,0.08); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1);">
+                <i class="ti ti-sparkles text-yellow-200"></i>
+                <span class="text-white/80 text-sm font-medium">Join 12,000+ Learners</span>
             </div>
 
             <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 leading-tight">
@@ -610,48 +710,47 @@
             <div class="flex flex-wrap justify-center gap-4">
                 @guest
                     <a href="{{ route('register') }}" 
-                       class="inline-flex items-center gap-2 bg-white text-purple-700 px-8 py-3.5 rounded-full font-semibold text-base hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300">
+                       class="inline-flex items-center gap-2 bg-white text-gray-900 px-8 py-3.5 rounded-full font-semibold text-base hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
                         <i class="ti ti-user-plus"></i> Create Free Account
                     </a>
                     <a href="{{ route('login') }}" 
-                       class="inline-flex items-center gap-2 border-2 border-white/30 text-white px-8 py-3.5 rounded-full font-semibold text-base hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
+                       class="inline-flex items-center gap-2 border-2 border-white/30 text-white px-8 py-3.5 rounded-full font-semibold text-base hover:bg-white/10 transition-all duration-300" style="backdrop-filter: blur(8px);">
                         <i class="ti ti-login"></i> Sign In
                     </a>
                 @else
                     <a href="{{ route('dashboard') }}" 
-                       class="inline-flex items-center gap-2 bg-white text-purple-700 px-8 py-3.5 rounded-full font-semibold text-base hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300">
+                       class="inline-flex items-center gap-2 bg-white text-gray-900 px-8 py-3.5 rounded-full font-semibold text-base hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
                         <i class="ti ti-dashboard"></i> Go to Dashboard
                     </a>
                     <a href="{{ route('library.index') }}" 
-                       class="inline-flex items-center gap-2 border-2 border-white/30 text-white px-8 py-3.5 rounded-full font-semibold text-base hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
+                       class="inline-flex items-center gap-2 border-2 border-white/30 text-white px-8 py-3.5 rounded-full font-semibold text-base hover:bg-white/10 transition-all duration-300" style="backdrop-filter: blur(8px);">
                         <i class="ti ti-books"></i> Browse Library
                     </a>
                 @endguest
             </div>
 
-            <div class="mt-6 flex flex-wrap justify-center items-center gap-6 text-white/70 text-sm">
+            <div class="mt-6 flex flex-wrap justify-center items-center gap-6 text-white/60 text-sm">
                 <span class="flex items-center gap-1">
-                    <i class="ti ti-check text-green-400"></i> Free to join
+                    <i class="ti ti-check text-green-300"></i> Free to join
                 </span>
                 <span class="hidden sm:inline text-white/20">|</span>
                 <span class="flex items-center gap-1">
-                    <i class="ti ti-check text-green-400"></i> 12K+ books
+                    <i class="ti ti-check text-green-300"></i> 12K+ books
                 </span>
                 <span class="hidden sm:inline text-white/20">|</span>
                 <span class="flex items-center gap-1">
-                    <i class="ti ti-check text-green-400"></i> 8.4K readers
+                    <i class="ti ti-check text-green-300"></i> 8.4K readers
                 </span>
                 <span class="hidden sm:inline text-white/20">|</span>
                 <span class="flex items-center gap-1">
-                    <i class="ti ti-check text-green-400"></i> 320+ certificates
+                    <i class="ti ti-check text-green-300"></i> 320+ certificates
                 </span>
             </div>
         </div>
     </div>
 </section>
-
 <!-- ========================================== -->
-<!-- FOUNDER SECTION - Gradient Border          -->
+<!-- FOUNDER SECTION - Orange Border            -->
 <!-- ========================================== -->
 <section id="founders" class="py-16 light-body-bg">
     <div class="container mx-auto px-4 md:px-8">
@@ -678,10 +777,8 @@
                             $hasLinks = count($socialLinks) > 0;
                         @endphp
 
-                        <!-- Gradient Border Card -->
                         <div class="founder-card-gradient">
                             <div class="founder-card-inner">
-                                <!-- Image -->
                                 <div class="founder-image-wrap">
                                     @if($founder->photo)
                                         <img src="{{ asset('storage/' . $founder->photo) }}" 
@@ -696,7 +793,7 @@
                                 <div class="p-6 text-center">
                                     <h3 class="text-xl font-bold text-gray-800">{{ $founder->name }}</h3>
                                     @if($founder->title)
-                                        <p class="text-sm text-purple-600 font-semibold mt-1">{{ $founder->title }}</p>
+                                        <p class="text-sm text-orange-500 font-semibold mt-1">{{ $founder->title }}</p>
                                     @endif
 
                                     @if($founder->bio)
@@ -742,12 +839,12 @@
 
                                     <div class="mt-3 pt-3 border-t border-gray-100 flex justify-center gap-4 text-xs text-gray-500">
                                         @if($founder->email)
-                                            <a href="mailto:{{ $founder->email }}" class="hover:text-purple-600 transition flex items-center gap-1">
+                                            <a href="mailto:{{ $founder->email }}" class="hover:text-orange-500 transition flex items-center gap-1">
                                                 <i class="ti ti-mail"></i> Email
                                             </a>
                                         @endif
                                         @if($founder->phone)
-                                            <a href="tel:{{ $founder->phone }}" class="hover:text-purple-600 transition flex items-center gap-1">
+                                            <a href="tel:{{ $founder->phone }}" class="hover:text-orange-500 transition flex items-center gap-1">
                                                 <i class="ti ti-phone"></i> Call
                                             </a>
                                         @endif
@@ -775,17 +872,34 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
                 <div class="flex items-center gap-2 mb-3">
-                    <img src="{{ asset('images/jlibrary.jpeg') }}" alt="JLIBRARY" class="h-8 w-auto">
+                    <img src="{{ asset('images/logo.jpeg') }}" alt="JLIBRARY" class="h-8 w-auto">
                     <span class="text-lg font-bold text-white">JLIBRARY</span>
                 </div>
                 <p class="text-sm text-gray-400 leading-relaxed">
                     Empowering digital learning through innovation. Your all-in-one platform for books, community, certificates, and marketplace.
                 </p>
                 <div class="mt-3 flex gap-3">
-                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="ti ti-brand-twitter"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="ti ti-brand-instagram"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="ti ti-brand-facebook"></i></a>
-                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="ti ti-brand-youtube"></i></a>
+                    <a href="https://x.com/JNashon20" target="_blank" class="text-gray-400 hover:text-white transition" aria-label="Twitter (X)">
+                        <i class="ti ti-brand-x text-xl"></i>
+                    </a>
+                    <a href="https://www.instagram.com/jlib_rary?igsh=bjJ4ZHJ0NXptdG5j" target="_blank" class="text-gray-400 hover:text-white transition" aria-label="Instagram">
+                        <i class="ti ti-brand-instagram text-xl"></i>
+                    </a>
+                    <a href="https://vm.tiktok.com/ZS967rA8uWvFr-iHBad/" target="_blank" class="text-gray-400 hover:text-white transition" aria-label="TikTok">
+                        <i class="ti ti-brand-tiktok text-xl"></i>
+                    </a>
+                    <a href="https://www.facebook.com/share/1YDDzy1gnJ/" target="_blank" class="text-gray-400 hover:text-white transition" aria-label="Facebook">
+                        <i class="ti ti-brand-facebook text-xl"></i>
+                    </a>
+                    <a href="https://whatsapp.com/channel/0029VaC8Tg460eBjk82Xlt0U" target="_blank" class="text-gray-400 hover:text-white transition" aria-label="WhatsApp Channel">
+                        <i class="ti ti-brand-whatsapp text-xl"></i>
+                    </a>
+                    <a href="https://www.youtube.com/@Jlibraryonlinesystem" target="_blank" class="text-gray-400 hover:text-white transition" aria-label="YouTube">
+                        <i class="ti ti-brand-youtube text-xl"></i>
+                    </a>
+                    <a href="https://www.linkedin.com/public-profile/settings/" target="_blank" class="text-gray-400 hover:text-white transition" aria-label="LinkedIn">
+                        <i class="ti ti-brand-linkedin text-xl"></i>
+                    </a>
                 </div>
             </div>
 
@@ -796,16 +910,16 @@
                     <li><a href="{{ route('community.index') }}" class="hover:text-white transition">Community</a></li>
                     <li><a href="{{ route('certificates.index') }}" class="hover:text-white transition">Certificates</a></li>
                     <li><a href="{{ route('marketplace.listings') }}" class="hover:text-white transition">Marketplace</a></li>
-                    <li><a href="#" class="hover:text-white transition">Become an Author</a></li>
+                    <li><a href="{{ route('register') }}" class="hover:text-white transition">Become an Author</a></li>
                 </ul>
             </div>
 
             <div>
                 <h4 class="text-white font-semibold mb-3">Resources</h4>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="#" class="hover:text-white transition">Blog</a></li>
-                    <li><a href="#" class="hover:text-white transition">FAQs</a></li>
-                    <li><a href="#" class="hover:text-white transition">Help Center</a></li>
+                    <li><a href="{{ route('welcome') }}#about" class="hover:text-white transition">Blog</a></li>
+                    <li><a href="{{ route('welcome') }}#about" class="hover:text-white transition">FAQs</a></li>
+                    <li><a href="mailto:support@jlibrary.co.tz" class="hover:text-white transition">Help Center</a></li>
                     <li><a href="#" class="hover:text-white transition">Terms of Service</a></li>
                     <li><a href="#" class="hover:text-white transition">Privacy Policy</a></li>
                 </ul>
@@ -815,25 +929,29 @@
                 <h4 class="text-white font-semibold mb-3">Contact Us</h4>
                 <ul class="space-y-2 text-sm">
                     @php
-                        $contactEmail = \App\Models\SiteSetting::getValue('contact_email', 'info@jlibrary.co.tz');
-                        $supportEmail = \App\Models\SiteSetting::getValue('support_email', 'support@jlibrary.co.tz');
-                        $contactPhone = \App\Models\SiteSetting::getValue('contact_phone', '0766408259');
+                        $contactEmail = 'info@jlibrary.co.tz';
+                        $supportEmail = 'support@jlibrary.co.tz';
+                        $contactPhone = '0766408259';
                         $address = \App\Models\SiteSetting::getValue('address', 'Dar es Salaam, Tanzania');
                     @endphp
                     <li class="flex items-center gap-2">
-                        <i class="ti ti-mail text-purple-400"></i>
-                        <a href="mailto:{{ $contactEmail }}" class="hover:text-white transition">{{ $contactEmail }}</a>
+                        <i class="ti ti-mail text-orange-400"></i>
+                        <a href="mailto:info@jlibrary.co.tz" class="hover:text-white transition">info@jlibrary.co.tz</a>
                     </li>
                     <li class="flex items-center gap-2">
-                        <i class="ti ti-mail text-purple-400"></i>
-                        <a href="mailto:{{ $supportEmail }}" class="hover:text-white transition">{{ $supportEmail }}</a>
+                        <i class="ti ti-mail text-orange-400"></i>
+                        <a href="mailto:support@jlibrary.co.tz" class="hover:text-white transition">support@jlibrary.co.tz</a>
                     </li>
                     <li class="flex items-center gap-2">
-                        <i class="ti ti-phone text-purple-400"></i>
-                        <a href="tel:{{ $contactPhone }}" class="hover:text-white transition">{{ $contactPhone }}</a>
+                        <i class="ti ti-mail text-orange-400"></i>
+                        <a href="mailto:contact@jlibrary.co.tz" class="hover:text-white transition">contact@jlibrary.co.tz</a>
                     </li>
                     <li class="flex items-center gap-2">
-                        <i class="ti ti-map-pin text-purple-400"></i>
+                        <i class="ti ti-phone text-orange-400"></i>
+                        <a href="tel:0766408259" class="hover:text-white transition">0766 408 259</a>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <i class="ti ti-map-pin text-orange-400"></i>
                         <span>{{ $address }}</span>
                     </li>
                 </ul>
@@ -845,7 +963,6 @@
         </div>
     </div>
 </footer>
-
 <!-- ========================================== -->
 <!-- JAVASCRIPT                                -->
 <!-- ========================================== -->

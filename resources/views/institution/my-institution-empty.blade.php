@@ -1,30 +1,64 @@
 @extends('layouts.app')
 
 @section('title', 'No Institution')
-@section('page-title', '🏛️ No Institution')
+@section('page-title', 'No Institution')
 
 @section('content')
-<div class="fixed inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 -z-10"></div>
 
-<div class="relative z-10 min-h-screen flex items-center justify-center">
-    <div class="text-center max-w-md mx-auto px-4">
-        <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
-            <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="ti ti-building-community text-3xl text-white"></i>
+<div style="position: fixed; inset: 0; background: linear-gradient(135deg, #1e293b, #0f172a, #312e81); z-index: -10;"></div>
+
+<div style="position: relative; z-index: 10; min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <div style="text-align: center; max-width: 28rem; margin: 0 auto; padding: 0 1rem;">
+        <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 1rem; padding: 2rem; border: 1px solid rgba(255,255,255,0.08);">
+            
+            <!-- Icon -->
+            <div style="width: 5rem; height: 5rem; background: linear-gradient(135deg, #7c3aed, #ec4899); border-radius: 9999px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                <i class="ti ti-building-community" style="font-size: 1.75rem; color: #ffffff;"></i>
             </div>
-            <h2 class="text-2xl font-bold text-white mb-2">No Institution Yet</h2>
-            <p class="text-gray-300 mb-6">You haven't joined any institution. Discover and join one to access exclusive resources!</p>
-            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: #ffffff; margin-bottom: 0.5rem;">No Institution Yet</h2>
+            <p style="color: #d1d5db; margin-bottom: 1.5rem;">You haven't joined any institution. Discover and join one to access exclusive resources!</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: center;">
                 <a href="{{ route('discover.institutions') }}" 
-                   class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition">
+                   style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(135deg, #7c3aed, #db2777); color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; transition: all 0.2s; text-decoration: none;">
                     <i class="ti ti-building-community"></i> Discover Institutions
                 </a>
                 <a href="{{ route('institution.create-request') }}" 
-                   class="inline-flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl font-semibold transition">
+                   style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: rgba(255,255,255,0.08); color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; transition: all 0.2s; text-decoration: none; border: 1px solid rgba(255,255,255,0.05);">
                     <i class="ti ti-file-plus"></i> Create Institution
                 </a>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* ========================================== */
+    /* CLEAN NO INSTITUTION STYLES                */
+    /* ========================================== */
+
+    a[style*="Discover Institutions"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+        filter: brightness(1.05);
+    }
+    
+    a[style*="Create Institution"]:hover {
+        background: rgba(255,255,255,0.15) !important;
+        border-color: rgba(255,255,255,0.15) !important;
+        transform: translateY(-2px);
+    }
+    
+    /* Card hover */
+    div[style*="background: rgba(255,255,255,0.08)"] {
+        transition: all 0.3s ease;
+    }
+    
+    div[style*="background: rgba(255,255,255,0.08)"]:hover {
+        background: rgba(255,255,255,0.1) !important;
+        border-color: rgba(255,255,255,0.12) !important;
+    }
+</style>
+
 @endsection

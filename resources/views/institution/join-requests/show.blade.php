@@ -27,112 +27,116 @@
     }
     
     $statusColors = [
-        'pending' => 'bg-yellow-100 text-yellow-700',
-        'approved' => 'bg-green-100 text-green-700',
-        'rejected' => 'bg-red-100 text-red-700'
+        'pending' => 'color: #d97706; background: rgba(217, 119, 6, 0.08);',
+        'approved' => 'color: #065f46; background: rgba(6, 95, 70, 0.08);',
+        'rejected' => 'color: #dc2626; background: rgba(220, 38, 38, 0.08);'
     ];
     $statusIcons = [
         'pending' => '⏳',
         'approved' => '✅',
         'rejected' => '❌'
     ];
-    $color = $statusColors[$joinRequest->status] ?? 'bg-gray-100 text-gray-700';
+    $color = $statusColors[$joinRequest->status] ?? 'color: #6b7280; background: rgba(0,0,0,0.04);';
     $icon = $statusIcons[$joinRequest->status] ?? '';
 @endphp
 
-<div class="max-w-3xl mx-auto">
+<div class="max-w-3xl mx-auto" style="background: #fff8f0; padding: 1.5rem; border-radius: 1.5rem;">
+    
     <div class="mb-6">
-        <a href="{{ route('institution.join-requests.index') }}" class="text-purple-600 hover:text-purple-700 transition inline-flex items-center gap-1">
+        <a href="{{ route('institution.join-requests.index') }}" style="color: #5b21b6; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.25rem; text-decoration: none; font-weight: 500;">
             <i class="ti ti-arrow-left"></i> Back to Join Requests
         </a>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
+    <div style="background: rgba(255,255,255,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(91, 33, 182, 0.12); border-radius: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.06); overflow: hidden;">
+        
+        <!-- Header -->
+        <div style="padding: 1rem 1.5rem; border-bottom: 1px solid rgba(91, 33, 182, 0.08); background: rgba(91, 33, 182, 0.04);">
             <div class="flex justify-between items-center flex-wrap gap-4">
                 <div>
-                    <h1 class="text-xl font-bold text-white">Join Request Details</h1>
-                    <p class="text-purple-200 text-sm">Request from {{ $joinRequest->user->full_name }}</p>
+                    <h1 style="font-size: 1.125rem; font-weight: 700; color: #1a1a2e; margin: 0;">Join Request Details</h1>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0.25rem 0 0 0;">Request from {{ $joinRequest->user->full_name }}</p>
                 </div>
-                <span class="px-3 py-1 rounded-full text-sm font-semibold {{ $color }}">
+                <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; {{ $color }}">
                     {{ $icon }} {{ ucfirst($joinRequest->status) }}
                 </span>
             </div>
         </div>
 
-        <div class="p-6">
+        <div style="padding: 1.5rem;">
+            
             <!-- User Info -->
-            <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                        <span class="text-white text-xl font-bold">{{ substr($joinRequest->user->full_name, 0, 1) }}</span>
+            <div style="background: rgba(91, 33, 182, 0.04); border: 1px solid rgba(91, 33, 182, 0.06); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 4rem; height: 4rem; border-radius: 9999px; background: linear-gradient(135deg, #5b21b6, #7c3aed); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <span style="color: white; font-size: 1.25rem; font-weight: 700;">{{ substr($joinRequest->user->full_name, 0, 1) }}</span>
                     </div>
                     <div>
-                        <p class="text-lg font-semibold text-gray-800">{{ $joinRequest->user->full_name }}</p>
-                        <p class="text-sm text-gray-500">{{ $joinRequest->user->email }}</p>
-                        <p class="text-xs text-gray-400">Requested: {{ $joinRequest->created_at->format('F d, Y h:i A') }}</p>
+                        <p style="font-size: 1.125rem; font-weight: 600; color: #1a1a2e; margin: 0;">{{ $joinRequest->user->full_name }}</p>
+                        <p style="font-size: 0.875rem; color: #6b7280; margin: 0;">{{ $joinRequest->user->email }}</p>
+                        <p style="font-size: 0.7rem; color: #9ca3af; margin: 0;">Requested: {{ $joinRequest->created_at->format('F d, Y h:i A') }}</p>
                     </div>
                 </div>
             </div>
 
             <!-- Request Details -->
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <p class="text-xs text-gray-400 uppercase font-semibold">Status</p>
-                    <p class="mt-1">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium {{ $color }}">
+            <div class="grid md:grid-cols-2 gap-4">
+                <div style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); border-radius: 0.75rem; padding: 1rem;">
+                    <p style="font-size: 0.65rem; color: #6b7280; text-transform: uppercase; font-weight: 600; margin: 0;">Status</p>
+                    <p style="margin-top: 0.25rem;">
+                        <span style="display: inline-block; padding: 0.15rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 500; {{ $color }}">
                             {{ $icon }} {{ ucfirst($joinRequest->status) }}
                         </span>
                     </p>
                 </div>
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <p class="text-xs text-gray-400 uppercase font-semibold">Requested On</p>
-                    <p class="text-gray-800 font-medium">{{ $joinRequest->created_at->format('F d, Y h:i A') }}</p>
-                    <p class="text-xs text-gray-400">{{ $joinRequest->created_at->diffForHumans() }}</p>
+                <div style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); border-radius: 0.75rem; padding: 1rem;">
+                    <p style="font-size: 0.65rem; color: #6b7280; text-transform: uppercase; font-weight: 600; margin: 0;">Requested On</p>
+                    <p style="color: #1a1a2e; font-weight: 500; margin: 0; font-size: 0.875rem;">{{ $joinRequest->created_at->format('F d, Y h:i A') }}</p>
+                    <p style="font-size: 0.7rem; color: #6b7280; margin: 0;">{{ $joinRequest->created_at->diffForHumans() }}</p>
                 </div>
             </div>
 
             <!-- Message -->
             @if($joinRequest->message)
-                <div class="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-200">
-                    <p class="text-xs text-blue-600 uppercase font-semibold">User's Message</p>
-                    <p class="text-gray-800 mt-1">{{ $joinRequest->message }}</p>
+                <div style="margin-top: 1rem; background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.08); border-radius: 0.75rem; padding: 1rem;">
+                    <p style="font-size: 0.65rem; color: #2563eb; text-transform: uppercase; font-weight: 600; margin: 0;">User's Message</p>
+                    <p style="color: #1a1a2e; margin-top: 0.25rem; font-size: 0.9rem;">{{ $joinRequest->message }}</p>
                 </div>
             @endif
 
             <!-- Rejection Reason -->
             @if($joinRequest->status === 'rejected' && $joinRequest->rejection_reason)
-                <div class="mt-4 bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
-                    <p class="text-xs text-red-600 uppercase font-semibold">Rejection Reason</p>
-                    <p class="text-red-700">{{ $joinRequest->rejection_reason }}</p>
+                <div style="margin-top: 1rem; background: rgba(220, 38, 38, 0.04); border-left: 4px solid #dc2626; border-radius: 0.75rem; padding: 1rem;">
+                    <p style="font-size: 0.65rem; color: #dc2626; text-transform: uppercase; font-weight: 600; margin: 0;">Rejection Reason</p>
+                    <p style="color: #dc2626; margin-top: 0.25rem;">{{ $joinRequest->rejection_reason }}</p>
                 </div>
             @endif
 
             <!-- Approval Info -->
             @if($joinRequest->status === 'approved' && $joinRequest->approved_at)
-                <div class="mt-4 bg-green-50 border-l-4 border-green-500 rounded-lg p-4">
-                    <p class="text-xs text-green-600 uppercase font-semibold">Approved</p>
-                    <p class="text-green-700">Approved on {{ $joinRequest->approved_at->format('F d, Y h:i A') }}</p>
-                    <p class="text-sm text-green-600">{{ $joinRequest->user->full_name }} is now a member of {{ $institution->name }}</p>
+                <div style="margin-top: 1rem; background: rgba(6, 95, 70, 0.04); border-left: 4px solid #065f46; border-radius: 0.75rem; padding: 1rem;">
+                    <p style="font-size: 0.65rem; color: #065f46; text-transform: uppercase; font-weight: 600; margin: 0;">Approved</p>
+                    <p style="color: #065f46; margin-top: 0.25rem;">Approved on {{ $joinRequest->approved_at->format('F d, Y h:i A') }}</p>
+                    <p style="font-size: 0.875rem; color: #065f46;">{{ $joinRequest->user->full_name }} is now a member of {{ $institution->name }}</p>
                 </div>
             @endif
 
             <!-- Actions (only for pending requests) -->
             @if($joinRequest->status === 'pending')
-                <div class="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        <i class="ti ti-settings text-purple-600"></i> Review Decision
+                <div style="margin-top: 1.5rem; background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); border-radius: 0.75rem; padding: 1rem;">
+                    <h3 style="font-weight: 600; color: #1a1a2e; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="ti ti-settings" style="color: #5b21b6;"></i> Review Decision
                     </h3>
-                    <div class="flex flex-wrap gap-3">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
                         <form method="POST" action="{{ route('institution.join-requests.approve', $joinRequest->id) }}" 
-                              onsubmit="return confirm('Approve {{ $joinRequest->user->full_name }} to join {{ $institution->name }}?')">
+                              onsubmit="return confirm('Approve {{ $joinRequest->user->full_name }} to join {{ $institution->name }}?')" style="display: inline;">
                             @csrf
-                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition flex items-center gap-2">
+                            <button type="submit" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.5rem; background: #065f46; color: white; border: none; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; cursor: pointer;">
                                 <i class="ti ti-check"></i> Approve
                             </button>
                         </form>
 
-                        <button onclick="openRejectModal({{ $joinRequest->id }})" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition flex items-center gap-2">
+                        <button onclick="openRejectModal({{ $joinRequest->id }})" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.5rem; background: #dc2626; color: white; border: none; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; cursor: pointer;">
                             <i class="ti ti-x"></i> Reject
                         </button>
                     </div>
@@ -140,44 +144,49 @@
             @endif
 
             <!-- Back Button -->
-            <div class="mt-6 text-center">
-                <a href="{{ route('institution.join-requests.index') }}" class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg transition">
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <a href="{{ route('institution.join-requests.index') }}" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.5rem; background: #faf8f5; color: #475569; border: 1px solid #e2e0db; border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; transition: all 0.2s; text-decoration: none;">
                     <i class="ti ti-arrow-left"></i> Back to Join Requests
-                </a>
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Reject Modal -->
-<div id="rejectModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
-        <div class="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
+<div id="rejectModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div style="background: rgba(255,255,255,0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.3); border-radius: 1rem; max-width: 28rem; width: 100%; margin: 0 1rem; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.3);">
+        
+        <!-- Modal Header -->
+        <div style="padding: 1rem 1.5rem; border-bottom: 1px solid rgba(220, 38, 38, 0.1); background: rgba(220, 38, 38, 0.04);">
             <div class="flex justify-between items-center">
-                <h3 class="text-xl font-bold text-white">❌ Reject Join Request</h3>
-                <button onclick="closeRejectModal()" class="text-white/80 hover:text-white transition">
-                    <i class="ti ti-x text-2xl"></i>
+                <h3 style="font-size: 1.125rem; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                    <i class="ti ti-x" style="color: #dc2626;"></i> Reject Join Request
+                </h3>
+                <button onclick="closeRejectModal()" style="color: #6b7280; background: none; border: none; cursor: pointer; transition: color 0.2s; font-size: 1.5rem; padding: 0;">
+                    <i class="ti ti-x"></i>
                 </button>
             </div>
         </div>
-        <form id="rejectForm" method="POST" class="p-6">
+        
+        <form id="rejectForm" method="POST" style="padding: 1.5rem;">
             @csrf
-            <div class="space-y-4">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.4rem;">
                         Reason for Rejection (Optional)
                     </label>
                     <textarea name="rejection_reason" rows="3" 
-                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                              style="width: 100%; padding: 0.7rem 1rem; background: #faf8f5; border: 1px solid #e2e0db; border-radius: 0.5rem; color: #1a1a2e; transition: all 0.2s; outline: none; font-size: 0.875rem; min-height: 80px; resize: vertical; font-family: inherit;"
                               placeholder="Why are you rejecting this request?"></textarea>
                 </div>
-                <p class="text-xs text-gray-400">This reason will be visible to the user.</p>
+                <p style="font-size: 0.7rem; color: #6b7280;">This reason will be visible to the user.</p>
             </div>
-            <div class="flex gap-3 mt-6">
-                <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg transition font-semibold">
-                    Reject Request
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e0db;">
+                <button type="submit" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1.25rem; background: #dc2626; color: white; border: none; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; transition: all 0.2s; cursor: pointer;">
+                    <i class="ti ti-x"></i> Reject Request
                 </button>
-                <button type="button" onclick="closeRejectModal()" class="flex-1 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                <button type="button" onclick="closeRejectModal()" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1.25rem; background: #faf8f5; color: #475569; border: 1px solid #e2e0db; border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; transition: all 0.2s; cursor: pointer;">
                     Cancel
                 </button>
             </div>
@@ -204,5 +213,94 @@ document.getElementById('rejectModal')?.addEventListener('click', function(e) {
     }
 });
 </script>
+
+<style>
+    /* ========================================== */
+    /* CLEAN DETAILS & MODAL STYLES              */
+    /* ========================================== */
+
+    a[style*="Back to Join Requests"]:hover {
+        color: #4c1d95 !important;
+    }
+    
+    /* Approve button hover */
+    button[style*="background: #065f46"]:hover {
+        background: #044d37 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(6, 95, 70, 0.3);
+    }
+    
+    /* Reject button hover */
+    button[style*="background: #dc2626"]:hover {
+        background: #b91c1c !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+    
+    /* Modal reject button hover */
+    button[style*="background: #dc2626"]:hover {
+        background: #b91c1c !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+    
+    button[style*="background: #faf8f5"]:hover {
+        border-color: #db570a !important;
+        background: white !important;
+        color: #1a1a2e !important;
+    }
+    
+    /* Cards hover effect */
+    div[style*="background: rgba(91, 33, 182, 0.04)"] {
+        transition: all 0.2s ease;
+    }
+    
+    div[style*="background: rgba(91, 33, 182, 0.04)"]:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+    
+    div[style*="background: rgba(0,0,0,0.02)"] {
+        transition: all 0.2s ease;
+    }
+    
+    div[style*="background: rgba(0,0,0,0.02)"]:hover {
+        background: rgba(0,0,0,0.04) !important;
+    }
+    
+    textarea:focus {
+        border-color: #db570a !important;
+        box-shadow: 0 0 0 3px rgba(219, 87, 10, 0.1) !important;
+        background: white !important;
+    }
+    
+    textarea:hover {
+        border-color: #c5c0b8 !important;
+        background: white !important;
+    }
+    
+    @media (max-width: 768px) {
+        .grid-cols-2 {
+            grid-template-columns: 1fr !important;
+        }
+        
+        div[style*="display: flex; flex-wrap: wrap; gap: 0.75rem;"] {
+            flex-direction: column !important;
+        }
+        
+        div[style*="display: flex; flex-wrap: wrap; gap: 0.75rem;"] form,
+        div[style*="display: flex; flex-wrap: wrap; gap: 0.75rem;"] button {
+            width: 100% !important;
+        }
+        
+        div[style*="display: flex; gap: 0.75rem; margin-top: 1.5rem;"] {
+            flex-direction: column !important;
+        }
+        
+        div[style*="display: flex; gap: 0.75rem; margin-top: 1.5rem;"] button {
+            width: 100% !important;
+            justify-content: center !important;
+        }
+    }
+</style>
 
 @endsection

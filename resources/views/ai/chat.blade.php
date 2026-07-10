@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>JLIBRARY AI Assistant</title>
     
@@ -58,9 +58,9 @@
         }
         
         .chat-menu-dropdown {
-            position: absolute;
-            right: 0;
-            top: 100%;
+            position: fixed;
+            right: 16px;
+            top: auto;
             background: #1a1f3e;
             border-radius: 10px;
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
@@ -93,36 +93,127 @@
             color: transparent;
         }
         
-        /* Message formatting styles */
         .ai-message {
             line-height: 1.6;
         }
-        
         .ai-message p {
             margin-bottom: 12px;
         }
-        
         .ai-message p:last-child {
             margin-bottom: 0;
         }
-        
         .ai-message br {
             display: none;
         }
-        
         .ai-message strong {
             color: #c084fc;
             font-weight: 600;
+        }
+
+        /* Mobile Sidebar Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 40;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                bottom: 0;
+                width: 85%;
+                max-width: 300px;
+                z-index: 50;
+                transition: left 0.3s ease;
+                border-radius: 0;
+            }
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .sidebar-overlay.active {
+                display: block;
+            }
+            
+            .mobile-header {
+                display: flex !important;
+            }
+            
+            .desktop-header {
+                display: none !important;
+            }
+            
+            .prompt-grid {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+            
+            .prompt-btn {
+                font-size: 11px !important;
+                padding: 10px 8px !important;
+            }
+            
+            .welcome-robot {
+                width: 140px !important;
+                height: 140px !important;
+            }
+            
+            .welcome-title {
+                font-size: 20px !important;
+            }
+            
+            .welcome-subtitle {
+                font-size: 14px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .prompt-grid {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            
+            .prompt-btn {
+                font-size: 10px !important;
+                padding: 8px 6px !important;
+            }
+            
+            .welcome-robot {
+                width: 100px !important;
+                height: 100px !important;
+            }
+            
+            .welcome-title {
+                font-size: 18px !important;
+            }
+            
+            .chat-message {
+                max-width: 92% !important;
+            }
+            
+            .input-area {
+                padding: 8px 10px !important;
+            }
         }
     </style>
 </head>
 <body class="bg-[#0a0e27]">
 
+<!-- MOBILE SIDEBAR OVERLAY -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
 <div class="flex h-screen overflow-hidden">
     
     <!-- SIDEBAR -->
-    <aside class="w-72 bg-[#0f1235] border-r border-white/10 flex flex-col">
-        <div class="p-4 border-b border-white/10">
+    <aside id="sidebar" class="sidebar w-72 bg-[#0f1235] border-r border-white/10 flex flex-col flex-shrink-0">
+        <div class="p-4 border-b border-white/10 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
                     <i class="ti ti-robot text-white text-sm"></i>
@@ -132,6 +223,10 @@
                     <p class="text-purple-300 text-[10px]">Assistant</p>
                 </div>
             </div>
+            <!-- Mobile Close Button -->
+            <button onclick="closeSidebar()" class="md:hidden text-purple-300 hover:text-white transition">
+                <i class="ti ti-x text-xl"></i>
+            </button>
         </div>
         
         <div class="p-3">
@@ -175,10 +270,10 @@
             <hr class="border-white/10">
             <div class="p-3">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
                         <i class="ti ti-user text-white text-sm"></i>
                     </div>
-                    <div class="flex-1">
+                    <div class="flex-1 min-w-0">
                         <p class="text-white text-xs font-medium truncate">{{ Auth::user()->full_name }}</p>
                         <p class="text-purple-300 text-[10px] truncate">{{ Auth::user()->email }}</p>
                     </div>
@@ -188,34 +283,47 @@
     </aside>
     
     <!-- MAIN CHAT AREA -->
-    <main class="flex-1 flex flex-col bg-gradient-to-b from-[#0a0e27] to-[#0f1235]">
+    <main class="flex-1 flex flex-col bg-gradient-to-b from-[#0a0e27] to-[#0f1235] min-w-0">
         
         <!-- Top Bar -->
-        <div class="h-14 px-5 flex items-center justify-center border-b border-white/10">
-            <h1 class="text-xl font-bold gradient-title">JLIBRARY AI Assistant</h1>
+        <div class="h-14 px-4 flex items-center justify-between border-b border-white/10 flex-shrink-0">
+            <!-- Mobile Menu Button -->
+            <button onclick="openSidebar()" class="md:hidden text-purple-300 hover:text-white transition">
+                <i class="ti ti-menu-2 text-xl"></i>
+            </button>
+            
+            <h1 class="text-xl font-bold gradient-title truncate">JLIBRARY AI Assistant</h1>
+            
+            <!-- Mobile New Chat Button -->
+            <button onclick="newChat()" class="md:hidden text-purple-300 hover:text-white transition">
+                <i class="ti ti-plus text-xl"></i>
+            </button>
+            
+            <!-- Desktop Placeholder -->
+            <div class="w-8 md:block hidden"></div>
         </div>
         
         <!-- WELCOME SCREEN -->
-        <div id="welcomeScreen" class="flex flex-col items-center justify-start text-center pt-10 pb-10 {{ ($currentSession && $currentSession->messages && count($currentSession->messages) > 0) ? 'hidden' : '' }}">
+        <div id="welcomeScreen" class="flex flex-col items-center justify-start text-center pt-6 pb-10 px-4 {{ ($currentSession && $currentSession->messages && count($currentSession->messages) > 0) ? 'hidden' : '' }}">
             
             <!-- Robot Image -->
             <div class="relative mb-3">
                 <div class="absolute inset-0 bg-purple-500/20 blur-3xl rounded-full"></div>
                 <img src="{{ asset('images/ChatGPT Image May 29, 2026, 08_07_04 PM.png') }}" 
                      alt="AI Robot" 
-                     class="relative w-56 h-56 object-contain animate-float drop-shadow-[0_10px_30px_rgba(168,85,247,0.3)]">
+                     class="welcome-robot relative w-56 h-56 object-contain animate-float drop-shadow-[0_10px_30px_rgba(168,85,247,0.3)]">
             </div>
             
             <!-- Welcome Message -->
-            <h1 class="text-2xl font-bold text-white mb-1">
+            <h1 class="welcome-title text-2xl font-bold text-white mb-1">
                 Hello, {{ Auth::user()->full_name }} 👋
             </h1>
-            <p class="text-purple-200 text-sm mb-6">
+            <p class="welcome-subtitle text-purple-200 text-sm mb-6">
                 What would you like to do today?
             </p>
             
             <!-- Prompt Buttons -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl w-full">
+            <div class="prompt-grid grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl w-full">
                 <button class="prompt-btn bg-gradient-to-r from-purple-500 to-pink-500 hover:scale-[1.01] transition-all rounded-lg py-2.5 text-white text-xs font-medium shadow-md">
                     📚 Summarize a book
                 </button>
@@ -233,24 +341,24 @@
         </div>
         
         <!-- Messages Area -->
-        <div id="messagesArea" class="flex-1 overflow-y-auto px-5 py-4 {{ ($currentSession && $currentSession->messages && count($currentSession->messages) > 0) ? 'block' : 'hidden' }}">
+        <div id="messagesArea" class="flex-1 overflow-y-auto px-4 py-4 {{ ($currentSession && $currentSession->messages && count($currentSession->messages) > 0) ? 'block' : 'hidden' }}">
             <div class="max-w-3xl mx-auto">
                 <div id="chatMessages">
-                 @if($currentSession && $currentSession->messages && count($currentSession->messages) > 0)
-    @foreach($currentSession->messages as $msg)
-    <div class="mb-3 {{ $msg['role'] == 'user' ? 'text-right' : '' }}">
-        <div class="inline-block {{ $msg['role'] == 'user' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-white/10 text-white' }} rounded-xl px-4 py-2 max-w-[85%]">
-            @if($msg['role'] == 'user')
-                <p class="text-sm">{{ $msg['content'] }}</p>
-            @else
-                <div class="ai-message text-sm">
-                    <span class="ai-markdown" data-content="{{ e($msg['content']) }}"></span>
-                </div>
-            @endif
-        </div>
-    </div>
-    @endforeach
-@endif
+                    @if($currentSession && $currentSession->messages && count($currentSession->messages) > 0)
+                        @foreach($currentSession->messages as $msg)
+                        <div class="mb-3 {{ $msg['role'] == 'user' ? 'text-right' : '' }}">
+                            <div class="chat-message inline-block {{ $msg['role'] == 'user' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' : 'bg-white/10 text-white' }} rounded-xl px-4 py-2 max-w-[85%] md:max-w-[80%]">
+                                @if($msg['role'] == 'user')
+                                    <p class="text-sm">{{ $msg['content'] }}</p>
+                                @else
+                                    <div class="ai-message text-sm">
+                                        <span class="ai-markdown" data-content="{{ e($msg['content']) }}"></span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    @endif
                 </div>
                 <div id="typingIndicator" class="hidden mb-3">
                     <div class="inline-block bg-white/10 rounded-xl px-3 py-2">
@@ -265,16 +373,16 @@
         </div>
         
         <!-- INPUT AREA -->
-        <div class="px-5 pb-5 pt-3">
+        <div class="px-4 pb-4 pt-2 flex-shrink-0">
             <div class="max-w-3xl mx-auto">
-                <div class="flex items-center bg-white/10 border border-white/15 rounded-xl px-3 py-1.5 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500 transition">
-                    <button class="text-purple-300 text-lg mr-2 hover:text-white transition">
+                <div class="input-area flex items-center bg-white/10 border border-white/15 rounded-xl px-3 py-1.5 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500 transition">
+                    <button class="text-purple-300 text-lg mr-2 hover:text-white transition flex-shrink-0">
                         <i class="ti ti-plus"></i>
                     </button>
                     <input type="text" id="messageInput" 
                         placeholder="Ask anything..."
-                        class="flex-1 bg-transparent outline-none text-white placeholder:text-purple-300/60 text-sm py-2">
-                    <button id="sendBtn" class="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center justify-center shadow-md hover:scale-105 transition">
+                        class="flex-1 bg-transparent outline-none text-white placeholder:text-purple-300/60 text-sm py-2 min-w-0">
+                    <button id="sendBtn" class="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white flex items-center justify-center shadow-md hover:scale-105 transition flex-shrink-0">
                         <i class="ti ti-send text-sm"></i>
                     </button>
                 </div>
@@ -313,6 +421,28 @@ const typingIndicator = document.getElementById('typingIndicator');
 const welcomeScreen = document.getElementById('welcomeScreen');
 const messagesArea = document.getElementById('messagesArea');
 const newChatBtn = document.getElementById('newChatBtn');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+
+// ============================================
+// SIDEBAR FUNCTIONS
+// ============================================
+function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Close sidebar on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSidebar();
+});
 
 // ============================================
 // RENDER FUNCTIONS
@@ -346,12 +476,12 @@ function addMessage(role, content) {
 
     if (role === 'user') {
         div.innerHTML = `
-            <div class="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl px-4 py-2 max-w-[80%]">
+            <div class="chat-message inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl px-4 py-2 max-w-[85%] md:max-w-[80%]">
                 <p class="text-sm">${escapeHtml(content)}</p>
             </div>`;
     } else {
         div.innerHTML = `
-            <div class="inline-block bg-white/10 text-white rounded-xl px-5 py-3 max-w-[85%] ai-message" style="text-align:left">
+            <div class="chat-message inline-block bg-white/10 text-white rounded-xl px-5 py-3 max-w-[92%] md:max-w-[85%] ai-message" style="text-align:left">
                 ${renderAI(content)}
             </div>`;
     }
@@ -547,7 +677,6 @@ document.querySelectorAll('.chat-menu-btn').forEach(btn => {
         `;
 
         const rect = btn.getBoundingClientRect();
-        dropdown.style.position = 'fixed';
         dropdown.style.top = `${rect.bottom + 5}px`;
         dropdown.style.right = `${window.innerWidth - rect.right + 5}px`;
         document.body.appendChild(dropdown);

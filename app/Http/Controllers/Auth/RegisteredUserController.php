@@ -55,6 +55,7 @@ class RegisteredUserController extends Controller
             'referral_code' => $referralCode,
             'referred_by' => $referredBy,
             'referral_earnings' => 0,
+            'role' => 'user', // ✅ This fixes the error
         ]);
 
         // If user was referred, create referral record

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Super Admin - JLIBRARY</title>
+    <title>@yield('title', 'Super Admin') - JLIBRARY</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
@@ -63,6 +63,7 @@
             border-radius: 0.5rem;
             transition: all 0.2s ease;
             color: #9ca3af;
+            text-decoration: none;
         }
         .nav-item:hover {
             background-color: #374151;
@@ -75,7 +76,7 @@
         }
         .nav-item.active i { color: white !important; }
         
-        /* Submenu */
+        /* Submenu items */
         .nav-sub-item {
             display: flex;
             align-items: center;
@@ -86,6 +87,7 @@
             transition: all 0.2s ease;
             color: #9ca3af;
             font-size: 0.875rem;
+            text-decoration: none;
         }
         .nav-sub-item:hover {
             background-color: #374151;
@@ -117,6 +119,70 @@
                 display: none !important;
             }
         }
+
+        /* Badge styles */
+        .badge-orange {
+            background: #ea580c;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        .badge-yellow {
+            background: #ca8a04;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        .badge-red {
+            background: #dc2626;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        .badge-green {
+            background: #16a34a;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        .badge-purple {
+            background: #7c3aed;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        /* Role badge in top bar */
+        .role-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .role-badge.super-admin {
+            background: #dc2626;
+            color: white;
+        }
+        .role-badge.media-team {
+            background: #7c3aed;
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -124,172 +190,252 @@
     <div id="sidebar-overlay" onclick="closeSidebar()"></div>
     
     <div class="flex h-screen overflow-hidden">
-        <!-- SUPER ADMIN SIDEBAR -->
+        <!-- ========================================== -->
+        <!-- SUPER ADMIN SIDEBAR                        -->
+        <!-- ========================================== -->
         <aside id="super-sidebar" class="bg-gray-900 text-white flex-shrink-0 overflow-y-auto">
-            <div class="p-4 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <i class="ti ti-crown text-yellow-400 text-2xl"></i>
-                        <span class="text-xl font-bold">SUPER ADMIN</span>
-                    </div>
-                    <!-- Close button for mobile -->
-                    <button id="close-sidebar-mobile" class="lg:hidden text-gray-400 hover:text-white">
-                        <i class="ti ti-x text-2xl"></i>
-                    </button>
-                </div>
-                <p class="text-xs text-yellow-500 mt-1">Full Platform Control</p>
-            </div>
-            
-            <nav class="p-4 space-y-1">
-                <!-- ========================================== -->
-                <!-- DASHBOARD                                -->
-                <!-- ========================================== -->
-                <a href="{{ route('super-admin.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.dashboard') ? 'active' : '' }}">
-                    <i class="ti ti-crown text-yellow-400 text-xl"></i>
-                    <span>Super Dashboard</span>
-                </a>
 
-                <!-- ========================================== -->
-                <!-- CONTENT MANAGEMENT                       -->
-                <!-- ========================================== -->
-                <div class="nav-section-title">Content Management</div>
+        <!-- Brand -->
+<div class="p-4 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                <i class="ti ti-crown text-yellow-400 text-2xl"></i>
+                <span class="text-xl font-bold text-yellow-400">SUPER ADMIN</span>
+            @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+                <i class="ti ti-palette text-yellow-400 text-2xl"></i>
+                <span class="text-xl font-bold text-yellow-400">MEDIA TEAM</span>
+            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                <i class="ti ti-shield text-blue-400 text-2xl"></i>
+                <span class="text-xl font-bold text-blue-400">ADMIN</span>
+            @else
+                <i class="ti ti-user text-gray-400 text-2xl"></i>
+                <span class="text-xl font-bold text-gray-400">DASHBOARD</span>
+            @endif
+        </div>
+        <!-- Close button for mobile -->
+        <button id="close-sidebar-mobile" class="lg:hidden text-gray-400 hover:text-white">
+            <i class="ti ti-x text-2xl"></i>
+        </button>
+    </div>
+    <p class="text-xs mt-1 
+        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+            text-yellow-500
+        @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+            text-yellow-500
+        @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+            text-blue-400
+        @else
+            text-gray-400
+        @endif
+    ">
+        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+            Full Platform Control
+        @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+            Content Management
+        @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+            Platform Management
+        @else
+            User Dashboard
+        @endif
+    </p>
+</div>           
+<nav class="p-4 space-y-1">
+   <!-- ========================================== -->
+<!-- DASHBOARD                                -->
+<!-- ========================================== -->
+@if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin') || auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team') || auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+    <div class="px-3 mt-4 mb-2">
+        <p class="text-xs text-gray-500 uppercase tracking-wider">Dashboard</p>
+    </div>
+    
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+        <a href="{{ route('super-admin.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.dashboard') ? 'active' : '' }}">
+            <i class="ti ti-crown text-yellow-400 text-xl"></i>
+            <span>Super Dashboard</span>
+        </a>
+    @endif
 
-                <!-- Hero Slides -->
-                <a href="{{ route('super-admin.hero-slides.index') }}" class="nav-item {{ request()->routeIs('super-admin.hero-slides.*') ? 'active' : '' }}">
-                    <i class="ti ti-slideshow text-purple-400 text-xl"></i>
-                    <span>Hero Slides</span>
-                    @php
-                        $slideCount = \App\Models\HeroSlide::count();
-                    @endphp
-                    @if($slideCount > 0)
-                        <span class="ml-auto text-xs text-gray-400">{{ $slideCount }}</span>
-                    @endif
-                </a>
+    @if(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+        <a href="{{ route('super-admin.media.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.media.dashboard') ? 'active' : '' }}">
+            <i class="ti ti-palette text-yellow-400 text-xl"></i>
+            <span>Media Dashboard</span>
+        </a>
+    @endif
 
-                <!-- News Items -->
-                <a href="{{ route('super-admin.news-items.index') }}" class="nav-item {{ request()->routeIs('super-admin.news-items.*') ? 'active' : '' }}">
-                    <i class="ti ti-news text-blue-400 text-xl"></i>
-                    <span>News & Updates</span>
-                    @php
-                        $newsCount = \App\Models\NewsItem::count();
-                    @endphp
-                    @if($newsCount > 0)
-                        <span class="ml-auto text-xs text-gray-400">{{ $newsCount }}</span>
-                    @endif
-                </a>
+    @if(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            <i class="ti ti-shield text-blue-400 text-xl"></i>
+            <span>Admin Dashboard</span>
+        </a>
+    @endif
+@endif
+    <!-- ========================================== -->
+    <!-- CONTENT MANAGEMENT - 🎨 Media Team Access -->
+    <!-- ========================================== -->
+    @if(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team') || auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+        <div class="nav-section-title">🎨 Content Management</div>
 
-                <!-- Founders -->
-                <a href="{{ route('super-admin.founders.index') }}" class="nav-item {{ request()->routeIs('super-admin.founders.*') ? 'active' : '' }}">
-                    <i class="ti ti-users text-pink-400 text-xl"></i>
-                    <span>Founders</span>
-                    @php
-                        $founderCount = \App\Models\Founder::count();
-                    @endphp
-                    @if($founderCount > 0)
-                        <span class="ml-auto text-xs text-gray-400">{{ $founderCount }}</span>
-                    @endif
-                </a>
+        <!-- Hero Slides -->
+        <a href="{{ route('super-admin.hero-slides.index') }}" class="nav-item {{ request()->routeIs('super-admin.hero-slides.*') ? 'active' : '' }}">
+            <i class="ti ti-slideshow text-purple-400 text-xl"></i>
+            <span>Hero Slides</span>
+            @php
+                $slideCount = \App\Models\HeroSlide::count();
+            @endphp
+            @if($slideCount > 0)
+                <span class="ml-auto text-xs text-gray-400">{{ $slideCount }}</span>
+            @endif
+        </a>
 
-                <!-- Site Settings -->
-                <a href="{{ route('super-admin.site-settings.index') }}" class="nav-item {{ request()->routeIs('super-admin.site-settings.*') ? 'active' : '' }}">
-                    <i class="ti ti-settings text-gray-400 text-xl"></i>
-                    <span>Site Settings</span>
-                </a>
+        <!-- News Items -->
+        <a href="{{ route('super-admin.news-items.index') }}" class="nav-item {{ request()->routeIs('super-admin.news-items.*') ? 'active' : '' }}">
+            <i class="ti ti-news text-blue-400 text-xl"></i>
+            <span>News & Updates</span>
+            @php
+                $newsCount = \App\Models\NewsItem::count();
+            @endphp
+            @if($newsCount > 0)
+                <span class="ml-auto text-xs text-gray-400">{{ $newsCount }}</span>
+            @endif
+        </a>
 
-                <!-- ========================================== -->
-                <!-- PLATFORM MANAGEMENT                      -->
-                <!-- ========================================== -->
-                <div class="nav-section-title mt-4">Platform Management</div>
+        <!-- Founders -->
+        <a href="{{ route('super-admin.founders.index') }}" class="nav-item {{ request()->routeIs('super-admin.founders.*') ? 'active' : '' }}">
+            <i class="ti ti-users text-pink-400 text-xl"></i>
+            <span>Founders</span>
+            @php
+                $founderCount = \App\Models\Founder::count();
+            @endphp
+            @if($founderCount > 0)
+                <span class="ml-auto text-xs text-gray-400">{{ $founderCount }}</span>
+            @endif
+        </a>
 
-                <!-- Books -->
-                <a href="{{ route('super-admin.books.index') }}" class="nav-item {{ request()->routeIs('super-admin.books.*') ? 'active' : '' }}">
-                    <i class="ti ti-books text-blue-400 text-xl"></i>
-                    <span>Manage Books</span>
-                </a>
+        <!-- Site Settings -->
+        <a href="{{ route('super-admin.site-settings.index') }}" class="nav-item {{ request()->routeIs('super-admin.site-settings.*') ? 'active' : '' }}">
+            <i class="ti ti-settings text-gray-400 text-xl"></i>
+            <span>Site Settings</span>
+        </a>
+    @endif
 
-                <!-- Users -->
-                <a href="{{ route('super-admin.users.index') }}" class="nav-item {{ request()->routeIs('super-admin.users.*') ? 'active' : '' }}">
-                    <i class="ti ti-users text-cyan-400 text-xl"></i>
-                    <span>Manage Users</span>
-                </a>
+    <!-- ========================================== -->
+    <!-- PLATFORM MANAGEMENT - 🔒 Super Admin Only -->
+    <!-- ========================================== -->
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+        <div class="nav-section-title mt-4">🔒 Platform Management</div>
 
-                <!-- Institutions -->
-                <a href="{{ route('super-admin.institutions.index') }}" class="nav-item {{ request()->routeIs('super-admin.institutions.*') ? 'active' : '' }}">
-                    <i class="ti ti-building text-indigo-400 text-xl"></i>
-                    <span>Institutions</span>
-                </a>
+        <!-- Books -->
+        <a href="{{ route('super-admin.books.index') }}" class="nav-item {{ request()->routeIs('super-admin.books.*') ? 'active' : '' }}">
+            <i class="ti ti-books text-blue-400 text-xl"></i>
+            <span>Manage Books</span>
+        </a>
 
-                <!-- Institution Requests -->
-                <a href="{{ route('super-admin.institution-requests.index') }}" class="nav-item {{ request()->routeIs('super-admin.institution-requests.*') ? 'active' : '' }}">
-                    <i class="ti ti-file-plus text-orange-400 text-xl"></i>
-                    <span>Institution Requests</span>
-                    @php
-                        $pendingRequests = \App\Models\InstitutionCreationRequest::where('status', 'pending')->count() ?? 0;
-                    @endphp
-                    @if($pendingRequests > 0)
-                        <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingRequests }}</span>
-                    @endif
-                </a>
+        <!-- Users -->
+        <a href="{{ route('super-admin.users.index') }}" class="nav-item {{ request()->routeIs('super-admin.users.*') ? 'active' : '' }}">
+            <i class="ti ti-users text-cyan-400 text-xl"></i>
+            <span>Manage Users</span>
+        </a>
 
-                <!-- Marketplace -->
-                <a href="{{ route('super-admin.marketplace.index') }}" class="nav-item {{ request()->routeIs('super-admin.marketplace.*') ? 'active' : '' }}">
-                    <i class="ti ti-shopping-cart text-amber-400 text-xl"></i>
-                    <span>Marketplace</span>
-                </a>
+        <!-- Institutions -->
+        <a href="{{ route('super-admin.institutions.index') }}" 
+           class="nav-item {{ request()->routeIs('super-admin.institutions.index') || request()->routeIs('super-admin.institutions.show') || request()->routeIs('super-admin.institutions.edit') || request()->routeIs('super-admin.institutions.create') ? 'active' : '' }}">
+            <i class="ti ti-building text-indigo-400 text-xl"></i>
+            <span>Institutions</span>
+        </a>
 
-                <!-- Applications -->
-                <a href="{{ route('super-admin.applications.index') }}" class="nav-item {{ request()->routeIs('super-admin.applications.*') ? 'active' : '' }}">
-                    <i class="ti ti-files text-yellow-400 text-xl"></i>
-                    <span>Applications</span>
-                    @php
-                        $pendingCount = App\Models\Application::where('status', 'pending')->count();
-                    @endphp
-                    @if($pendingCount > 0)
-                        <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
-                    @endif
-                </a>
+        <!-- Institution Requests -->
+        <a href="{{ route('super-admin.institution-requests.index') }}" 
+           class="nav-item {{ request()->routeIs('super-admin.institution-requests.*') ? 'active' : '' }}">
+            <i class="ti ti-file-plus text-orange-400 text-xl"></i>
+            <span>Institution Requests</span>
+            @php
+                $pendingRequests = \App\Models\InstitutionCreationRequest::where('status', 'pending')->count() ?? 0;
+            @endphp
+            @if($pendingRequests > 0)
+                <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingRequests }}</span>
+            @endif
+        </a>
 
-                <!-- Payments -->
-                <a href="{{ route('super-admin.payments.index') }}" class="nav-item {{ request()->routeIs('super-admin.payments.*') ? 'active' : '' }}">
-                    <i class="ti ti-wallet text-green-400 text-xl"></i>
-                    <span>Payments</span>
-                </a>
+        <!-- Subscriptions -->
+        <a href="{{ route('super-admin.institutions.subscriptions.index') }}"
+           class="nav-item {{ request()->routeIs('super-admin.institutions.subscriptions.index') || request()->routeIs('super-admin.institutions.subscriptions.*') ? 'active' : '' }}">
+            <i class="ti ti-building text-purple-400 text-xl"></i>
+            <span>Subscriptions</span>
+            @php
+                $expiringSoon = \App\Models\Institution::whereHas('subscriptions', function($q) {
+                    $q->where('status', 'active')
+                        ->where('ends_at', '<=', now()->addDays(7))
+                        ->where('ends_at', '>', now());
+                })->count();
+            @endphp
+            @if($expiringSoon > 0)
+                <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $expiringSoon }}</span>
+            @endif
+        </a>
 
-                <!-- Quotes -->
-                <a href="{{ route('super-admin.quotes.index') }}" class="nav-item {{ request()->routeIs('super-admin.quotes.*') ? 'active' : '' }}">
-                    <i class="ti ti-quote text-purple-400 text-xl"></i>
-                    <span>Manage Quotes</span>
-                </a>
+        <!-- Marketplace -->
+        <a href="{{ route('super-admin.marketplace.index') }}" class="nav-item {{ request()->routeIs('super-admin.marketplace.*') ? 'active' : '' }}">
+            <i class="ti ti-shopping-cart text-amber-400 text-xl"></i>
+            <span>Marketplace</span>
+        </a>
 
-                <!-- ========================================== -->
-                <!-- ANALYTICS                               -->
-                <!-- ========================================== -->
-                <div class="nav-section-title mt-4">Analytics</div>
+        <!-- Applications -->
+        <a href="{{ route('super-admin.applications.index') }}" class="nav-item {{ request()->routeIs('super-admin.applications.*') ? 'active' : '' }}">
+            <i class="ti ti-files text-yellow-400 text-xl"></i>
+            <span>Applications</span>
+            @php
+                $pendingAppCount = \App\Models\Application::where('status', 'pending')->count();
+            @endphp
+            @if($pendingAppCount > 0)
+                <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingAppCount }}</span>
+            @endif
+        </a>
 
-                <a href="{{ route('super-admin.analytics.index') }}" class="nav-item {{ request()->routeIs('super-admin.analytics.*') ? 'active' : '' }}">
-                    <i class="ti ti-chart-bar text-yellow-400 text-xl"></i>
-                    <span>Analytics</span>
-                </a>
+        <!-- Payments -->
+        <a href="{{ route('super-admin.payments.index') }}" class="nav-item {{ request()->routeIs('super-admin.payments.*') ? 'active' : '' }}">
+            <i class="ti ti-wallet text-green-400 text-xl"></i>
+            <span>Payments</span>
+        </a>
 
-                <!-- ========================================== -->
-                <!-- NAVIGATION                              -->
-                <!-- ========================================== -->
-                <hr class="my-3 border-gray-800">
+        <!-- Quotes -->
+        <a href="{{ route('super-admin.quotes.index') }}" class="nav-item {{ request()->routeIs('super-admin.quotes.*') ? 'active' : '' }}">
+            <i class="ti ti-quote text-purple-400 text-xl"></i>
+            <span>Manage Quotes</span>
+        </a>
 
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
-                    <i class="ti ti-arrow-left"></i> <span class="hidden sm:inline">Back to User Site</span>
-                </a>
-                
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition">
-                        <i class="ti ti-logout"></i> <span class="hidden sm:inline">Logout</span>
-                    </button>
-                </form>
-            </nav>
-        </aside>
+        <!-- ========================================== -->
+        <!-- ANALYTICS - 📊 Super Admin Only          -->
+        <!-- ========================================== -->
+        <div class="nav-section-title mt-4">📊 Analytics</div>
+
+        <a href="{{ route('super-admin.analytics.index') }}" class="nav-item {{ request()->routeIs('super-admin.analytics.*') ? 'active' : '' }}">
+            <i class="ti ti-chart-bar text-yellow-400 text-xl"></i>
+            <span>Analytics</span>
+        </a>
+    @endif
+
+    <!-- ========================================== -->
+    <!-- NAVIGATION                              -->
+    <!-- ========================================== -->
+    <hr class="my-3 border-gray-800">
+
+    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
+        <i class="ti ti-arrow-left"></i> <span class="hidden sm:inline">Back to User Site</span>
+    </a>
+    
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition">
+            <i class="ti ti-logout"></i> <span class="hidden sm:inline">Logout</span>
+        </button>
+    </form>
+</nav>           
+</aside>
         
-        <!-- MAIN CONTENT -->
+        <!-- ========================================== -->
+        <!-- MAIN CONTENT                              -->
+        <!-- ========================================== -->
         <main class="flex-1 overflow-y-auto bg-gray-50">
             <!-- Top Bar -->
             <div class="bg-white shadow-sm sticky top-0 z-20 border-b">
@@ -303,14 +449,36 @@
                     </div>
                     
                     <div class="flex items-center gap-2 sm:gap-3">
-                        <!-- Super Admin Info -->
+                        <!-- User Info -->
                         <div class="hidden sm:flex items-center gap-2 super-admin-info-mobile">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-500 to-red-500 flex items-center justify-center flex-shrink-0">
-                                <i class="ti ti-crown text-white text-sm"></i>
-                            </div>
+                          <div class="w-8 h-8 rounded-full 
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+        bg-gradient-to-r from-yellow-500 to-red-500
+    @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+        bg-gradient-to-r from-purple-500 to-pink-500
+    @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+        bg-gradient-to-r from-blue-500 to-cyan-500
+    @else
+        bg-gradient-to-r from-gray-500 to-gray-600
+    @endif
+    flex items-center justify-center flex-shrink-0">
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+        <i class="ti ti-crown text-white text-sm"></i>
+    @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+        <i class="ti ti-palette text-white text-sm"></i>
+    @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+        <i class="ti ti-shield text-white text-sm"></i>
+    @else
+        <i class="ti ti-user text-white text-sm"></i>
+    @endif
+</div>
                             <div class="hidden md:block">
-                                <p class="text-sm font-medium text-gray-700">{{ Auth::user()->full_name }}</p>
-                                <p class="text-xs text-red-500 font-semibold">Super Admin</p>
+                                <p class="text-sm font-medium text-gray-700">{{ Auth::user()->full_name ?? 'Super Admin' }}</p>
+                                @if(Auth::user()->isSuperAdmin())
+                                    <span class="role-badge super-admin">Super Admin</span>
+                                @else
+                                    <span class="role-badge media-team">Media Team</span>
+                                @endif
                             </div>
                         </div>
                         
@@ -322,7 +490,36 @@
                 </div>
             </div>
             
+            <!-- Page Content -->
             <div class="p-3 sm:p-4 md:p-6">
+                @if(session('success'))
+                    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <i class="ti ti-check-circle text-green-500"></i>
+                        {{ session('success') }}
+                    </div>
+                @endif
+                
+                @if(session('error'))
+                    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <i class="ti ti-alert-circle text-red-500"></i>
+                        {{ session('error') }}
+                    </div>
+                @endif
+                
+                @if(session('warning'))
+                    <div class="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <i class="ti ti-alert-triangle text-yellow-500"></i>
+                        {{ session('warning') }}
+                    </div>
+                @endif
+                
+                @if(session('info'))
+                    <div class="mb-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <i class="ti ti-info-circle text-blue-500"></i>
+                        {{ session('info') }}
+                    </div>
+                @endif
+                
                 @yield('content')
             </div>
         </main>
@@ -356,6 +553,9 @@
                 document.body.style.overflow = '';
             }
 
+            // Make closeSidebar available globally for onclick
+            window.closeSidebar = closeSidebar;
+
             if (openBtn) {
                 openBtn.addEventListener('click', openSidebar);
             }
@@ -367,6 +567,13 @@
             // Close on Escape key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
+                    closeSidebar();
+                }
+            });
+
+            // Close on window resize to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 1024) {
                     closeSidebar();
                 }
             });

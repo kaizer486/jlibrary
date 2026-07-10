@@ -32,18 +32,15 @@ class CertificateController extends Controller
      */
     public function generate(Book $book)
     {
-        // Get quiz results from session
         $score = session('quiz_score');
         $total = session('quiz_total');
         $percentage = session('quiz_percentage');
 
-        // Check if user passed (70% or higher)
         if (!$score || $percentage < 70) {
             return redirect()->route('library.show', $book)
                 ->with('error', 'You need to pass the quiz with 70% or higher to get a certificate.');
         }
 
-        // Check if certificate already exists
         $existingCertificate = Certificate::where('user_id', Auth::id())
             ->where('book_id', $book->id)
             ->first();
@@ -53,17 +50,15 @@ class CertificateController extends Controller
                 ->with('info', 'You already have a certificate for this book.');
         }
 
-        // Generate certificate
-        $certificate = $this->createCertificate(
-            bookId: $book->id,
-            title: $book->title,
-            author: $book->author,
-            score: $score,
-            total: $total,
-            percentage: $percentage
+        $certificate = $this->createBookCertificate(
+            $book->id,
+            $book->title,
+            $book->author,
+            $score,
+            $total,
+            $percentage
         );
 
-        // Clear quiz session
         session()->forget(['quiz_score', 'quiz_total', 'quiz_percentage', 'quiz_book_id', 'quiz_book_title']);
 
         return redirect()->route('certificates.show', $certificate)
@@ -75,7 +70,6 @@ class CertificateController extends Controller
      */
     public function generateFromQuiz($quiz, $attempt)
     {
-        // Check if certificate already exists
         $existingCertificate = Certificate::where('user_id', Auth::id())
             ->where('quiz_id', $attempt->quiz_id)
             ->where('quiz_attempt_id', $attempt->id)
@@ -85,20 +79,18 @@ class CertificateController extends Controller
             return $existingCertificate;
         }
 
-        // Use book info or quiz info
         $bookTitle = $quiz->book_title ?? $quiz->title;
         $bookAuthor = $quiz->book_author ?? 'JLIBRARY';
 
-        // Generate certificate
-        $certificate = $this->createCertificate(
-            quizId: $attempt->quiz_id,
-            quizAttemptId: $attempt->id,
-            title: $bookTitle,
-            author: $bookAuthor,
-            score: $attempt->score,
-            total: $attempt->total_points,
-            percentage: $attempt->percentage,
-            institutionId: $quiz->institution_id ?? null
+        $certificate = $this->createQuizCertificate(
+            $attempt->quiz_id,
+            $attempt->id,
+            $bookTitle,
+            $bookAuthor,
+            $attempt->score,
+            $attempt->total_points,
+            $attempt->percentage,
+            $quiz->institution_id ?? null
         );
 
         return $certificate;
@@ -106,6 +98,7 @@ class CertificateController extends Controller
 
     /**
      * Generate certificate from book completion.
+     * AUTO-TRIGGERED when user reaches 100% progress.
      */
     public function generateFromBook($book, $progress = 100)
     {
@@ -118,27 +111,70 @@ class CertificateController extends Controller
             return $existingCertificate;
         }
 
-        // Generate certificate
-        $certificate = $this->createCertificate(
-            bookId: $book->id,
-            title: $book->title,
-            author: $book->author,
-            score: $progress,
-            total: 100,
-            percentage: $progress,
-            institutionId: $book->institution_id ?? null
+        // Generate certificate with 100% score for book completion
+        $certificate = $this->createBookCertificate(
+            $book->id,
+            $book->title,
+            $book->author,
+            100,
+            100,
+            100
         );
 
         return $certificate;
     }
 
     /**
-     * Create a certificate record and PDF.
+     * Create a book certificate record and PDF.
      */
-    private function createCertificate(
-        $bookId = null,
-        $quizId = null,
-        $quizAttemptId = null,
+    private function createBookCertificate(
+        $bookId,
+        string $title,
+        string $author,
+        int $score,
+        int $total,
+        float $percentage
+    ) {
+        // Generate unique certificate number
+        $certificateNumber = 'JLIB-' . strtoupper(Str::random(8)) . '-' . Auth::id();
+
+        // Generate PDF
+        $pdf = $this->generatePDF(
+            $title,
+            $author,
+            $score,
+            $total,
+            $percentage,
+            $certificateNumber
+        );
+
+        // Save PDF to storage
+        $fileName = 'certificates/certificate_' . Auth::id() . '_' . time() . '_' . Str::random(6) . '.pdf';
+        Storage::disk('public')->put($fileName, $pdf);
+
+        // Create certificate record
+        $certificate = Certificate::create([
+            'user_id' => Auth::id(),
+            'book_id' => $bookId,
+            'quiz_id' => null,
+            'quiz_attempt_id' => null,
+            'institution_id' => null,
+            'certificate_number' => $certificateNumber,
+            'file_path' => $fileName,
+            'quiz_score' => $score,
+            'total_questions' => $total,
+            'percentage' => $percentage,
+        ]);
+
+        return $certificate;
+    }
+
+    /**
+     * Create a quiz certificate record and PDF.
+     */
+    private function createQuizCertificate(
+        $quizId,
+        $quizAttemptId,
         string $title,
         string $author,
         int $score,
@@ -151,12 +187,12 @@ class CertificateController extends Controller
 
         // Generate PDF
         $pdf = $this->generatePDF(
-            bookTitle: $title,
-            bookAuthor: $author,
-            score: $score,
-            total: $total,
-            percentage: $percentage,
-            certificateNumber: $certificateNumber
+            $title,
+            $author,
+            $score,
+            $total,
+            $percentage,
+            $certificateNumber
         );
 
         // Save PDF to storage
@@ -166,7 +202,7 @@ class CertificateController extends Controller
         // Create certificate record
         $certificate = Certificate::create([
             'user_id' => Auth::id(),
-            'book_id' => $bookId,
+            'book_id' => null,
             'quiz_id' => $quizId,
             'quiz_attempt_id' => $quizAttemptId,
             'institution_id' => $institutionId,
@@ -181,38 +217,125 @@ class CertificateController extends Controller
     }
 
     /**
-     * Generate PDF content.
+     * Generate PDF with certificate image as background.
+     * ONLY overlays user name, book title, and author.
      */
-    private function generatePDF(string $bookTitle, string $bookAuthor, int $score, int $total, float $percentage, string $certificateNumber)
-    {
-        $user = Auth::user();
-        $date = now()->format('F d, Y');
+   
+   
+   private function generatePDF(
+    string $bookTitle,
+    string $bookAuthor,
+    int $score,
+    int $total,
+    float $percentage,
+    string $certificateNumber
+) {
+    $user = Auth::user();
 
-        $data = [
-            'user_name' => $user->full_name,
-            'book_title' => $bookTitle,
-            'book_author' => $bookAuthor,
-            'score' => $score,
-            'total' => $total,
-            'percentage' => $percentage,
-            'certificate_number' => $certificateNumber,
-            'date' => $date,
-        ];
+    // Convert image to base64
+    $imagePath = public_path('images/a.jpeg');
+    $imageData = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($imagePath));
 
-        $pdf = Pdf::loadView('certificates.template', $data);
-        $pdf->setPaper('a4', 'landscape');
+    // ADD A VERSION MARKER TO CONFIRM NEW CODE RUNS
+    $version = 'v2-' . date('Y-m-d H:i:s');
 
-        return $pdf->output();
-    }
+    $html = '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Certificate</title>
+        <style>
+            @page { margin: 0; padding: 0; size: a4 landscape; }
+            body { margin: 0; padding: 0; font-family: "Georgia", serif; background: white; }
+            .wrapper {
+                position: relative;
+                width: 842pt;
+                height: 595pt;
+            }
+            .bg {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 842pt;
+                height: 595pt;
+                object-fit: cover;
+            }
+            .content {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                text-align: center;
+                z-index: 10;
+                padding-top: 200px;
+            }
+            .name {
+                font-size: 52px;
+                font-weight: 700;
+                color: #1a202c;
+                letter-spacing: 3px;
+                text-transform: uppercase;
+                margin-bottom: 15px;
+            }
+            .book {
+                font-size: 36px;
+                font-weight: 600;
+                color: #2d3748;
+                margin-bottom: 8px;
+            }
+            .author {
+                font-size: 24px;
+                font-weight: 400;
+                color: #4a5568;
+                font-style: italic;
+            }
+            .version {
+                position: absolute;
+                bottom: 20px;
+                right: 30px;
+                font-size: 10px;
+                color: #ccc;
+                z-index: 10;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <img src="' . $imageData . '" class="bg" alt="Background">
+            <div class="content">
+                <div class="name">' . $user->full_name . '</div>
+                <div class="book">"' . $bookTitle . '"</div>
+                <div class="author">by ' . $bookAuthor . '</div>
+            </div>
+            <div class="version">' . $version . '</div>
+        </div>
+    </body>
+    </html>
+    ';
 
+    // Generate PDF
+    $pdf = Pdf::loadHTML($html);
+    $pdf->setPaper('a4', 'landscape');
+    $pdf->setOptions([
+        'defaultFont' => 'Helvetica',
+        'isRemoteEnabled' => true,
+        'isHtml5ParserEnabled' => true,
+        'isPhpEnabled' => true,
+    ]);
 
-    
+    return $pdf->output();
+}
     /**
      * Show single certificate.
      */
     public function show(Certificate $certificate)
     {
-        // Check if certificate belongs to logged in user
         if ($certificate->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access.');
         }
@@ -220,58 +343,84 @@ class CertificateController extends Controller
         return view('certificates.show', compact('certificate'));
     }
 
-
     /**
- * Auto-regenerate certificate file if missing.
- */
-public function regenerateCertificateFile(Certificate $certificate)
-{
-    $bookTitle = $certificate->book->title ?? 'Certificate';
-    $bookAuthor = $certificate->book->author ?? 'JLIBRARY';
-
-    $pdf = $this->generatePDF(
-        bookTitle: $bookTitle,
-        bookAuthor: $bookAuthor,
-        score: $certificate->quiz_score,
-        total: $certificate->total_questions,
-        percentage: $certificate->percentage,
-        certificateNumber: $certificate->certificate_number
-    );
-
-    $fileName = 'certificates/certificate_' . $certificate->user_id . '_' . $certificate->id . '_' . time() . '.pdf';
-    Storage::disk('public')->put($fileName, $pdf);
-
-    $certificate->file_path = $fileName;
-    $certificate->save();
-
-    return $certificate;
-}
-
-    /**
-     * Download certificate PDF.
+     * Auto-regenerate certificate file if missing.
      */
-    public function download(Certificate $certificate)
+    public function regenerateCertificateFile(Certificate $certificate)
     {
-        // Check if certificate belongs to logged in user
-        if ($certificate->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access.');
-        }
+        $bookTitle = $certificate->book->title ?? 'Certificate';
+        $bookAuthor = $certificate->book->author ?? 'JLIBRARY';
 
-        $filePath = storage_path('app/public/' . $certificate->file_path);
+        $pdf = $this->generatePDF(
+            $bookTitle,
+            $bookAuthor,
+            $certificate->quiz_score,
+            $certificate->total_questions,
+            $certificate->percentage,
+            $certificate->certificate_number
+        );
 
+        $fileName = 'certificates/certificate_' . $certificate->user_id . '_' . $certificate->id . '_' . time() . '.pdf';
+        Storage::disk('public')->put($fileName, $pdf);
+
+        $certificate->file_path = $fileName;
+        $certificate->save();
+
+        return $certificate;
+    }
+
+ public function download(Certificate $certificate)
+{
+    if ($certificate->user_id !== Auth::id()) {
+        abort(403, 'Unauthorized access.');
+    }
+
+    $filePath = storage_path('app/public/' . $certificate->file_path);
+
+    if (!file_exists($filePath)) {
+        // Try public path
+        $filePath = public_path('storage/' . $certificate->file_path);
         if (!file_exists($filePath)) {
             abort(404, 'Certificate file not found.');
         }
-
-        return response()->download($filePath, 'certificate_' . $certificate->certificate_number . '.pdf');
     }
+
+    return response()->download($filePath, 'certificate_' . $certificate->certificate_number . '.pdf');
+}
+/**
+ * Serve the certificate PDF directly (bypasses storage link issues).
+ */
+public function serve($id)
+{
+    $certificate = Certificate::findOrFail($id);
+    
+    if ($certificate->user_id !== Auth::id()) {
+        abort(403, 'Unauthorized access.');
+    }
+    
+    // Try storage path first
+    $filePath = storage_path('app/public/' . $certificate->file_path);
+    
+    // If not found, try public path
+    if (!file_exists($filePath)) {
+        $filePath = public_path('storage/' . $certificate->file_path);
+    }
+    
+    if (!file_exists($filePath)) {
+        abort(404, 'Certificate file not found.');
+    }
+    
+    return response()->file($filePath, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'inline; filename="certificate_' . $certificate->certificate_number . '.pdf"',
+    ]);
+}
 
     /**
      * Regenerate certificate PDF (admin only).
      */
     public function regenerate(Certificate $certificate)
     {
-        // Only allow admin/super admin
         if (!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized access.');
         }
@@ -280,15 +429,14 @@ public function regenerateCertificateFile(Certificate $certificate)
         $bookAuthor = $certificate->book->author ?? 'JLIBRARY';
 
         $pdf = $this->generatePDF(
-            bookTitle: $bookTitle,
-            bookAuthor: $bookAuthor,
-            score: $certificate->quiz_score,
-            total: $certificate->total_questions,
-            percentage: $certificate->percentage,
-            certificateNumber: $certificate->certificate_number
+            $bookTitle,
+            $bookAuthor,
+            $certificate->quiz_score,
+            $certificate->total_questions,
+            $certificate->percentage,
+            $certificate->certificate_number
         );
 
-        // Overwrite existing file
         Storage::disk('public')->put($certificate->file_path, $pdf);
 
         return redirect()->back()
@@ -300,12 +448,10 @@ public function regenerateCertificateFile(Certificate $certificate)
      */
     public function destroy(Certificate $certificate)
     {
-        // Only allow admin/super admin
         if (!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin()) {
             abort(403, 'Unauthorized access.');
         }
 
-        // Delete file
         if ($certificate->file_path) {
             Storage::disk('public')->delete($certificate->file_path);
         }

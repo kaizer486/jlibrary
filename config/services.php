@@ -53,5 +53,33 @@ return [
         'timeout' => 60,
         'retry_times' => 3,
     ],
+    'pesapal' => [
+    'consumer_key' => env('PESAPAL_CONSUMER_KEY'),
+    'consumer_secret' => env('PESAPAL_CONSUMER_SECRET'),
+    'environment' => env('PESAPAL_ENVIRONMENT', 'sandbox'),
+],
+
+'mpesa' => [
+    'consumer_key' => env('MPESA_CONSUMER_KEY'),
+    'consumer_secret' => env('MPESA_CONSUMER_SECRET'),
+    'passkey' => env('MPESA_PASSKEY'),
+    'shortcode' => env('MPESA_SHORTCODE'),
+    'callback_url' => env('MPESA_CALLBACK_URL'),
+    'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
+],
+ 'tigopesa' => [
+        'api_key' => env('TIGOPESA_API_KEY'),
+        'api_secret' => env('TIGOPESA_API_SECRET'),
+        'callback_url' => env('TIGOPESA_CALLBACK_URL'),
+        'environment' => env('TIGOPESA_ENVIRONMENT', 'sandbox'),
+    ],
+    
+    'halopesa' => [
+        'api_key' => env('HALOPESA_API_KEY'),
+        'api_secret' => env('HALOPESA_API_SECRET'),
+        'callback_url' => env('HALOPESA_CALLBACK_URL'),
+        'environment' => env('HALOPESA_ENVIRONMENT', 'sandbox'),
+    ],
 
 ];
+

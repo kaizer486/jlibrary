@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Institution;
 use App\Http\Controllers\Controller;
 use App\Models\Institution;
 use App\Models\Subscription;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class SubscriptionController extends Controller
 {
@@ -15,33 +17,117 @@ class SubscriptionController extends Controller
      */
     public function index()
     {
-        $institution = auth()->user()->institution;
+        $user = Auth::user();
+        $institution = $user->institution;
         
         if (!$institution) {
             abort(403, 'You do not belong to any institution.');
         }
         
-        // Get active subscription
-        $activeSubscription = $institution->activeSubscription;
+        // ==========================================
+        // CHECK BOTH SOURCES FOR SUBSCRIPTION
+        // ==========================================
         
-        // Get subscription history
+        // 1. Check if user has subscription in subscriptions table (polymorphic)
+        $subscriptionFromTable = $user->activeSubscription;
+        
+        // 2. Check if user has subscription fields in users table
+        $hasUserSubscription = !empty($user->subscription_tier) && 
+                               $user->subscription_expires_at && 
+                               $user->subscription_expires_at > now();
+        
+        // Determine which subscription to use
+        $activeSubscription = null;
+        $isActive = false;
+        $isExpired = false;
+        $daysLeft = 0;
+        $planLabel = '📘 No Plan';
+        $plan = 'basic';
+        $expiresAt = null;
+        
+        if ($subscriptionFromTable) {
+            // Use subscription from subscriptions table
+            $activeSubscription = $subscriptionFromTable;
+            $isActive = $subscriptionFromTable->isActive();
+            $isExpired = $subscriptionFromTable->isExpired();
+            $daysLeft = $subscriptionFromTable->daysRemaining();
+            $planLabel = $subscriptionFromTable->getPlanLabel();
+            $plan = $subscriptionFromTable->plan;
+            $expiresAt = $subscriptionFromTable->ends_at;
+        } elseif ($hasUserSubscription) {
+            // Use subscription from users table fields
+            $isActive = true;
+            $isExpired = false;
+            $daysLeft = max(0, Carbon::now()->diffInDays($user->subscription_expires_at, false));
+            $planLabel = match($user->subscription_tier) {
+                'basic' => '📘 Basic',
+                'premium' => '📚 Premium',
+                'enterprise' => '🏢 Enterprise',
+                'free' => '🆓 Free',
+                default => '📘 Basic'
+            };
+            $plan = $user->subscription_tier ?? 'basic';
+            $expiresAt = $user->subscription_expires_at;
+            
+            // Create a virtual subscription object
+            $activeSubscription = (object) [
+                'plan' => $plan,
+                'amount' => 0,
+                'status' => 'active',
+                'starts_at' => null,
+                'ends_at' => $expiresAt,
+                'isActive' => function() use ($expiresAt) {
+                    return $expiresAt && $expiresAt > now();
+                },
+                'isExpired' => function() use ($expiresAt) {
+                    return $expiresAt && $expiresAt <= now();
+                },
+                'daysRemaining' => function() use ($expiresAt) {
+                    if (!$expiresAt) return 0;
+                    if ($expiresAt <= now()) return 0;
+                    return max(0, Carbon::now()->diffInDays($expiresAt, false));
+                },
+                'getPlanLabel' => function() use ($plan) {
+                    return match($plan) {
+                        'basic' => '📘 Basic',
+                        'premium' => '📚 Premium',
+                        'enterprise' => '🏢 Enterprise',
+                        'free' => '🆓 Free',
+                        default => '📘 Basic'
+                    };
+                }
+            ];
+        }
+        
+        // Check if subscription is expired
+        if ($expiresAt && $expiresAt <= now()) {
+            $isActive = false;
+            $isExpired = true;
+            $daysLeft = 0;
+        }
+        
+        $canChoosePlan = !$isActive;
+        
+        // Get subscription history from institution
         $history = $institution->subscriptionHistory()
             ->limit(10)
             ->get();
         
         // Stats
         $stats = [
-            'is_active' => $institution->isSubscriptionActive(),
-            'days_left' => $institution->getDaysLeft(),
-            'progress' => $institution->getSubscriptionProgress(),
-            'status_color' => $institution->getSubscriptionStatusColor(),
-            'status_label' => $institution->getSubscriptionStatusLabel(),
-            'plan_label' => $institution->getPlanLabel(),
-            'plan' => $activeSubscription?->plan ?? $institution->subscription_tier ?? 'basic',
-            'expires_at' => $activeSubscription?->ends_at ?? $institution->subscription_expires_at,
+            'is_active' => $isActive,
+            'is_expired' => $isExpired,
+            'days_left' => $daysLeft,
+            'progress' => $this->getProgress($activeSubscription, $expiresAt),
+            'status_color' => $isActive ? 'text-emerald-400' : ($isExpired ? 'text-red-400' : 'text-slate-400'),
+            'status_label' => $isActive ? '✅ Active' : ($isExpired ? '❌ Expired' : 'No Subscription'),
+            'plan_label' => $planLabel,
+            'plan' => $plan,
+            'expires_at' => $expiresAt,
+            'can_choose_plan' => $canChoosePlan,
         ];
         
-        // Plans
+        // Plans for institution
         $plans = [
             (object) [
                 'id' => 'basic',
@@ -111,7 +197,7 @@ class SubscriptionController extends Controller
             'stats'
         ));
     }
-    
+
     /**
      * Show subscription history.
      */
@@ -128,13 +214,14 @@ class SubscriptionController extends Controller
         
         return view('institution.subscription.history', compact('institution', 'history'));
     }
-    
+
     /**
      * Extend or upgrade subscription.
      */
     public function extend(Request $request)
     {
-        $institution = auth()->user()->institution;
+        $user = auth()->user();
+        $institution = $user->institution;
         
         if (!$institution) {
             abort(403, 'You do not belong to any institution.');
@@ -150,10 +237,16 @@ class SubscriptionController extends Controller
         $amount = $this->calculateAmount($request->plan, $request->period);
         
         // Calculate dates
-        $startDate = $institution->subscription_expires_at ?? now();
+        $startDate = now();
         $endDate = $this->calculateExpiry($startDate, $request->period);
         
-        // Create subscription
+        // Update user subscription fields
+        $user->update([
+            'subscription_tier' => $request->plan,
+            'subscription_expires_at' => $endDate,
+        ]);
+        
+        // Create subscription record in subscriptions table
         $subscription = $institution->subscriptions()->create([
             'plan' => $request->plan,
             'amount' => $amount,
@@ -185,13 +278,14 @@ class SubscriptionController extends Controller
         return redirect()->route('institution.subscription.index')
             ->with('success', "Subscription extended successfully! Your {$request->plan} plan is active until " . $endDate->format('M d, Y'));
     }
-    
+
     /**
      * Cancel subscription.
      */
     public function cancel()
     {
-        $institution = auth()->user()->institution;
+        $user = auth()->user();
+        $institution = $user->institution;
         
         if (!$institution) {
             abort(403, 'You do not belong to any institution.');
@@ -210,15 +304,20 @@ class SubscriptionController extends Controller
             'auto_renew' => false,
         ]);
         
+        // Clear user subscription fields
+        $user->update([
+            'subscription_tier' => null,
+            'subscription_expires_at' => null,
+        ]);
+        
         $institution->update([
             'subscription_status' => 'cancelled',
         ]);
         
         return redirect()->route('institution.subscription.index')
-            ->with('warning', 'Subscription has been cancelled. Your access will remain until ' . 
-                ($active->ends_at ? $active->ends_at->format('M d, Y') : 'the end of the current period'));
+            ->with('warning', 'Subscription has been cancelled.');
     }
-    
+
     /**
      * Calculate amount based on plan and period.
      */
@@ -247,7 +346,7 @@ class SubscriptionController extends Controller
         
         return $prices[$plan][$period] ?? 0;
     }
-    
+
     /**
      * Calculate expiry date.
      */
@@ -276,7 +375,7 @@ class SubscriptionController extends Controller
         
         return $startDate->copy()->$method();
     }
-    
+
     /**
      * Get plan limits.
      */
@@ -288,5 +387,31 @@ class SubscriptionController extends Controller
             'enterprise' => ['max_users' => null, 'max_books' => null],
             default => ['max_users' => 50, 'max_books' => 100],
         };
+    }
+
+    /**
+     * Get subscription progress.
+     */
+    private function getProgress($subscription, $expiresAt = null)
+    {
+        if ($subscription instanceof \App\Models\Subscription && $subscription->ends_at) {
+            $total = Carbon::now()->diffInDays($subscription->ends_at);
+            $elapsed = Carbon::now()->diffInDays($subscription->starts_at ?? Carbon::now());
+            
+            if ($total <= 0) return 0;
+            return round(($elapsed / $total) * 100);
+        }
+        
+        if ($expiresAt && $expiresAt > now()) {
+            // Calculate progress for user-based subscription
+            $total = max(1, Carbon::now()->diffInDays($expiresAt));
+            $startDate = Carbon::now()->subDays(30);
+            $elapsed = Carbon::now()->diffInDays($startDate);
+            
+            if ($total <= 0) return 0;
+            return round(($elapsed / $total) * 100);
+        }
+        
+        return 0;
     }
 }

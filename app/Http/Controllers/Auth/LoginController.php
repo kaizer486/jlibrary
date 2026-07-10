@@ -15,17 +15,13 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
     }
 
-    /**
-     * ✅ OVERRIDE: Force "Remember Me" to ALWAYS be false
-     */
     protected function attemptLogin(Request $request)
     {
         $credentials = $this->credentials($request);
         
-        // ✅ ALWAYS FALSE - Ignore the "Remember Me" checkbox
         return $this->guard()->attempt(
             $credentials,
-            false  // Never remember the user
+            false
         );
     }
 
@@ -34,42 +30,69 @@ class LoginController extends Controller
      */
     protected function authenticated(Request $request, $user)
     {
-        // ✅ Clear any existing remember token on login
         if ($user->remember_token) {
             $user->remember_token = null;
             $user->save();
         }
 
-        // Role-based redirect
+        // ==========================================
+        // 👑 SUPER ADMIN
+        // ==========================================
         if ($user->hasRole('super_admin')) {
             return redirect()->route('super-admin.dashboard');
         }
+        
+        // ==========================================
+        // 🛡️ ADMIN
+        // ==========================================
         if ($user->hasRole('admin')) {
             return redirect()->route('admin.dashboard');
         }
-        if ($user->hasRole('institution_admin')) {
+
+        // ==========================================
+        // 🏢 INSTITUTION ADMIN - GO TO ADMIN PANEL
+        // ==========================================
+        if ($user->hasRole('institution_admin') || $user->is_institution_admin) {
             return redirect()->route('institution.dashboard');
         }
+
+        // ==========================================
+        // 📚 LIBRARIAN - GO TO ADMIN PANEL
+        // ==========================================
         if ($user->hasRole('librarian')) {
             return redirect()->route('librarian.dashboard');
         }
+
+        // ==========================================
+        // 👨‍🏫 INSTRUCTOR
+        // ==========================================
         if ($user->hasRole('instructor')) {
             return redirect()->route('instructor.dashboard');
         }
+
+        // ==========================================
+        // ✍️ AUTHOR
+        // ==========================================
         if ($user->hasRole('author')) {
             return redirect()->route('author.dashboard');
         }
+
+        // ==========================================
+        // 👤 NORMAL USER - Public Library Page
+        // ==========================================
+        $institution = $user->institution;
+        
+        if ($institution) {
+            return redirect()->route('institution.public.index', $institution->id);
+        }
+
         return redirect()->route('dashboard');
     }
 
-    /**
-     * ✅ OVERRIDE: Logout and clear everything
-     */
     public function logout(Request $request)
     {
         $user = $this->guard()->user();
 
-        // ✅ Clear the remember token on logout
         if ($user) {
             $user->remember_token = null;
             $user->save();
@@ -77,12 +100,50 @@ class LoginController extends Controller
 
         $this->guard()->logout();
 
-        // ✅ Invalidate session
         $request->session()->invalidate();
-        
-        // ✅ Regenerate CSRF token
         $request->session()->regenerateToken();
 
         return redirect('/login');
+    }
+
+    protected function redirectTo()
+    {
+        $user = auth()->user();
+        
+        if (!$user) {
+            return route('dashboard');
+        }
+        
+        if ($user->hasRole('super_admin')) {
+            return route('super-admin.dashboard');
+        }
+        
+        if ($user->hasRole('admin')) {
+            return route('admin.dashboard');
+        }
+        
+        if ($user->hasRole('institution_admin') || $user->is_institution_admin) {
+            return route('institution.dashboard');
+        }
+        
+        if ($user->hasRole('librarian')) {
+            return route('librarian.dashboard');
+        }
+        
+        if ($user->hasRole('instructor')) {
+            return route('instructor.dashboard');
+        }
+        
+        if ($user->hasRole('author')) {
+            return route('author.dashboard');
+        }
+        
+        $institution = $user->institution;
+        
+        if ($institution) {
+            return route('institution.public.index', $institution->id);
+        }
+        
+        return route('dashboard');
     }
 }

@@ -71,30 +71,34 @@ class UserController extends Controller
     }
     
     public function store(Request $request)
-    {
-        $request->validate([
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => ['required', Rule::in(['user', 'admin', 'institution_admin', 'super_admin'])],
-            'institution_id' => 'nullable|exists:institutions,id',
-            'is_institution_admin' => 'boolean',
-        ]);
-        
-        $user = User::create([
-            'full_name' => $request->full_name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'wallet_balance' => 0,
-            'referral_code' => User::generateReferralCode(),
-            'institution_id' => ($request->role === 'institution_admin' || $request->is_institution_admin) ? $request->institution_id : null,
-            'is_institution_admin' => ($request->role === 'institution_admin' || $request->is_institution_admin) ? $request->has('is_institution_admin') : false,
-        ]);
-        
-        return redirect()->route('super-admin.users.index')->with('success', 'User created successfully!');
-    }
+{
+    $request->validate([
+        'full_name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'password' => 'required|string|min:8|confirmed',
+        'role' => ['required', Rule::in(['user', 'admin', 'institution_admin', 'super_admin'])],
+        'institution_id' => 'nullable|exists:institutions,id',
+        'is_institution_admin' => 'boolean',
+    ]);
     
+    $user = User::create([
+        'full_name' => $request->full_name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => $request->role,  
+        'wallet_balance' => 0,
+        'referral_code' => User::generateReferralCode(),
+        'institution_id' => ($request->role === 'institution_admin' || $request->is_institution_admin) ? $request->institution_id : null,
+        'is_institution_admin' => ($request->role === 'institution_admin' || $request->is_institution_admin) ? $request->has('is_institution_admin') : false,
+    ]);
+    
+    // ==========================================
+    // ASSIGN ROLE USING SPATIE
+    // ==========================================
+    $user->assignRole($request->role);  
+    
+    return redirect()->route('super-admin.users.index')->with('success', 'User created successfully!');
+}    
     public function show(User $user)
     {
         $user->load(['books', 'certificates', 'institution']);
@@ -108,42 +112,46 @@ class UserController extends Controller
     }
     
     public function update(Request $request, User $user)
-    {
-        $request->validate([
-            'full_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => ['required', Rule::in(['user', 'admin', 'institution_admin', 'super_admin'])],
-            'institution_id' => 'nullable|exists:institutions,id',
-            'is_institution_admin' => 'boolean',
-        ]);
-        
-        $user->full_name = $request->full_name;
-        $user->email = $request->email;
-        $user->role = $request->role;
-        
-        // Handle institution assignment
-        if ($request->role === 'institution_admin' || $request->is_institution_admin) {
-            $user->institution_id = $request->institution_id;
-            $user->is_institution_admin = $request->has('is_institution_admin');
-        } else {
-            $user->institution_id = null;
-            $user->is_institution_admin = false;
-        }
-        
-        $user->save();
-        
-        // Handle password update if provided
-        if ($request->filled('password')) {
-            $request->validate([
-                'password' => 'required|string|min:8|confirmed',
-            ]);
-            $user->password = Hash::make($request->password);
-            $user->save();
-        }
-        
-        return redirect()->route('super-admin.users.index')->with('success', 'User updated successfully!');
+{
+    $request->validate([
+        'full_name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email,' . $user->id,
+        'role' => ['required', Rule::in(['user', 'admin', 'institution_admin', 'super_admin'])],
+        'institution_id' => 'nullable|exists:institutions,id',
+        'is_institution_admin' => 'boolean',
+    ]);
+    
+    $user->full_name = $request->full_name;
+    $user->email = $request->email;
+    $user->role = $request->role;
+    
+    // Handle institution assignment
+    if ($request->role === 'institution_admin' || $request->is_institution_admin) {
+        $user->institution_id = $request->institution_id;
+        $user->is_institution_admin = $request->has('is_institution_admin');
+    } else {
+        $user->institution_id = null;
+        $user->is_institution_admin = false;
     }
     
+    $user->save();
+    
+    // ==========================================
+    // SYNC SPATIE ROLE
+    // ==========================================
+    $user->syncRoles([$request->role]);  // Add this line!
+    
+    // Handle password update if provided
+    if ($request->filled('password')) {
+        $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+        $user->password = Hash::make($request->password);
+        $user->save();
+    }
+    
+    return redirect()->route('super-admin.users.index')->with('success', 'User updated successfully!');
+}
     public function destroy(User $user)
     {
         // Cannot delete yourself

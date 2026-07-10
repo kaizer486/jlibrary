@@ -380,50 +380,58 @@
                                         <span class="text-xs font-semibold text-green-700">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</span>
                                     </div>
                                     <div class="mt-2">
-                                        <span class="text-xs px-2 py-0.5 rounded-full inline-block 
-                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin')) bg-red-100 text-red-700
-                                            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin')) bg-purple-100 text-purple-700
-                                            @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin')) bg-blue-100 text-blue-700
-                                            @elseif(auth()->user()->hasRole('author')) bg-green-100 text-green-700
-                                            @elseif(auth()->user()->hasRole('librarian')) bg-amber-100 text-amber-700
-                                            @elseif(auth()->user()->hasRole('instructor')) bg-cyan-100 text-cyan-700
-                                            @else bg-gray-100 text-gray-700 @endif">
-                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-                                                👑 Super Admin
-                                            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-                                                🛡️ Admin
-                                            @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
-                                                🏢 Institution Admin
-                                            @elseif(auth()->user()->hasRole('author'))
-                                                ✍️ Author
-                                            @elseif(auth()->user()->hasRole('librarian'))
-                                                📚 Librarian
-                                            @elseif(auth()->user()->hasRole('instructor'))
-                                                👨‍🏫 Instructor
-                                            @else
-                                                👤 Member
-                                            @endif
-                                        </span>
-                                    </div>
+    <span class="text-xs px-2 py-0.5 rounded-full inline-block 
+        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin')) bg-red-100 text-red-700
+        @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team')) bg-yellow-100 text-yellow-700
+        @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin')) bg-purple-100 text-purple-700
+        @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin')) bg-blue-100 text-blue-700
+        @elseif(auth()->user()->hasRole('author')) bg-green-100 text-green-700
+        @elseif(auth()->user()->hasRole('librarian')) bg-amber-100 text-amber-700
+        @elseif(auth()->user()->hasRole('instructor')) bg-cyan-100 text-cyan-700
+        @else bg-gray-100 text-gray-700 @endif">
+        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+            👑 Super Admin
+        @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+            🎨 Media Team
+        @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+            🛡️ Admin
+        @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+            🏢 Institution Admin
+        @elseif(auth()->user()->hasRole('author'))
+            ✍️ Author
+        @elseif(auth()->user()->hasRole('librarian'))
+            📚 Librarian
+        @elseif(auth()->user()->hasRole('instructor'))
+            👨‍🏫 Instructor
+        @else
+            👤 Member
+        @endif
+    </span>
+</div>                                    
                                 </div>
 
-                                <!-- ========================================== -->
-                                <!-- ADMIN ACCESS - SINGLE LINK (PRIORITY)    -->
-                                <!-- ========================================== -->
-                                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-                                    <a href="{{ route('super-admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 border-b transition">
-                                        <i class="ti ti-crown text-lg text-yellow-500"></i>
-                                        <span class="font-medium text-gray-700">Super Dashboard</span>
-                                        <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded ml-auto">Super</span>
-                                    </a>
-                                @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-                                    <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
-                                        <i class="ti ti-shield text-lg text-purple-600"></i>
-                                        <span class="font-medium text-gray-700">Admin Panel</span>
-                                        <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded ml-auto">Admin</span>
-                                    </a>
-                                @endif
-
+                               <!-- ========================================== -->
+<!-- ADMIN ACCESS - SINGLE LINK (PRIORITY)    -->
+<!-- ========================================== -->
+@if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+    <a href="{{ route('super-admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 border-b transition">
+        <i class="ti ti-crown text-lg text-yellow-500"></i>
+        <span class="font-medium text-gray-700">Super Dashboard</span>
+        <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded ml-auto">Super</span>
+    </a>
+@elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+    <a href="{{ route('super-admin.media.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 border-b transition">
+        <i class="ti ti-palette text-lg text-yellow-500"></i>
+        <span class="font-medium text-gray-700">Media Dashboard</span>
+        <span class="text-xs bg-yellow-500 text-white px-2 py-0.5 rounded ml-auto">Media</span>
+    </a>
+@elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+    <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
+        <i class="ti ti-shield text-lg text-purple-600"></i>
+        <span class="font-medium text-gray-700">Admin Panel</span>
+        <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded ml-auto">Admin</span>
+    </a>
+@endif
 
                                 <!-- ========================================== -->
 <!-- MARKETPLACE SELLER - ONLY IF APPROVED     -->

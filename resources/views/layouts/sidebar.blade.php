@@ -3,7 +3,7 @@
     <!-- Logo -->
     <div class="flex items-center justify-between p-4 border-b border-white/10">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-           <img src="{{ asset('images/jlibrary.jpeg') }}" alt="Logo" class="h-10 w-auto rounded-3xl">
+           <img src="{{ asset('images/logo.jpeg') }}" alt="Logo" class="h-10 w-auto rounded-3xl">
             <span class="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">JLIBRARY</span>
         </a>
         <button id="close-sidebar" class="lg:hidden text-gray-400 hover:text-white">
@@ -22,6 +22,8 @@
                 <p class="text-xs text-gray-400">
                     @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
                         👑 Super Administrator
+                        @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+                        🎨 Media Team
                     @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
                         🛡️ Administrator
                     @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
@@ -168,29 +170,36 @@
             @endif
         </a>
 
-        <!-- ========================================== -->
-        <!-- ADMIN/SUPER ADMIN ACCESS - SINGLE LINK    -->
-        <!-- ========================================== -->
-        @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->hasRole('admin') || auth()->user()->hasRole('super_admin'))
-            <div class="px-3 mt-4 mb-2">
-                <p class="text-xs text-gray-500 uppercase tracking-wider">Admin Access</p>
-            </div>
-            
-            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-                <a href="{{ route('super-admin.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.*') ? 'active' : '' }}">
-                    <i class="ti ti-crown text-yellow-400 text-xl"></i>
-                    <span>Super Dashboard</span>
-                   
-                </a>
-            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-                <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
-                    <i class="ti ti-shield text-purple-400 text-xl"></i>
-                    <span>Admin Panel</span>
-                    <span class="ml-auto text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">Manage</span>
-                </a>
-            @endif
-        @endif
+       <!-- ========================================== -->
+<!-- ADMIN/SUPER ADMIN/MEDIA TEAM ACCESS        -->
+<!-- ========================================== -->
+@if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isMediaTeam() || auth()->user()->hasRole('admin') || auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('media_team'))
+    <div class="px-3 mt-4 mb-2">
+        <p class="text-xs text-gray-500 uppercase tracking-wider">Admin Access</p>
+    </div>
+    
+    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+        <a href="{{ route('super-admin.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.*') ? 'active' : '' }}">
+            <i class="ti ti-crown text-yellow-400 text-xl"></i>
+            <span>Super Dashboard</span>
+        </a>
+    @endif
 
+    @if(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+        <a href="{{ route('super-admin.media.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.media.dashboard') ? 'active' : '' }}">
+            <i class="ti ti-palette text-yellow-400 text-xl"></i>
+            <span>Media Dashboard</span>
+        </a>
+    @endif
+
+    @if(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
+            <i class="ti ti-shield text-purple-400 text-xl"></i>
+            <span>Admin Panel</span>
+            <span class="ml-auto text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">Manage</span>
+        </a>
+    @endif
+@endif
 
        <!-- ========================================== -->
 <!-- MARKETPLACE SELLER SECTION                -->
@@ -328,7 +337,7 @@
         color: white !important;
     }
     .nav-item.active {
-        background: linear-gradient(135deg, #7c3aed, #db2777);
+        background: linear-gradient(135deg, #ed993a, #db4227);
         color: white;
     }
     .nav-item.active i {

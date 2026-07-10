@@ -5,7 +5,7 @@
 @section('content')
 
 <!-- ========================================== -->
-<!-- HERO SECTION - Wood-Trimmed Library Sign   -->
+<!-- HERO SECTION                               -->
 <!-- ========================================== -->
 <div class="library-hero">
     <div class="hero-content">
@@ -14,12 +14,20 @@
                 <div class="flex items-center justify-center gap-2 mb-2">
                     <i class="ti ti-library text-purple-200 text-2xl"></i>
                     <h1 class="text-2xl md:text-3xl font-bold text-white font-playfair">
-                        Welcome to {{ $institution->name }}
+                        @if($institution->type === 'bookstore')
+                            Welcome to {{ $institution->name }} Bookstore
+                        @else
+                            Welcome to {{ $institution->name }}
+                        @endif
                     </h1>
                 </div>
-              <p class="text-purple-100/80 text-sm md:text-base mx-auto whitespace-nowrap">
-    {{ $institution->description ?? 'Explore thousands of books - Find books by category, shelf, or author' }}
-</p>
+                <p class="text-purple-100/80 text-sm md:text-base mx-auto whitespace-nowrap">
+                    @if($institution->type === 'bookstore')
+                        {{ $institution->description ?? 'Browse our collection of books available for purchase' }}
+                    @else
+                        {{ $institution->description ?? 'Explore thousands of books - Find books by category, shelf, or author' }}
+                    @endif
+                </p>
                 @if($location)
                     <p class="text-purple-100/60 text-sm mt-1">
                         <i class="ti ti-map-pin"></i> {{ $location->address ?? $institution->address }}
@@ -27,8 +35,8 @@
                     </p>
                 @endif
             </div>
-
         </div>
+        
         <!-- Search -->
         <div class="mt-6">
             <form method="GET" class="flex flex-wrap gap-3">
@@ -60,7 +68,6 @@
                 <button type="submit" class="btn-library">
                     <i class="ti ti-search"></i> Search
                 </button>
-               
             </form>
 
             <div class="flex flex-wrap gap-1 mt-3">
@@ -102,17 +109,18 @@
                             $overflow = $shelfBooks->count() - $visibleBooks->count();
                         @endphp
                         
-                        {{-- ✅ REMOVED <a> - using <div> instead --}}
                         <div class="shelf-bay" onclick="window.location='{{ route('institution.public.shelf.show', [$institution->id, $shelf->id]) }}'">
+                            <!-- Debug: Show book count -->
+                            <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: #34d399; font-size: 9px; padding: 2px 8px; border-radius: 10px; z-index: 20; font-weight: bold;">
+                                {{ $shelf->books_count ?? 0 }}
+                            </div>
+                            
                             <div class="shelf-bay-label">
                                 <span class="shelf-bay-code">{{ $shelf->code }}</span>
-                                <span class="shelf-bay-count">{{ $shelf->books_count }} books</span>
+                                <span class="shelf-bay-count">{{ $shelf->books_count ?? 0 }} books</span>
                             </div>
                             <p class="shelf-bay-name">{{ $shelf->name }}</p>
 
-                            <!-- ========================================== -->
-                            <!-- BOOK COVERS - FIXED HEIGHT CONTAINER      -->
-                            <!-- ========================================== -->
                             <div class="book-spines-container">
                                 @forelse($visibleBooks as $book)
                                     <a href="{{ route('institution.public.show', [$institution->id, $book->id]) }}"
@@ -149,7 +157,6 @@
                                 </p>
                             @endif
                         </div>
-                        {{-- ✅ END OF shelf-bay div --}}
                     @endforeach
                 </div>
             @endforeach
@@ -174,14 +181,15 @@
 @endif
 
 <!-- ========================================== -->
-<!-- POPULAR BOOKS & RECENTLY ADDED - PRO SHELF -->
+<!-- POPULAR BOOKS & RECENTLY ADDED             -->
 <!-- ========================================== -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
 
     <!-- Popular Books -->
     <div id="popular">
         <h2 class="section-title">
-            <i class="ti ti-trending-up text-purple-300"></i> Popular Books
+            <i class="ti ti-trending-up text-purple-300"></i> 
+            {{ $institution->type === 'bookstore' ? 'Bestsellers' : 'Popular Books' }}
         </h2>
         <div class="featured-shelf">
             <div class="featured-books-row">
@@ -190,10 +198,14 @@
                     <a href="{{ route('institution.public.show', [$institution->id, $book->id]) }}" class="featured-book">
                         <div class="featured-book-cover">
                             <span class="featured-book-rank">{{ $i + 1 }}</span>
-                            @if($book->is_paid)
+                            @if($institution->type === 'bookstore')
                                 <span class="featured-book-badge paid">TSh {{ number_format($book->price) }}</span>
                             @else
-                                <span class="featured-book-badge free">FREE</span>
+                                @if($book->is_paid)
+                                    <span class="featured-book-badge paid">TSh {{ number_format($book->price) }}</span>
+                                @else
+                                    <span class="featured-book-badge free">FREE</span>
+                                @endif
                             @endif
                             @if($book->cover_image)
                                 <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
@@ -220,7 +232,7 @@
     <!-- Recently Added -->
     <div id="recent">
         <h2 class="section-title">
-            <i class="ti ti-clock text-purple-300"></i> Recently Added
+            <i class="ti ti-clock text-purple-300"></i> New Arrivals
         </h2>
         <div class="featured-shelf">
             <div class="featured-books-row">
@@ -228,10 +240,14 @@
                 @forelse($recentBooks as $book)
                     <a href="{{ route('institution.public.show', [$institution->id, $book->id]) }}" class="featured-book">
                         <div class="featured-book-cover">
-                            @if($book->is_paid)
+                            @if($institution->type === 'bookstore')
                                 <span class="featured-book-badge paid">TSh {{ number_format($book->price) }}</span>
                             @else
-                                <span class="featured-book-badge free">FREE</span>
+                                @if($book->is_paid)
+                                    <span class="featured-book-badge paid">TSh {{ number_format($book->price) }}</span>
+                                @else
+                                    <span class="featured-book-badge free">FREE</span>
+                                @endif
                             @endif
                             @if($book->cover_image)
                                 <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
@@ -257,7 +273,7 @@
 </div>
 
 <!-- ========================================== -->
-<!-- ALL BOOKS GRID - WOODEN SHELF STYLE        -->
+<!-- ALL BOOKS GRID                             -->
 <!-- ========================================== -->
 @if($books->count() > 0)
     <div class="mb-8">
@@ -276,16 +292,25 @@
                                 <i class="ti ti-book text-4xl text-purple-400/40"></i>
                             </div>
                         @endif
-                        @if($book->is_paid)
-                            <span class="absolute top-2 right-2 badge-paid text-xs">💰</span>
+                        
+                        @if($institution->type === 'bookstore')
+                            <span class="absolute top-2 right-2 badge-paid text-xs">TSh {{ number_format($book->price) }}</span>
                         @else
-                            <span class="absolute top-2 right-2 badge-free text-xs">FREE</span>
+                            @if($book->is_paid)
+                                <span class="absolute top-2 right-2 badge-paid text-xs">💰</span>
+                            @else
+                                <span class="absolute top-2 right-2 badge-free text-xs">FREE</span>
+                            @endif
                         @endif
                     </div>
                     <div class="mt-2">
                         <p class="book-title text-sm truncate group-hover:text-purple-300">{{ $book->title }}</p>
                         <p class="book-author truncate">{{ $book->author ?? 'Unknown' }}</p>
-                        @if($book->shelf_number)
+                        @if($institution->type === 'bookstore')
+                            <p class="text-xs text-emerald-400/60 mt-1">
+                                TSh {{ number_format($book->price, 2) }}
+                            </p>
+                        @elseif($book->shelf_number)
                             <p class="text-xs text-purple-400/40 mt-1">
                                 <i class="ti ti-map-pin text-[10px]"></i> {{ $book->shelf_number }}
                             </p>
@@ -302,7 +327,11 @@
     </div>
 @else
     <div class="book-shelf-card p-12 text-center text-white/40">
-        No books available in this library yet
+        @if($institution->type === 'bookstore')
+            No books available in this bookstore yet
+        @else
+            No books available in this library yet
+        @endif
     </div>
 @endif
 
@@ -312,7 +341,12 @@
 @if($location || $institution->address)
     <div class="library-card p-4 mt-8">
         <h3 class="font-semibold text-white flex items-center gap-2">
-            <i class="ti ti-map-pin text-purple-400"></i> Library Location
+            <i class="ti ti-map-pin text-purple-400"></i> 
+            @if($institution->type === 'bookstore')
+                Bookstore Location
+            @else
+                Library Location
+            @endif
         </h3>
         <p class="text-white text-sm mt-1">
             {{ $institution->address ?? 'Address not specified' }}
@@ -329,5 +363,98 @@
         </div>
     </div>
 @endif
+
+<!-- ========================================== -->
+<!-- STYLES - FORCE BOOK SPINES VISIBLE        -->
+<!-- ========================================== -->
+<style>
+/* Force book spines to be visible */
+.shelf-bay .book-spines-container {
+    min-height: 100px !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-end !important;
+    gap: 4px !important;
+    padding: 4px 2px !important;
+    overflow: visible !important;
+}
+
+.shelf-bay .spine-book-cover {
+    display: block !important;
+    flex: 0 0 20px !important;
+    min-width: 20px !important;
+    height: 120px !important;
+    border-radius: 2px 2px 0 0 !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
+
+.shelf-bay .spine-book-cover img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+.shelf-bay .spine-fallback-cover {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5) !important;
+}
+
+.shelf-bay .spine-fallback-cover span {
+    color: white !important;
+    font-size: 8px !important;
+    writing-mode: vertical-rl !important;
+    text-orientation: mixed !important;
+    font-weight: 700 !important;
+}
+
+.shelf-bay .empty-shelf-text {
+    color: rgba(255,255,255,0.2) !important;
+    font-size: 0.6rem !important;
+    align-self: center !important;
+    padding-bottom: 10px !important;
+    font-weight: 500 !important;
+}
+
+/* Debug badge */
+.shelf-bay .debug-count {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.7);
+    color: #34d399;
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    z-index: 20;
+    font-weight: bold;
+}
+
+/* Add color variation for book spines without covers */
+.shelf-bay .spine-book-cover:nth-child(6n+1) { background: linear-gradient(135deg, #7c3aed, #4f46e5) !important; }
+.shelf-bay .spine-book-cover:nth-child(6n+2) { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; }
+.shelf-bay .spine-book-cover:nth-child(6n+3) { background: linear-gradient(135deg, #059669, #047857) !important; }
+.shelf-bay .spine-book-cover:nth-child(6n+4) { background: linear-gradient(135deg, #d97706, #b45309) !important; }
+.shelf-bay .spine-book-cover:nth-child(6n+5) { background: linear-gradient(135deg, #2563eb, #1d4ed8) !important; }
+.shelf-bay .spine-book-cover:nth-child(6n+6) { background: linear-gradient(135deg, #7c3aed, #4f46e5) !important; }
+
+/* Responsive */
+@media (max-width: 640px) {
+    .shelf-bay .spine-book-cover {
+        height: 80px !important;
+        min-width: 14px !important;
+        flex: 0 0 14px !important;
+    }
+    .shelf-bay .book-spines-container {
+        min-height: 70px !important;
+    }
+}
+</style>
 
 @endsection

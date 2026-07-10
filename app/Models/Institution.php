@@ -107,7 +107,22 @@ class Institution extends Model
     {
         return $this->hasOne(InstitutionWallet::class);
     }
-
+/**
+ * Create a wallet for the institution.
+ */
+public function createWallet()
+{
+    // Check if wallet already exists
+    if ($this->wallet) {
+        return $this->wallet;
+    }
+    
+    return $this->wallet()->create([
+        'balance' => 0,
+        'total_deposited' => 0,
+        'total_withdrawn' => 0,
+    ]);
+}
     public function withdrawalRequests()
     {
         return $this->hasMany(WithdrawalRequest::class);
@@ -630,5 +645,59 @@ public function activeSubscription()
             'subscription_days_left' => $this->getDaysLeft(),
             'subscription_plan' => $this->getPlanLabel(),
         ];
+    }
+        // ==========================================
+    // JOIN METHOD CHECKS
+    // ==========================================
+    
+    /**
+     * Check if institution requires approval to join.
+     * School, College, University require approval.
+     */
+    public function requiresApproval(): bool
+    {
+        return in_array($this->type, ['school', 'college', 'university']);
+    }
+
+    /**
+     * Check if institution allows free join (no approval needed).
+     * Library, Bookstore, Publisher, Research Center, Other.
+     */
+    public function allowsFreeJoin(): bool
+    {
+        return !$this->requiresApproval();
+    }
+
+    /**
+     * Get the join type label for display.
+     */
+    public function getJoinTypeLabelAttribute(): string
+    {
+        if ($this->requiresApproval()) {
+            return '🛡️ Requires Approval';
+        }
+        return '✅ Instant Join';
+    }
+
+    /**
+     * Get the join button text.
+     */
+    public function getJoinButtonTextAttribute(): string
+    {
+        if ($this->requiresApproval()) {
+            return 'Request to Join';
+        }
+        return 'Join Now (Free)';
+    }
+
+    /**
+     * Get the join button color class.
+     */
+    public function getJoinButtonColorAttribute(): string
+    {
+        if ($this->requiresApproval()) {
+            return 'bg-gradient-to-r from-purple-600 to-pink-600';
+        }
+        return 'bg-gradient-to-r from-emerald-600 to-emerald-500';
     }
 }

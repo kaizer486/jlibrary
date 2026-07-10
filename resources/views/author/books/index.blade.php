@@ -3,83 +3,94 @@
 @section('title', 'My Books')
 
 @section('content')
-<div class="fixed inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-900 -z-10"></div>
+
+<!-- ========================================== -->
+<!-- LIGHT BISQUE BACKGROUND                    -->
+<!-- ========================================== -->
+<div style="position: fixed; inset: 0; background: #e9e8e6; z-index: -10;"></div>
 
 <div class="relative z-10 min-h-screen py-8">
     <div class="container mx-auto px-4 max-w-6xl">
         
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
+        <!-- ========================================== -->
+        <!-- HEADER CARD                                 -->
+        <!-- ========================================== -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-white flex items-center gap-2">
-                    <i class="ti ti-books"></i> My Books
+                <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <span class="bg-gradient-to-br from-orange-500 to-amber-500 p-2 rounded-xl shadow-lg shadow-orange-500/20">
+                        <i class="ti ti-books text-white text-xl"></i>
+                    </span>
+                    My Books
                 </h1>
-                <p class="text-gray-300 text-sm mt-1">Manage your published books</p>
+                <p class="text-slate-600 text-sm mt-1">Manage your published books</p>
             </div>
-            <a href="{{ route('author.books.create') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <a href="{{ route('author.books.create') }}" class="bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-5 py-2.5 rounded-xl transition flex items-center gap-2 text-sm font-medium border-2 border-orange-400/30">
                 <i class="ti ti-plus"></i> Upload New Book
             </a>
         </div>
 
-        <!-- Books Grid -->
+        <!-- ========================================== -->
+        <!-- BOOKS GRID                                 -->
+        <!-- ========================================== -->
         @if($books->count() > 0)
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($books as $book)
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition group">
+            <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 overflow-hidden hover:shadow-lg hover:border-orange-300/60 transition group">
                 <!-- Cover Image -->
-                <div class="relative h-48 bg-gray-200">
+                <div class="relative h-48 bg-orange-50/60">
                     @if($book->cover_image)
                         <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
                     @else
                         <div class="w-full h-full flex items-center justify-center">
-                            <i class="ti ti-book text-6xl text-gray-400"></i>
+                            <i class="ti ti-book text-6xl text-orange-400/40"></i>
                         </div>
                     @endif
                     <!-- Status Badge -->
                     <div class="absolute top-3 right-3">
                         @if($book->status === 'approved')
-                            <span class="px-2 py-1 rounded-lg text-xs font-semibold bg-green-500 text-white">Approved</span>
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500 text-white border border-emerald-400/30">✅ Approved</span>
                         @elseif($book->status === 'pending')
-                            <span class="px-2 py-1 rounded-lg text-xs font-semibold bg-yellow-500 text-white">Pending</span>
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-yellow-500 text-white border border-yellow-400/30">⏳ Pending</span>
                         @else
-                            <span class="px-2 py-1 rounded-lg text-xs font-semibold bg-red-500 text-white">Rejected</span>
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500 text-white border border-red-400/30">❌ Rejected</span>
                         @endif
                     </div>
                 </div>
                 
                 <!-- Content -->
                 <div class="p-4">
-                    <h3 class="font-bold text-lg text-gray-800 mb-1 line-clamp-1">{{ $book->title }}</h3>
-                    <p class="text-sm text-gray-500 mb-2">by {{ $book->author }}</p>
-                    <p class="text-sm text-gray-600 line-clamp-2 mb-3">{{ Str::limit($book->description ?? 'No description', 80) }}</p>
+                    <h3 class="font-bold text-lg text-slate-800 mb-1 line-clamp-1">{{ $book->title }}</h3>
+                    <p class="text-sm text-slate-500 mb-2">by {{ $book->author }}</p>
+                    <p class="text-sm text-slate-600 line-clamp-2 mb-3">{{ Str::limit($book->description ?? 'No description', 80) }}</p>
                     
                     <!-- Stats -->
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <div class="flex items-center justify-between pt-3 border-t-2 border-slate-200/60">
                         <div class="flex items-center gap-3">
-                            <div class="flex items-center gap-1 text-gray-500 text-xs">
-                                <i class="ti ti-download"></i>
+                            <div class="flex items-center gap-1 text-slate-500 text-xs">
+                                <i class="ti ti-download text-orange-500"></i>
                                 <span>{{ number_format($book->downloads ?? 0) }}</span>
                             </div>
-                            <div class="flex items-center gap-1 text-gray-500 text-xs">
+                            <div class="flex items-center gap-1 text-slate-500 text-xs">
                                 <i class="ti ti-star text-yellow-400"></i>
                                 <span>{{ $book->averageRating() ?? 0 }}</span>
                             </div>
-                            <div class="flex items-center gap-1 text-gray-500 text-xs">
-                                <i class="ti ti-wallet"></i>
+                            <div class="flex items-center gap-1 text-slate-500 text-xs">
+                                <i class="ti ti-wallet text-orange-500"></i>
                                 <span>{{ $book->is_paid ? 'TSh '.number_format($book->price, 2) : 'FREE' }}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <a href="{{ route('author.books.show', $book) }}" class="text-blue-600 hover:text-blue-800" title="View">
+                            <a href="{{ route('author.books.show', $book) }}" class="text-blue-600 hover:text-blue-800 transition" title="View">
                                 <i class="ti ti-eye"></i>
                             </a>
-                            <a href="{{ route('author.books.edit', $book) }}" class="text-green-600 hover:text-green-800" title="Edit">
+                            <a href="{{ route('author.books.edit', $book) }}" class="text-orange-600 hover:text-orange-800 transition" title="Edit">
                                 <i class="ti ti-edit"></i>
                             </a>
                             <form method="POST" action="{{ route('author.books.destroy', $book) }}" class="inline" onsubmit="return confirm('Delete {{ addslashes($book->title) }} permanently?')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-800" title="Delete">
+                                <button type="submit" class="text-red-600 hover:text-red-800 transition" title="Delete">
                                     <i class="ti ti-trash"></i>
                                 </button>
                             </form>
@@ -95,11 +106,16 @@
         </div>
 
         @else
-        <div class="bg-white rounded-xl shadow-sm p-12 text-center">
-            <i class="ti ti-books text-6xl text-gray-400 mb-4 block"></i>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">No Books Yet</h3>
-            <p class="text-gray-500 mb-4">Upload your first book to start earning royalties.</p>
-            <a href="{{ route('author.books.create') }}" class="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
+        <!-- ========================================== -->
+        <!-- EMPTY STATE CARD                           -->
+        <!-- ========================================== -->
+        <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-16 text-center">
+            <div class="w-24 h-24 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-500/20">
+                <i class="ti ti-books text-4xl text-white"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-slate-800 mb-2">No Books Yet</h3>
+            <p class="text-slate-500 mb-4">Upload your first book to start earning royalties.</p>
+            <a href="{{ route('author.books.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-orange-600/25 transition font-medium border-2 border-orange-400/30">
                 <i class="ti ti-plus"></i> Upload Your First Book
             </a>
         </div>

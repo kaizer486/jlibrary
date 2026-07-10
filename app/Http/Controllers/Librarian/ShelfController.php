@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Librarian;
 use App\Http\Controllers\Controller;
 use App\Models\Shelf;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ShelfController extends Controller
 {
@@ -18,7 +19,6 @@ class ShelfController extends Controller
 
         $query = Shelf::where('institution_id', $institution->id);
 
-        // Search
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -28,7 +28,6 @@ class ShelfController extends Controller
             });
         }
 
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -51,32 +50,47 @@ class ShelfController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $institution = auth()->user()->institution;
+{
+    $institution = auth()->user()->institution;
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:shelves,code',
-            'category' => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'floor' => 'nullable|string|max:50',
-            'section' => 'nullable|string|max:100',
-            'column' => 'nullable|string|max:50',
-            'row' => 'nullable|string|max:50',
-            'capacity' => 'required|integer|min:1',
-            'current_count' => 'nullable|integer|min:0',
-            'status' => 'required|in:active,inactive,full',
-        ]);
-
-        $validated['institution_id'] = $institution->id;
-        $validated['current_count'] = $validated['current_count'] ?? 0;
-
-        Shelf::create($validated);
-
-        return redirect()->route('librarian.shelves.index')
-            ->with('success', 'Shelf created successfully!');
+    if (!$institution) {
+        abort(403, 'You do not belong to any institution.');
     }
 
+    // ✅ Check only NON-DELETED records
+    $exists = Shelf::where('institution_id', $institution->id)
+        ->where('code', $request->code)
+        ->whereNull('deleted_at')  // ✅ Only check non-deleted
+        ->exists();
+
+    if ($exists) {
+        return redirect()->back()
+            ->with('error', 'The shelf code "' . $request->code . '" has already been taken in this institution.')
+            ->withInput();
+    }
+
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'code' => 'required|string|max:50',
+        'category' => 'nullable|string|max:100',
+        'description' => 'nullable|string',
+        'floor' => 'nullable|string|max:50',
+        'section' => 'nullable|string|max:100',
+        'column' => 'nullable|string|max:50',
+        'row' => 'nullable|string|max:50',
+        'capacity' => 'required|integer|min:1',
+        'current_count' => 'nullable|integer|min:0',
+        'status' => 'required|in:active,inactive,full',
+    ]);
+
+    $validated['institution_id'] = $institution->id;
+    $validated['current_count'] = $validated['current_count'] ?? 0;
+
+    Shelf::create($validated);
+
+    return redirect()->route('librarian.shelves.index')
+        ->with('success', 'Shelf created successfully!');
+}
     public function show(Shelf $shelf)
     {
         $institution = auth()->user()->institution;
@@ -110,9 +124,21 @@ class ShelfController extends Controller
             abort(403, 'This shelf does not belong to your institution.');
         }
 
+        // ✅ Manual check first (excluding current shelf)
+        $exists = Shelf::where('institution_id', $institution->id)
+            ->where('code', $request->code)
+            ->where('id', '!=', $shelf->id)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()
+                ->with('error', 'The shelf code "' . $request->code . '" has already been taken in this institution.')
+                ->withInput();
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:shelves,code,' . $shelf->id,
+            'code' => 'required|string|max:50',
             'category' => 'nullable|string|max:100',
             'description' => 'nullable|string',
             'floor' => 'nullable|string|max:50',
@@ -140,7 +166,6 @@ class ShelfController extends Controller
             abort(403, 'This shelf does not belong to your institution.');
         }
 
-        // Check if shelf has books
         if ($shelf->books()->count() > 0) {
             return redirect()->back()
                 ->with('error', 'Cannot delete shelf with books. Remove books first.');

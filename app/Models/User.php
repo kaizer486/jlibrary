@@ -364,25 +364,36 @@ public function getTotalSalesAttribute()
 
     // ========== ROLE METHODS (Using Spatie) ==========
     
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole('super_admin');
-    }
+  public function isSuperAdmin(): bool
+{
+    return $this->hasRole('super_admin') || $this->role === 'super_admin';
+}
 
-    public function isAdmin(): bool
+  /**
+     * Check if user is Media Team
+     */
+    public function isMediaTeam(): bool
     {
-        return $this->hasRole('admin');
+        return $this->hasRole('media_team');
     }
+ 
 
-    public function isUser(): bool
-    {
-        return $this->hasRole('user');
-    }
+   public function isAdmin(): bool
+{
+    return $this->hasRole('admin') || $this->role === 'admin';
+}
+
+public function isUser(): bool
+{
+    return $this->hasRole('user') || $this->role === 'user';
+}
     
-    public function isInstitutionAdmin(): bool
-    {
-        return $this->hasRole('institution_admin') || $this->is_institution_admin === true;
-    }
+  public function isInstitutionAdmin(): bool
+{
+    return $this->hasRole('institution_admin') || 
+           $this->role === 'institution_admin' || 
+           $this->is_institution_admin === true;
+}
 
     public function isLibrarian(): bool
     {
@@ -433,55 +444,59 @@ public function getTotalSalesAttribute()
     /**
      * Get the role label for display.
      */
-    public function getRoleLabel(): string
-    {
-        $role = $this->getRoleNames()->first() ?? 'user';
-        
-        return match($role) {
-            'super_admin' => '👑 Super Admin',
-            'admin' => '🛡️ Admin',
-            'institution_admin' => '🏢 Institution Admin',
-            'school_admin' => '🏫 School Admin',
-            'college_admin' => '🎓 College Admin',
-            'university_admin' => '🏛️ University Admin',
-            'library_admin' => '📚 Library Admin',
-            'bookstore_admin' => '📖 Bookstore Admin',
-            'publisher_admin' => '📰 Publisher Admin',
-            'researcher' => '🔬 Researcher',
-            'librarian' => '📚 Librarian',
-            'instructor' => '👨‍🏫 Instructor',
-            'author' => '✍️ Author',
-            'bookseller' => '📖 Bookseller',
-            default => '👤 Member',
-        };
-    }
+   /**
+ * Get the role label for display.
+ */
+public function getRoleLabel(): string
+{
+    $role = $this->getRoleNames()->first() ?? 'user';
+    
+    return match($role) {
+        'super_admin' => '👑 Super Admin',
+        'media_team' => '🎨 Media Team',
+        'admin' => '🛡️ Admin',
+        'institution_admin' => '🏢 Institution Admin',
+        'school_admin' => '🏫 School Admin',
+        'college_admin' => '🎓 College Admin',
+        'university_admin' => '🏛️ University Admin',
+        'library_admin' => '📚 Library Admin',
+        'bookstore_admin' => '📖 Bookstore Admin',
+        'publisher_admin' => '📰 Publisher Admin',
+        'researcher' => '🔬 Researcher',
+        'librarian' => '📚 Librarian',
+        'instructor' => '👨‍🏫 Instructor',
+        'author' => '✍️ Author',
+        'bookseller' => '📖 Bookseller',
+        default => '👤 Member',
+    };
+}
 
     /**
-     * Get role badge class.
-     */
-    public function getRoleBadgeClass(): string
-    {
-        $role = $this->getRoleNames()->first() ?? 'user';
-        
-        return match($role) {
-            'super_admin' => 'bg-red-100 text-red-700',
-            'admin' => 'bg-purple-100 text-purple-700',
-            'institution_admin' => 'bg-blue-100 text-blue-700',
-            'school_admin' => 'bg-green-100 text-green-700',
-            'college_admin' => 'bg-cyan-100 text-cyan-700',
-            'university_admin' => 'bg-indigo-100 text-indigo-700',
-            'library_admin' => 'bg-sky-100 text-sky-700',
-            'bookstore_admin' => 'bg-amber-100 text-amber-700',
-            'publisher_admin' => 'bg-fuchsia-100 text-fuchsia-700',
-            'researcher' => 'bg-teal-100 text-teal-700',
-            'librarian' => 'bg-blue-100 text-blue-700',
-            'instructor' => 'bg-green-100 text-green-700',
-            'author' => 'bg-purple-100 text-purple-700',
-            'bookseller' => 'bg-orange-100 text-orange-700',
-            default => 'bg-gray-100 text-gray-700',
-        };
-    }
-
+ * Get role badge class.
+ */
+public function getRoleBadgeClass(): string
+{
+    $role = $this->getRoleNames()->first() ?? 'user';
+    
+    return match($role) {
+        'super_admin' => 'bg-red-100 text-red-700',
+        'media_team' => 'bg-purple-100 text-purple-700',
+        'admin' => 'bg-purple-100 text-purple-700',
+        'institution_admin' => 'bg-blue-100 text-blue-700',
+        'school_admin' => 'bg-green-100 text-green-700',
+        'college_admin' => 'bg-cyan-100 text-cyan-700',
+        'university_admin' => 'bg-indigo-100 text-indigo-700',
+        'library_admin' => 'bg-sky-100 text-sky-700',
+        'bookstore_admin' => 'bg-amber-100 text-amber-700',
+        'publisher_admin' => 'bg-fuchsia-100 text-fuchsia-700',
+        'researcher' => 'bg-teal-100 text-teal-700',
+        'librarian' => 'bg-blue-100 text-blue-700',
+        'instructor' => 'bg-green-100 text-green-700',
+        'author' => 'bg-purple-100 text-purple-700',
+        'bookseller' => 'bg-orange-100 text-orange-700',
+        default => 'bg-gray-100 text-gray-700',
+    };
+}
     /**
      * Check if user is a specific type of institution admin.
      */

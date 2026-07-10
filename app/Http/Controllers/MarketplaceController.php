@@ -151,16 +151,13 @@ class MarketplaceController extends Controller
             ->with('success', 'Book deleted successfully!');
     }
 
-    /**
-     * Get seller's listings (My Books)
-     */
-    public function myListings()
-    {
-        $listings = auth()->user()
-            ->marketplaceListings()
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+   public function myListings()
+{
+    $listings = auth()->user()
+        ->marketplaceListings()
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
 
-        return view('seller.listings', compact('listings'));
-    }
+    return view('marketplace.listings', compact('listings'));
+}
 }

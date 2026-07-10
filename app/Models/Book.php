@@ -57,6 +57,13 @@ class Book extends Model
         'downloads',
         'copies_available',
         'total_copies',
+
+         'is_bookstore_item',
+    'book_type',
+    'softcopy_price',
+    'hardcopy_price',
+    'stock_quantity',
+    'hardcopy_available',
     ];
 
     // ==========================================
@@ -74,6 +81,12 @@ class Book extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+
+         'is_bookstore_item' => 'boolean',
+    'softcopy_price' => 'decimal:2',
+    'hardcopy_price' => 'decimal:2',
+    'stock_quantity' => 'integer',
+    'hardcopy_available' => 'boolean',
     ];
 
     // ==========================================

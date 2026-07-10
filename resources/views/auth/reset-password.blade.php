@@ -17,7 +17,7 @@
             <!-- Logo Section -->
             <div class="text-center mb-2">
                 <div class="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-2xl mb-2 mt-1 backdrop-blur-sm">
-                    <img src="{{ asset('images/jlibrary.jpeg') }}" alt="Logo" class="h-20 w-auto rounded-2xl">
+                    <img src="{{ asset('images/logo.jpeg') }}" alt="Logo" class="h-20 w-auto rounded-2xl">
                 </div>
                 <h1 class="text-3xl font-bold text-white">JLIBRARY</h1>
                 <p class="text-purple-200 mt-1">Create New Password</p>

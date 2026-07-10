@@ -23,12 +23,6 @@ class InstitutionCreationController extends Controller
                 ->with('info', 'You already have a pending institution creation request.');
         }
 
-        // ✅ REMOVED: Institution check - users can request even if they're in an institution
-        // if (auth()->user()->institution_id) {
-        //     return redirect()->route('dashboard')
-        //         ->with('info', 'You are already a member of an institution.');
-        // }
-
         return view('institution.requests.create');
     }
 
@@ -47,24 +41,41 @@ class InstitutionCreationController extends Controller
                 ->with('error', 'You already have a pending request.');
         }
 
-        // ✅ REMOVED: Institution check
-        // if (auth()->user()->institution_id) {
-        //     return redirect()->route('dashboard')
-        //         ->with('error', 'You are already a member of an institution.');
-        // }
-
+        // ==========================================
+        // ALL FIELDS REQUIRED - UPDATED VALIDATION
+        // ==========================================
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|string|in:school,college,university,library,bookstore,publisher,research_center,academy,institute',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'city' => 'nullable|string|max:255',
-            'region' => 'nullable|string|max:255',
-            'address' => 'nullable|string|max:500',
-            'description' => 'nullable|string|max:1000',
-            'website' => 'nullable|url|max:255',
-            'motivation' => 'nullable|string|max:1000',
-            'document' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+            'type' => 'required|string|in:school,college,university,library,bookstore,publisher,research_center,academy,institute,other',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:50',
+            'city' => 'required|string|max:255',
+            'region' => 'required|string|max:255',
+            'address' => 'required|string|max:500',
+            'description' => 'required|string|min:20|max:1000',
+            'website' => 'required|url|max:255',
+            'motivation' => 'required|string|min:20|max:1000',
+            'document' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
+        ], [
+            // Custom error messages
+            'name.required' => 'Please enter the institution name.',
+            'type.required' => 'Please select the institution type.',
+            'type.in' => 'Please select a valid institution type.',
+            'email.required' => 'Please enter the contact email.',
+            'email.email' => 'Please enter a valid email address.',
+            'phone.required' => 'Please enter the phone number.',
+            'city.required' => 'Please enter the city.',
+            'region.required' => 'Please enter the region or state.',
+            'address.required' => 'Please enter the address.',
+            'description.required' => 'Please describe your institution.',
+            'description.min' => 'Description must be at least 20 characters.',
+            'website.required' => 'Please enter the website URL.',
+            'website.url' => 'Please enter a valid website URL (e.g., https://example.com).',
+            'motivation.required' => 'Please explain your motivation.',
+            'motivation.min' => 'Motivation must be at least 20 characters.',
+            'document.required' => 'Please upload a supporting document.',
+            'document.mimes' => 'Document must be PDF, Word, or image file.',
+            'document.max' => 'Document size must not exceed 10MB.',
         ]);
 
         // Handle document upload
@@ -77,14 +88,14 @@ class InstitutionCreationController extends Controller
             'user_id' => auth()->id(),
             'name' => $validated['name'],
             'type' => $validated['type'],
-            'email' => $validated['email'] ?? null,
-            'phone' => $validated['phone'] ?? null,
-            'city' => $validated['city'] ?? null,
-            'region' => $validated['region'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'description' => $validated['description'] ?? null,
-            'website' => $validated['website'] ?? null,
-            'motivation' => $validated['motivation'] ?? null,
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'city' => $validated['city'],
+            'region' => $validated['region'],
+            'address' => $validated['address'],
+            'description' => $validated['description'],
+            'website' => $validated['website'],
+            'motivation' => $validated['motivation'],
             'document_path' => $documentPath,
             'status' => 'pending',
         ]);

@@ -81,5 +81,6 @@ class Kernel extends HttpKernel
         'institution.admin' => \App\Http\Middleware\InstitutionAdminMiddleware::class,
         'librarian' => \App\Http\Middleware\LibrarianMiddleware::class,
         'library' => \App\Http\Middleware\LibraryMiddleware::class,
+        'media_team' => \App\Http\Middleware\MediaTeamMiddleware::class,
     ];
 }

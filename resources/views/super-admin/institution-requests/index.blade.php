@@ -84,16 +84,48 @@
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <div>
-                            <p class="text-sm text-gray-800">{{ $request->user->full_name }}</p>
-                            <p class="text-xs text-gray-500">{{ $request->user->email }}</p>
-                        </div>
+                        @if($request->user)
+                            <div>
+                                <p class="text-sm text-gray-800">{{ $request->user->full_name }}</p>
+                                <p class="text-xs text-gray-500">{{ $request->user->email }}</p>
+                            </div>
+                        @else
+                            <div>
+                                <p class="text-sm text-red-500">⚠️ User Deleted</p>
+                                <p class="text-xs text-gray-400">User no longer exists</p>
+                            </div>
+                        @endif
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ $request->type_label }}</td>
-                    <td class="px-6 py-4">{!! $request->status_badge !!}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium
+                            @if($request->type == 'new') bg-blue-100 text-blue-700
+                            @elseif($request->type == 'update') bg-yellow-100 text-yellow-700
+                            @else bg-gray-100 text-gray-700 @endif">
+                            {{ $request->type_label }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        @if($request->status == 'pending')
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                                ⏳ Pending
+                            </span>
+                        @elseif($request->status == 'approved')
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                ✅ Approved
+                            </span>
+                        @elseif($request->status == 'rejected')
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                ❌ Rejected
+                            </span>
+                        @else
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                {{ ucfirst($request->status) }}
+                            </span>
+                        @endif
+                    </td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $request->created_at->format('M d, Y') }}</td>
                     <td class="px-6 py-4 text-sm">
-                        <a href="{{ route('super-admin.institution-requests.show', $request->id) }}" class="text-purple-600 hover:text-purple-800 transition">
+                        <a href="{{ route('super-admin.institution-requests.show', $request->id) }}" class="text-purple-600 hover:text-purple-800 transition inline-flex items-center gap-1">
                             <i class="ti ti-eye"></i> View
                         </a>
                     </td>

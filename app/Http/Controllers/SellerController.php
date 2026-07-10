@@ -73,16 +73,58 @@ class SellerController extends Controller
     {
         $user = auth()->user();
         
+        // Total earnings
         $totalEarnings = $user->sellerOrders()->where('status', 'completed')->sum('seller_earnings');
+        
+        // Pending earnings
         $pendingEarnings = $user->sellerOrders()->where('status', 'pending')->sum('seller_earnings');
         
+        // Monthly earnings (current month)
         $monthlyEarnings = $user->sellerOrders()
             ->where('status', 'completed')
+            ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
-            ->selectRaw('MONTH(created_at) as month, SUM(seller_earnings) as total')
-            ->groupBy('month')
-            ->get();
+            ->sum('seller_earnings');
+        
+        // Monthly data for chart (last 6 months)
+        $monthlyData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = now()->subMonths($i);
+            $total = $user->sellerOrders()
+                ->where('status', 'completed')
+                ->whereMonth('created_at', $month->month)
+                ->whereYear('created_at', $month->year)
+                ->sum('seller_earnings');
+            
+            $monthlyData[] = [
+                'month' => $month->format('M Y'),
+                'total' => $total,
+                'percentage' => $totalEarnings > 0 ? round(($total / $totalEarnings) * 100, 1) : 0
+            ];
+        }
+        
+        // Recent transactions
+        $transactions = $user->sellerOrders()
+            ->where('status', 'completed')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($order) {
+                return (object)[
+                    'description' => 'Order #' . $order->id . ' - ' . ($order->listing->title ?? 'Book Sale'),
+                    'amount' => $order->seller_earnings ?? $order->amount ?? 0,
+                    'type' => 'credit',
+                    'created_at' => $order->created_at,
+                    'order_id' => $order->id
+                ];
+            });
 
-        return view('seller.earnings', compact('totalEarnings', 'pendingEarnings', 'monthlyEarnings'));
+        return view('seller.earnings', compact(
+            'totalEarnings',
+            'pendingEarnings',
+            'monthlyEarnings',
+            'monthlyData',
+            'transactions'
+        ));
     }
 }
