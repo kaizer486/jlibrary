@@ -15,6 +15,7 @@ use App\Models\QuizAttempt;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Traits\HasRoles; 
 use Laravel\Sanctum\HasApiTokens;
+use App\Notifications\CustomResetPasswordNotification;
 
 /**
  * @property int $id
@@ -700,19 +701,12 @@ public function hasInstitution(): bool
         return $this->isSuperAdmin() && $this->id !== $user->id;
     }
 
+    public function sendPasswordResetNotification($token)
+{
+    $this->notify(new CustomResetPasswordNotification($token));
+}
 
     
-    // ==========================================
-    // SUBSCRIPTION RELATIONSHIPS (Polymorphic)
-    // ==========================================
-
-    /**
-     * Get all subscriptions for this user.
-     */
-    public function subscriptions()
-    {
-        return $this->morphMany(Subscription::class, 'subscribable');
-    }
 
     /**
      * Get the active subscription.
@@ -749,78 +743,136 @@ public function hasInstitution(): bool
     // SUBSCRIPTION METHODS
     // ==========================================
 
-    /**
-     * Check if user has active subscription.
-     */
-    public function hasActiveSubscription(): bool
-    {
-        $active = $this->activeSubscription;
-        return $active && $active->isActive();
+ public function hasActiveSubscription(): bool
+{
+    // Check 1: User's own subscription_tier field in users table
+    if ($this->subscription_tier && $this->subscription_expires_at) {
+        return $this->subscription_expires_at > now();
     }
+    
+    // Check 2: User's own subscription in subscriptions table
+    if ($this->subscriptions()
+        ->where('status', 'active')
+        ->where('ends_at', '>', now())
+        ->exists()) {
+        return true;
+    }
+    
+    // Check 3: Institution subscription (if user belongs to an institution)
+    if ($this->institution && $this->institution->hasActiveSubscription()) {
+        return true;
+    }
+    
+    return false;
+}
 
-    /**
-     * Get days left in subscription.
-     */
-    public function getSubscriptionDaysLeft(): int
-    {
-        $active = $this->activeSubscription;
-        if (!$active) {
+
+public function getSubscriptionDaysLeft(): int
+{
+    // Check 1: User's own subscription_tier field
+    if ($this->subscription_expires_at) {
+        if ($this->subscription_expires_at->isPast()) {
             return 0;
         }
-        return $active->daysRemaining();
+        return max(0, now()->diffInDays($this->subscription_expires_at, false));
     }
+    
+    // Check 2: User's own subscription in subscriptions table
+    $subscription = $this->subscriptions()
+        ->where('status', 'active')
+        ->where('ends_at', '>', now())
+        ->latest()
+        ->first();
+    
+    if ($subscription && $subscription->ends_at) {
+        if ($subscription->ends_at->isPast()) {
+            return 0;
+        }
+        return max(0, now()->diffInDays($subscription->ends_at, false));
+    }
+    
+    // Check 3: Institution subscription
+    if ($this->institution) {
+        return $this->institution->getSubscriptionDaysLeft();
+    }
+    
+    return 0;
+}
 
-    /**
-     * Get subscription status color.
-     */
-    public function getSubscriptionStatusColor(): string
-    {
-        $daysLeft = $this->getSubscriptionDaysLeft();
-        
-        if ($daysLeft <= 0) {
-            return 'red';
-        } elseif ($daysLeft <= 7) {
-            return 'red';
-        } elseif ($daysLeft <= 30) {
-            return 'yellow';
-        } elseif ($daysLeft <= 60) {
-            return 'orange';
-        }
-        return 'green';
-    }
 
-    /**
-     * Get subscription status label.
-     */
-    public function getSubscriptionStatusLabel(): string
-    {
-        if (!$this->hasActiveSubscription()) {
-            return '⚠️ No Active Subscription';
-        }
-        
-        $daysLeft = $this->getSubscriptionDaysLeft();
-        
-        if ($daysLeft <= 7) {
-            return "🔴 Expires in {$daysLeft} days";
-        } elseif ($daysLeft <= 30) {
-            return "🟡 Expires in {$daysLeft} days";
-        } elseif ($daysLeft <= 60) {
-            return "🟠 Expires in {$daysLeft} days";
-        }
-        return "✅ Active ({$daysLeft} days left)";
-    }
+public function subscriptions()
+{
+    return $this->hasMany(Subscription::class, 'subscribable_id')
+        ->where('subscribable_type', User::class);
+}
 
-    /**
-     * Get user plan label.
-     */
-    public function getPlanLabel(): string
-    {
-        $active = $this->activeSubscription;
-        if ($active) {
-            return $active->getPlanLabel();
-        }
-        return '🆓 Free';
+ public function getSubscriptionStatusColor(): string
+{
+    $daysLeft = $this->getSubscriptionDaysLeft();
+    
+    if ($daysLeft <= 0) {
+        return 'red';
+    } elseif ($daysLeft <= 7) {
+        return 'red';
+    } elseif ($daysLeft <= 30) {
+        return 'yellow';
+    } elseif ($daysLeft <= 60) {
+        return 'orange';
     }
+    return 'green';
+}
+
+public function getSubscriptionStatusLabel(): string
+{
+    if (!$this->hasActiveSubscription()) {
+        return ' No Active Subscription';
+    }
+    
+    $daysLeft = $this->getSubscriptionDaysLeft();
+    
+    if ($daysLeft <= 0) {
+        return '🔴 Expired';
+    } elseif ($daysLeft <= 7) {
+        return "🔴 Expires in {$daysLeft} days";
+    } elseif ($daysLeft <= 30) {
+        return "🟡 Expires in {$daysLeft} days";
+    } elseif ($daysLeft <= 60) {
+        return "🟠 Expires in {$daysLeft} days";
+    }
+    return "✅ Active ({$daysLeft} days left)";
+}
+   public function getPlanLabel(): string
+{
+    // Check 1: User's own subscription_tier
+    if ($this->subscription_tier) {
+        return match($this->subscription_tier) {
+            'basic' => '📘 Basic',
+            'premium' => '📚 Premium',
+            'enterprise' => '🏢 Enterprise',
+            'free' => '🆓 Free',
+            default => '📘 ' . ucfirst($this->subscription_tier),
+        };
+    }
+    
+    // Check 2: User's own subscription in subscriptions table
+    $subscription = $this->subscriptions()
+        ->where('status', 'active')
+        ->where('ends_at', '>', now())
+        ->latest()
+        ->first();
+    
+    if ($subscription) {
+        return $subscription->getPlanLabel();
+    }
+    
+    // Check 3: Institution subscription
+    if ($this->institution && $this->institution->hasActiveSubscription()) {
+        return $this->institution->getPlanLabel();
+    }
+    
+    return '🆓 Free';
+}
+
 
     /**
      * Check if user can access premium feature.

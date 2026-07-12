@@ -77,7 +77,7 @@
                                     <option value="bookstore" {{ old('type') == 'bookstore' ? 'selected' : '' }}>📖 Bookstore</option>
                                     <option value="publisher" {{ old('type') == 'publisher' ? 'selected' : '' }}>📰 Publisher</option>
                                     <option value="research_center" {{ old('type') == 'research_center' ? 'selected' : '' }}>🔬 Research Center</option>
-                                   
+                                    <option value="other" {{ old('type') == 'other' ? 'selected' : '' }}>🏢 Other</option>
                                 </select>
                                 @error('type')
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -118,11 +118,12 @@
                                 @enderror
                             </div>
 
+                            <!-- ✅ FIXED: Website is now OPTIONAL -->
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 mb-1.5">
-                                    Website <span class="text-red-500">*</span>
+                                    Website <span class="text-slate-400 text-xs font-normal">(Optional)</span>
                                 </label>
-                                <input type="url" name="website" value="{{ old('website') }}" required
+                                <input type="url" name="website" value="{{ old('website') }}"
                                        class="w-full px-4 py-2.5 bg-white/80 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800 placeholder-slate-400"
                                        placeholder="https://example.com">
                                 @error('website')

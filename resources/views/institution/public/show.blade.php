@@ -109,19 +109,19 @@
                 </span>
             </div>
         </div>
-        
+
         <!-- Quick Stats -->
         <div class="grid grid-cols-3 gap-2 p-3 rounded-2xl" style="background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3);">
             <div class="text-center">
-                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ number_format($book->sold_count ?? 0) }}</p>
-                <p class="text-xs" style="color: #6b7280;">Sold</p>
+                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ number_format($book->downloads ?? 0) }}</p>
+                <p class="text-xs" style="color: #6b7280;">Downloads</p>
             </div>
             <div class="text-center">
-                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ number_format($book->stock_quantity ?? 0) }}</p>
-                <p class="text-xs" style="color: #6b7280;">Stock</p>
+                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ number_format($book->views_count ?? 0) }}</p>
+                <p class="text-xs" style="color: #6b7280;">Views</p>
             </div>
             <div class="text-center">
-                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ $book->pages ?? 0 }}</p>
+                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ $book->total_pages ?? 0 }}</p>
                 <p class="text-xs" style="color: #6b7280;">Pages</p>
             </div>
         </div>
@@ -343,7 +343,7 @@
             
             <!-- Book Info Grid -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                @if(isset($book->publisher) && $book->publisher)
+                @if(isset($book->publisher) && $book->publisher && !empty($book->publisher))
                     <div class="p-3 rounded-xl text-center" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
                         <p class="text-xs" style="color: #6b7280;">Publisher</p>
                         <p class="text-sm font-medium truncate" style="color: #1a1a2e;">{{ $book->publisher }}</p>
@@ -355,7 +355,12 @@
                         <p class="text-sm font-medium" style="color: #1a1a2e;">{{ $book->publication_year }}</p>
                     </div>
                 @endif
-                @if(isset($book->pages) && $book->pages)
+                @if(isset($book->total_pages) && $book->total_pages)
+                    <div class="p-3 rounded-xl text-center" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
+                        <p class="text-xs" style="color: #6b7280;">Pages</p>
+                        <p class="text-sm font-medium" style="color: #1a1a2e;">{{ $book->total_pages }}</p>
+                    </div>
+                @elseif(isset($book->pages) && $book->pages)
                     <div class="p-3 rounded-xl text-center" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
                         <p class="text-xs" style="color: #6b7280;">Pages</p>
                         <p class="text-sm font-medium" style="color: #1a1a2e;">{{ $book->pages }}</p>
@@ -368,19 +373,7 @@
                     </div>
                 @endif
             </div>
-            
-            <!-- Description -->
-            <div class="mb-4">
-                <h3 class="font-semibold text-lg flex items-center gap-2 mb-2" style="color: #1a1a2e;">
-                    <i class="ti ti-file-description" style="color: #db570a;"></i> About This Book
-                </h3>
-                <div class="p-4 rounded-xl" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                    <p class="leading-relaxed" style="color: #374151; font-size: 0.95rem;">
-                        {{ $book->description ?? 'No description available for this book.' }}
-                    </p>
-                </div>
-            </div>
-            
+
             <!-- Additional Details -->
             <div class="mb-4">
                 <h4 class="text-sm font-semibold mb-2 flex items-center gap-2" style="color: #4b5563;">
@@ -405,6 +398,18 @@
                             <span class="ml-1 font-medium" style="color: #1a1a2e;">{{ $book->format }}</span>
                         </div>
                     @endif
+                </div>
+            </div>
+            
+            <!-- Description -->
+            <div class="mb-4">
+                <h3 class="font-semibold text-lg flex items-center gap-2 mb-2" style="color: #1a1a2e;">
+                    <i class="ti ti-file-description" style="color: #db570a;"></i> About This Book
+                </h3>
+                <div class="p-4 rounded-xl" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
+                    <p class="leading-relaxed" style="color: #374151; font-size: 0.95rem;">
+                        {{ $book->description ?? 'No description available for this book.' }}
+                    </p>
                 </div>
             </div>
             
@@ -471,6 +476,110 @@
                     </div>
                 </div>
             @endif
+
+            <!-- ========================================== -->
+            <!-- RATINGS & REVIEWS                          -->
+            <!-- ========================================== -->
+            <div class="mt-6 pt-4 border-t" style="border-color: rgba(0,0,0,0.06);">
+                <!-- Ratings -->
+                <div class="flex items-center flex-wrap gap-4 mb-4">
+                    <div class="flex items-center gap-2">
+                        @php
+                            $avgRating = 0;
+                            if (!$isBookstore && method_exists($book, 'averageRating')) {
+                                $avgRating = $book->averageRating();
+                            }
+                        @endphp
+                        <x-star-rating :rating="$avgRating" readonly="true" size="lg" />
+                        <span class="text-2xl font-bold text-gray-800">
+                            {{ number_format($avgRating, 1) }}
+                        </span>
+                        <span class="text-gray-500 text-sm">
+                            ({{ $ratingsCount ?? 0 }} ratings)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Reviews -->
+                <div class="mt-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="ti ti-message-circle-2"></i>
+                        Reviews & Comments
+                        <span class="text-sm font-normal text-gray-500">({{ $reviewsCount ?? 0 }} reviews)</span>
+                    </h3>
+                    
+                    @if(!$isBookstore)
+                        @auth
+                            @if(method_exists($book, 'hasUserReviewed') && !$book->hasUserReviewed())
+                                <div class="bg-gray-50 rounded-xl p-5 mb-6">
+                                    <h4 class="font-semibold text-gray-800 mb-3">Write a Review</h4>
+                                    <form action="{{ route('books.review', $book) }}" method="POST">
+                                        @csrf
+                                        <textarea name="review" rows="4" 
+                                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                  placeholder="Share your thoughts about this book..." required></textarea>
+                                        <button type="submit" class="mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
+                                            Submit Review
+                                        </button>
+                                    </form>
+                                </div>
+                            @elseif(method_exists($book, 'hasUserReviewed'))
+                                <div class="bg-green-50 rounded-xl p-4 mb-6 flex justify-between items-center">
+                                    <div>
+                                        <i class="ti ti-check-circle text-green-500"></i>
+                                        <span class="text-sm text-gray-600">You've reviewed this book</span>
+                                    </div>
+                                    <form action="{{ route('books.review.delete', $book) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-sm text-red-500 hover:text-red-700" onclick="return confirm('Delete your review?')">
+                                            Delete Review
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        @endauth
+                        
+                        <!-- Reviews List -->
+                        <div class="space-y-4">
+                            @forelse($book->reviews ?? [] as $review)
+                                <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div>
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="font-semibold text-gray-800">{{ $review->user->full_name ?? 'Anonymous' }}</span>
+                                                <span class="text-xs text-gray-400">{{ $review->created_at->diffForHumans() }}</span>
+                                            </div>
+                                            @php
+                                                $userRating = method_exists($book, 'userRating') ? $book->userRating($review->user_id) : null;
+                                            @endphp
+                                            @if($userRating)
+                                                <x-star-rating :rating="$userRating" readonly="true" size="sm" />
+                                            @endif
+                                        </div>
+                                        <button onclick="markHelpful({{ $review->id }}, this)" 
+                                                class="text-sm text-gray-400 hover:text-purple-600 transition flex items-center gap-1">
+                                            <i class="ti ti-thumb-up"></i>
+                                            <span class="helpful-count-{{ $review->id }}">{{ $review->helpful_count ?? 0 }}</span>
+                                        </button>
+                                    </div>
+                                    <p class="text-gray-600 leading-relaxed">{{ $review->review }}</p>
+                                </div>
+                            @empty
+                                <div class="bg-gray-50 rounded-xl p-8 text-center">
+                                    <i class="ti ti-message-circle-2 text-4xl text-gray-300 mb-2 block"></i>
+                                    <p class="text-gray-500">No reviews yet. Be the first to review this book!</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    @else
+                        <div class="bg-gray-50 rounded-xl p-8 text-center">
+                            <i class="ti ti-message-circle-2 text-4xl text-gray-300 mb-2 block"></i>
+                            <p class="text-gray-500">Reviews are not available for bookstore items.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -699,6 +808,7 @@ function purchaseWithPesaPal(bookId) {
 }
 </script>
 @endpush
+
 <style>
 /* ========================================== */
 /* COMPACT BOOK VIEW - OPTIMIZED              */

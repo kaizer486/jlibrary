@@ -36,7 +36,7 @@
                         <label class="block text-sm font-medium text-white mb-2">Email Address</label>
                         <div class="relative">
                             <i class="ti ti-mail absolute left-3 top-1/2 -translate-y-1/2 text-2xl text-orange-400"></i>
-                            <input type="email" name="email" value="{{ old('email') }}" required
+                            <input type="email" name="email" value="{{ old('email', $email ?? '') }}" required
                                    class="w-full pl-12 pr-3 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
                         @error('email')

@@ -15,33 +15,33 @@ use Illuminate\Support\Facades\Mail;
 
 class BookController extends Controller
 {
-    /**
-     * Get the appropriate book model based on institution type.
-     */
-    private function getBookModel()
-    {
-        $institution = auth()->user()->institution;
-        
-        if ($institution && $institution->type === 'bookstore') {
-            return new BookshopBook();
-        }
-        
-        return new Book();
+   /**
+ * Get the appropriate book model based on institution type.
+ */
+private function getBookModel()
+{
+    $institution = auth()->user()->institution;
+    
+    if ($institution && $institution->type === 'bookstore') {
+        return new BookshopBook();
     }
+    
+    return new Book();
+}
 
-    /**
-     * Get the book model class name.
-     */
-    private function getBookModelClass()
-    {
-        $institution = auth()->user()->institution;
-        
-        if ($institution && $institution->type === 'bookstore') {
-            return BookshopBook::class;
-        }
-        
-        return Book::class;
+  /**
+ * Get the book model class name.
+ */
+private function getBookModelClass()
+{
+    $institution = auth()->user()->institution;
+    
+    if ($institution && $institution->type === 'bookstore') {
+        return BookshopBook::class;
     }
+    
+    return Book::class;
+}
 
     /**
      * Display a listing of books.
@@ -99,27 +99,38 @@ class BookController extends Controller
         return view('institution.books.index', compact('books', 'shelves', 'stats', 'institution'));
     }
 
-    /**
-     * Show the form for creating a new book.
-     */
+  
+
+/**
+ * Show the form for creating a new book.
+ */
 public function create()
 {
-    $institution = auth()->user()->institution;
+   
+    $user = auth()->user();
+    
+    if (!$user) {
+        abort(403, 'You need to be logged in.');
+    }
+
+    $institution = $user->institution;
 
     if (!$institution) {
         abort(403, 'You do not belong to any institution.');
     }
 
-    $isBookstore = $institution->type === 'bookstore';
-    
-    // ✅ ALWAYS fetch shelves, regardless of institution type
     $shelves = Shelf::where('institution_id', $institution->id)
         ->where('status', 'active')
         ->get();
 
-    return view('institution.books.create', compact('shelves', 'institution', 'isBookstore'));
-}
+    $isBookstore = $institution->type === 'bookstore';
 
+    return view('institution.books.create', [
+        'institution' => $institution,
+        'shelves' => $shelves,
+        'isBookstore' => $isBookstore
+    ]);
+}
     /**
      * Store a newly created book in storage.
      */
@@ -206,10 +217,7 @@ public function create()
             ->with('success', 'Book created successfully!');
     }
 
-    /**
-     * Display the specified book.
-     */
-/**
+  /**
  * Display the specified book.
  */
 public function show($id)
@@ -220,10 +228,27 @@ public function show($id)
         abort(403, 'You do not belong to any institution.');
     }
 
-    // ✅ Use the correct model
+    // ✅ Use the correct model based on institution type
     $bookModel = $this->getBookModelClass();
+    
+    // ✅ Find the book - make sure we use the correct table
     $book = $bookModel::where('institution_id', $institution->id)
-        ->findOrFail($id);
+        ->where('id', $id)
+        ->first();
+    
+    // ✅ If not found in the main table, try the other table
+    if (!$book) {
+        // Try the other model
+        $otherModel = $institution->type === 'bookstore' ? Book::class : BookshopBook::class;
+        $book = $otherModel::where('institution_id', $institution->id)
+            ->where('id', $id)
+            ->first();
+    }
+    
+    // ✅ If still not found, abort
+    if (!$book) {
+        abort(404, 'Book not found in this institution.');
+    }
 
     $isBookstore = $institution->type === 'bookstore';
 
@@ -238,9 +263,9 @@ public function show($id)
     return view('institution.books.show', compact('book', 'institution', 'isBookstore', 'relatedBooks'));
 }
 
-    /**
-     * Show the form for editing the specified book.
-     */
+  /**
+ * Show the form for editing the specified book.
+ */
 public function edit($id)
 {
     $institution = auth()->user()->institution;
@@ -249,9 +274,26 @@ public function edit($id)
         abort(403, 'You do not belong to any institution.');
     }
 
+    // ✅ Use the correct model based on institution type
     $bookModel = $this->getBookModelClass();
+    
+    // ✅ Find the book
     $book = $bookModel::where('institution_id', $institution->id)
-        ->findOrFail($id);
+        ->where('id', $id)
+        ->first();
+    
+    // ✅ If not found in the main table, try the other table
+    if (!$book) {
+        $otherModel = $institution->type === 'bookstore' ? Book::class : BookshopBook::class;
+        $book = $otherModel::where('institution_id', $institution->id)
+            ->where('id', $id)
+            ->first();
+    }
+    
+    // ✅ If still not found, abort
+    if (!$book) {
+        abort(404, 'Book not found in this institution.');
+    }
 
     $isBookstore = $institution->type === 'bookstore';
     
@@ -262,6 +304,7 @@ public function edit($id)
 
     return view('institution.books.edit', compact('book', 'shelves', 'institution', 'isBookstore'));
 }
+
     /**
      * Update the specified book in storage.
      */

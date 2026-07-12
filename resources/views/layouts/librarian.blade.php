@@ -609,151 +609,165 @@
         <!-- ========================================== -->
         <!-- LIBRARIAN SIDEBAR                         -->
         <!-- ========================================== -->
-        <aside id="librarian-sidebar" class="bg-gray-900 text-white flex-shrink-0 overflow-y-auto">
-            <!-- Brand -->
-            <div class="p-4 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <i class="ti ti-library text-purple-400 text-2xl"></i>
-                        <span class="text-xl font-bold">LIBRARIAN</span>
-                    </div>
-                    <!-- Close button for mobile -->
-                    <button id="close-sidebar-mobile" class="lg:hidden text-gray-400 hover:text-white">
-                        <i class="ti ti-x text-2xl"></i>
-                    </button>
-                </div>
-                <p class="text-xs text-purple-400 mt-1">Library Management Panel</p>
+       <aside id="librarian-sidebar" class="bg-gray-900 text-white flex-shrink-0 overflow-y-auto">
+    <!-- Brand -->
+    <div class="p-4 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="ti ti-library text-purple-400 text-2xl"></i>
+                <span class="text-xl font-bold">LIBRARIAN</span>
             </div>
+            <button id="close-sidebar-mobile" class="lg:hidden text-gray-400 hover:text-white">
+                <i class="ti ti-x text-2xl"></i>
+            </button>
+        </div>
+        <p class="text-xs text-purple-400 mt-1">Library Management Panel</p>
+    </div>
+    
+    <nav class="p-4 space-y-1">
+        <!-- ========================================== -->
+        <!-- DASHBOARD                                -->
+        <!-- ========================================== -->
+        <a href="{{ route('institution.dashboard') }}" class="nav-item {{ request()->routeIs('institution.dashboard*') ? 'active' : '' }}">
+            <i class="ti ti-dashboard text-blue-400 text-xl"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <!-- ========================================== -->
+        <!-- SUBSCRIPTION - SHOW FOR ALL TYPES         -->
+        <!-- ========================================== -->
+        <div class="nav-section-title">Subscription</div>
+        
+        <a href="{{ route('institution.subscription.index') }}" class="nav-item {{ request()->routeIs('institution.subscription*') ? 'active' : '' }}">
+            <i class="ti ti-credit-card text-purple-400 text-xl"></i>
+            <span>Subscription</span>
             
-            <nav class="p-4 space-y-1">
-                <!-- ========================================== -->
-                <!-- DASHBOARD                                -->
-                <!-- ========================================== -->
-                <a href="{{ route('institution.dashboard') }}" class="nav-item {{ request()->routeIs('institution.dashboard*') ? 'active' : '' }}">
-                    <i class="ti ti-dashboard text-blue-400 text-xl"></i>
-                    <span>Dashboard</span>
-                </a>
-
-                <!-- ========================================== -->
-                <!-- LIBRARY MANAGEMENT                       -->
-                <!-- ========================================== -->
-                <div class="nav-section-title">Library Management</div>
-
-                @php
-                    $institutionType = auth()->user()->institution?->type ?? 'library';
-                    $isBookstore = $institutionType === 'bookstore';
-                @endphp
-
-               @if($isBookstore)
-    <!-- Bookstore Menu -->
-    <a href="{{ route('institution.books.index') }}" class="nav-item {{ request()->routeIs('institution.books*') ? 'active' : '' }}">
-        <i class="ti ti-package text-green-400 text-xl"></i>
-        <span>Inventory Management</span>
-    </a>
-    
-    <a href="{{ route('institution.shelves.index') }}" class="nav-item {{ request()->routeIs('institution.shelves*') ? 'active' : '' }}">
-        <i class="ti ti-category text-yellow-400 text-xl"></i>
-        <span>Categories & Sections</span>
-    </a>
-    
-    <a href="{{ route('institution.members.index') }}" class="nav-item {{ request()->routeIs('institution.members*') ? 'active' : '' }}">
-        <i class="ti ti-users text-blue-400 text-xl"></i>
-        <span>Customers</span>
-    </a>
-    
-    <a href="{{ route('institution.orders.index') }}" class="nav-item {{ request()->routeIs('institution.orders*') ? 'active' : '' }}">
-        <i class="ti ti-shopping-cart text-pink-400 text-xl"></i>
-        <span>Orders & Sales</span>
-    </a>
-    
-    <!-- ✅ SUBSCRIPTION FOR BOOKSTORE -->
-    <a href="{{ route('institution.subscription.index') }}" class="nav-item {{ request()->routeIs('institution.subscription*') ? 'active' : '' }}">
-       <i class="ti ti-credit-card text-purple-400 text-xl"></i>     
-        <span>Subscription</span>
-        @php
-            $user = auth()->user();
-            $hasActiveSub = $user->hasActiveSubscription();
-            $daysLeft = $user->getSubscriptionDaysLeft();
-        @endphp
-        @if(!$hasActiveSub)
-            <span class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">Expired</span>
-        @elseif($daysLeft <= 7)
-            <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $daysLeft }}d</span>
-        @endif
-    </a>
-@else
-                    <!-- Library Menu -->
-                    <a href="{{ route('institution.books.index') }}" class="nav-item {{ request()->routeIs('institution.books*') ? 'active' : '' }}">
-                        <i class="ti ti-books text-blue-400 text-xl"></i>
-                        <span>Books Management</span>
-                    </a>
-                    
-                    <a href="{{ route('institution.shelves.index') }}" class="nav-item {{ request()->routeIs('institution.shelves*') ? 'active' : '' }}">
-                        <i class="ti ti-layout-grid text-green-400 text-xl"></i>
-                        <span>Shelves & Locations</span>
-                    </a>
-                    
-                    <a href="{{ route('institution.members.index') }}" class="nav-item {{ request()->routeIs('institution.members*') ? 'active' : '' }}">
-                        <i class="ti ti-users text-cyan-400 text-xl"></i>
-                        <span>Members Directory</span>
-                    </a>
-
-                    <a href="{{ route('institution.borrowings.index') }}" class="nav-item {{ request()->routeIs('institution.borrowings*') ? 'active' : '' }}">
-                        <i class="ti ti-bookmark text-pink-400 text-xl"></i>
-                        <span>Borrowings</span>
-                    </a>
-
-                    <a href="{{ route('institution.join-requests.index') }}" class="nav-item {{ request()->routeIs('institution.join-requests*') ? 'active' : '' }}">
-                        <i class="ti ti-user-plus text-yellow-400 text-xl"></i>
-                        <span>Join Requests</span>
-                        @php
-                            $pendingJoinRequests = App\Models\JoinRequest::where('institution_id', auth()->user()->institution_id)
-                                ->where('status', 'pending')
-                                ->count();
-                        @endphp
-                        @if($pendingJoinRequests > 0)
-                            <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingJoinRequests }}</span>
-                        @endif
-                    </a>
-                @endif
-
-                <!-- ========================================== -->
-                <!-- ANALYTICS                               -->
-                <!-- ========================================== -->
-                <div class="nav-section-title mt-4">Analytics</div>
-
-                <a href="{{ route('institution.reports.index') }}" class="nav-item {{ request()->routeIs('institution.reports*') ? 'active' : '' }}">
-                    <i class="ti ti-chart-bar text-yellow-400 text-xl"></i>
-                    <span>Reports & Analytics</span>
-                </a>
-
-                <!-- ========================================== -->
-                <!-- SETTINGS                                -->
-                <!-- ========================================== -->
-                <div class="nav-section-title mt-4">Settings</div>
-
-                <a href="{{ route('institution.settings') }}" class="nav-item {{ request()->routeIs('institution.settings*') ? 'active' : '' }}">
-                    <i class="ti ti-settings text-gray-400 text-xl"></i>
-                    <span>Settings</span>
-                </a>
-
-                <!-- ========================================== -->
-                <!-- NAVIGATION                              -->
-                <!-- ========================================== -->
-                <hr class="my-3 border-gray-800">
-
-                <a href="{{ route('institution.public.index', auth()->user()->institution_id ?? 1) }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
-                    <i class="ti ti-arrow-left"></i> <span class="hidden sm:inline">Back to Library</span>
-                </a>
+            @php
+                $user = auth()->user();
+                $institution = $user?->institution;
                 
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition">
-                        <i class="ti ti-logout"></i> <span class="hidden sm:inline">Logout</span>
-                    </button>
-                </form>
-            </nav>
-        </aside>
+                if ($institution) {
+                    $hasActiveSub = $institution->hasActiveSubscription();
+                    $daysLeft = $institution->getSubscriptionDaysLeft();
+                } else {
+                    $hasActiveSub = false;
+                    $daysLeft = 0;
+                }
+            @endphp
+            
+            @if(!$hasActiveSub)
+                <span class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">Expired</span>
+            @elseif($daysLeft <= 7)
+                <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $daysLeft }}d</span>
+            @elseif($daysLeft <= 30)
+                <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $daysLeft }}d</span>
+            @endif
+        </a>
+
+        <!-- ========================================== -->
+        <!-- LIBRARY MANAGEMENT                       -->
+        <!-- ========================================== -->
+        <div class="nav-section-title">Library Management</div>
+
+        @php
+            $institutionType = auth()->user()->institution?->type ?? 'library';
+            $isBookstore = $institutionType === 'bookstore';
+        @endphp
+
+        @if($isBookstore)
+            <!-- Bookstore Menu -->
+            <a href="{{ route('institution.books.index') }}" class="nav-item {{ request()->routeIs('institution.books*') ? 'active' : '' }}">
+                <i class="ti ti-package text-green-400 text-xl"></i>
+                <span>Inventory Management</span>
+            </a>
+            
+            <a href="{{ route('institution.shelves.index') }}" class="nav-item {{ request()->routeIs('institution.shelves*') ? 'active' : '' }}">
+                <i class="ti ti-category text-yellow-400 text-xl"></i>
+                <span>Categories & Sections</span>
+            </a>
+            
+            <a href="{{ route('institution.members.index') }}" class="nav-item {{ request()->routeIs('institution.members*') ? 'active' : '' }}">
+                <i class="ti ti-users text-blue-400 text-xl"></i>
+                <span>Customers</span>
+            </a>
+            
+            <a href="{{ route('institution.orders.index') }}" class="nav-item {{ request()->routeIs('institution.orders*') ? 'active' : '' }}">
+                <i class="ti ti-shopping-cart text-pink-400 text-xl"></i>
+                <span>Orders & Sales</span>
+            </a>
+        @else
+            <!-- Library Menu -->
+            <a href="{{ route('institution.books.index') }}" class="nav-item {{ request()->routeIs('institution.books*') ? 'active' : '' }}">
+                <i class="ti ti-books text-blue-400 text-xl"></i>
+                <span>Books Management</span>
+            </a>
+            
+            <a href="{{ route('institution.shelves.index') }}" class="nav-item {{ request()->routeIs('institution.shelves*') ? 'active' : '' }}">
+                <i class="ti ti-layout-grid text-green-400 text-xl"></i>
+                <span>Shelves & Locations</span>
+            </a>
+            
+            <a href="{{ route('institution.members.index') }}" class="nav-item {{ request()->routeIs('institution.members*') ? 'active' : '' }}">
+                <i class="ti ti-users text-cyan-400 text-xl"></i>
+                <span>Members Directory</span>
+            </a>
+
+            <a href="{{ route('institution.borrowings.index') }}" class="nav-item {{ request()->routeIs('institution.borrowings*') ? 'active' : '' }}">
+                <i class="ti ti-bookmark text-pink-400 text-xl"></i>
+                <span>Borrowings</span>
+            </a>
+
+            <a href="{{ route('institution.join-requests.index') }}" class="nav-item {{ request()->routeIs('institution.join-requests*') ? 'active' : '' }}">
+                <i class="ti ti-user-plus text-yellow-400 text-xl"></i>
+                <span>Join Requests</span>
+                @php
+                    $pendingJoinRequests = App\Models\JoinRequest::where('institution_id', auth()->user()->institution_id ?? 0)
+                        ->where('status', 'pending')
+                        ->count();
+                @endphp
+                @if($pendingJoinRequests > 0)
+                    <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingJoinRequests }}</span>
+                @endif
+            </a>
+        @endif
+
+        <!-- ========================================== -->
+        <!-- ANALYTICS                               -->
+        <!-- ========================================== -->
+        <div class="nav-section-title mt-4">Analytics</div>
+
+        <a href="{{ route('institution.reports.index') }}" class="nav-item {{ request()->routeIs('institution.reports*') ? 'active' : '' }}">
+            <i class="ti ti-chart-bar text-yellow-400 text-xl"></i>
+            <span>Reports & Analytics</span>
+        </a>
+
+        <!-- ========================================== -->
+        <!-- SETTINGS                                -->
+        <!-- ========================================== -->
+        <div class="nav-section-title mt-4">Settings</div>
+
+        <a href="{{ route('institution.settings') }}" class="nav-item {{ request()->routeIs('institution.settings*') ? 'active' : '' }}">
+            <i class="ti ti-settings text-gray-400 text-xl"></i>
+            <span>Settings</span>
+        </a>
+
+        <!-- ========================================== -->
+        <!-- NAVIGATION                              -->
+        <!-- ========================================== -->
+        <hr class="my-3 border-gray-800">
+
+        <a href="{{ route('institution.public.index', auth()->user()->institution_id ?? 1) }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
+            <i class="ti ti-arrow-left"></i> <span class="hidden sm:inline">Back to Library</span>
+        </a>
+        
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition">
+                <i class="ti ti-logout"></i> <span class="hidden sm:inline">Logout</span>
+            </button>
+        </form>
+    </nav>
+</aside>
         
         <!-- ========================================== -->
         <!-- MAIN CONTENT                              -->

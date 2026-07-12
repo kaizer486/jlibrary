@@ -12,10 +12,30 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Subscription reminders - Daily at 9:00 AM
+        // ==========================================
+        // SUBSCRIPTION COMMANDS
+        // ==========================================
+        
+        // Send subscription reminders - Daily at 9:00 AM
         $schedule->command('subscription:send-reminders')
             ->dailyAt('09:00')
             ->withoutOverlapping();
+        
+        // Process expirations - Daily at 12:00 AM
+        $schedule->command('subscriptions:expire')
+            ->daily()
+            ->withoutOverlapping();
+        
+        // Process billing for auto-renew - Daily at 2:00 AM
+        $schedule->command('subscriptions:billing')
+            ->dailyAt('02:00')
+            ->withoutOverlapping();
+        
+        // ==========================================
+        // OTHER COMMANDS
+        // ==========================================
+        
+        // Backup, cache clearing, etc.
     }
 
     /**

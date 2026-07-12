@@ -132,29 +132,40 @@
             @foreach($books as $book)
                 <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
                     <!-- Book Cover -->
-                    @php
-                        $bookUrl = url('/institution/' . $book->institution_id . '/library/' . $book->id);
-                    @endphp
-                    <a href="{{ $bookUrl }}" class="block">
-                        <div class="relative h-56 bg-gradient-to-br from-jlibrary-500 to-jlibrary-700 flex items-center justify-center">
-                            @if($book->cover_image)
-                                <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
-                            @else
-                                <i class="ti ti-book text-6xl text-white/50"></i>
-                            @endif
-                            
-                            <!-- Institution Badge -->
-                            <div class="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded-lg text-xs max-w-[120px] truncate">
-                                <i class="ti ti-building"></i> {{ $book->institution->name ?? 'Unknown' }}
-                            </div>
-                            
-                            <!-- Bookmark Button -->
-                            <div class="absolute bottom-2 right-2 z-10">
-                                <x-bookmark-button :item="$book" type="book" size="sm" />
-                            </div>
-                        </div>
-                    </a>
-                    
+                   @php
+    // ✅ Determine the correct URL for the book
+    if ($book->institution_id) {
+        $bookUrl = url('/institution/' . $book->institution_id . '/library/' . $book->id);
+    } else {
+        $bookUrl = route('library.show', $book->id);
+    }
+@endphp
+
+<a href="{{ $bookUrl }}" class="block">
+    <div class="relative h-56 bg-gradient-to-br from-jlibrary-500 to-jlibrary-700 flex items-center justify-center">
+        @if($book->cover_image)
+            <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
+        @else
+            <i class="ti ti-book text-6xl text-white/50"></i>
+        @endif
+        
+        <!-- Institution Badge - Only show if institution exists -->
+        @if($book->institution_id && $book->institution)
+            <div class="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded-lg text-xs max-w-[120px] truncate">
+                <i class="ti ti-building"></i> {{ $book->institution->name ?? '' }}
+            </div>
+        @else
+            <div class="absolute bottom-2 left-2 bg-purple-600/90 text-white px-2 py-1 rounded-lg text-xs">
+                🌐 Global
+            </div>
+        @endif
+        
+        <!-- Bookmark Button -->
+        <div class="absolute bottom-2 right-2 z-10">
+            <x-bookmark-button :item="$book" type="book" size="sm" />
+        </div>
+    </div>
+</a>              
                     <!-- Book Info -->
                     <div class="p-4">
                         <a href="{{ $bookUrl }}" class="block">

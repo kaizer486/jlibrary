@@ -41,22 +41,27 @@
                             <tr style="transition: background 0.2s; border-bottom: 1px solid rgba(30, 58, 95, 0.04);">
                                 <td style="padding: 0.75rem 1rem; color: #6b7280; font-size: 0.875rem;">{{ $loop->iteration }}</td>
                                 <td style="padding: 0.75rem 1rem; font-weight: 600; color: #1a1a2e; font-size: 0.875rem; text-transform: capitalize;">
-                                    {{ $entry->plan->name ?? $entry->plan ?? 'N/A' }}
+                                    {{ $entry->plan ? ucfirst($entry->plan) : 'N/A' }}
                                 </td>
                                 <td style="padding: 0.75rem 1rem; color: #4b5563; font-size: 0.875rem;">
-                                    {{ $entry->start_date ? $entry->start_date->format('M d, Y') : 'N/A' }}
+                                    {{ $entry->starts_at ? $entry->starts_at->format('M d, Y') : 'N/A' }}
                                 </td>
                                 <td style="padding: 0.75rem 1rem; color: #4b5563; font-size: 0.875rem;">
-                                    {{ $entry->end_date ? $entry->end_date->format('M d, Y') : 'N/A' }}
+                                    {{ $entry->ends_at ? $entry->ends_at->format('M d, Y') : 'N/A' }}
                                 </td>
-                                <td style="padding: 0.75rem 1rem; font-weight: 600; color: #db570a; font-size: 0.875rem;">TSh {{ number_format($entry->amount ?? 0, 2) }}</td>
-                                <td style="padding: 0.75rem 1rem; color: #4b5563; font-size: 0.875rem; text-transform: uppercase;">{{ $entry->payment_method ?? 'N/A' }}</td>
+                                <td style="padding: 0.75rem 1rem; font-weight: 600; color: #db570a; font-size: 0.875rem;">
+                                    TSh {{ number_format($entry->amount ?? 0, 2) }}
+                                </td>
+                                <td style="padding: 0.75rem 1rem; color: #4b5563; font-size: 0.875rem; text-transform: uppercase;">
+                                    {{ $entry->payment_method ? ucfirst($entry->payment_method) : 'N/A' }}
+                                </td>
                                 <td style="padding: 0.75rem 1rem;">
                                     <span style="display: inline-block; padding: 0.15rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 500; 
                                         @if($entry->status === 'active') color: #065f46; background: rgba(6, 95, 70, 0.08);
                                         @elseif($entry->status === 'cancelled') color: #6b7280; background: rgba(0, 0, 0, 0.04);
                                         @elseif($entry->status === 'expired') color: #dc2626; background: rgba(220, 38, 38, 0.08);
-                                        @else color: #d97706; background: rgba(217, 119, 6, 0.08); @endif">
+                                        @elseif($entry->status === 'pending') color: #d97706; background: rgba(217, 119, 6, 0.08);
+                                        @else color: #6b7280; background: rgba(0, 0, 0, 0.04); @endif">
                                         {{ ucfirst($entry->status) }}
                                     </span>
                                 </td>

@@ -235,4 +235,57 @@ class BookshopBook extends Model
         
         return $this;
     }
+    /**
+ * Check if user has access to this book
+ */
+public function userHasAccess($userId)
+{
+    if (!$this->is_paid) {
+        return true;
+    }
+    return $this->payments()
+        ->where('user_id', $userId)
+        ->where('status', 'completed')
+        ->exists();
+}
+
+/**
+ * Get average rating (always 0 for bookstore items)
+ */
+public function averageRating()
+{
+    return 0;
+}
+
+/**
+ * Get the total pages (alias for pages)
+ */
+public function getTotalPagesAttribute()
+{
+    return $this->pages ?? 0;
+}
+
+/**
+ * Get the display price
+ */
+public function getDisplayPriceAttribute()
+{
+    return $this->price ?? 0;
+}
+
+/**
+ * Check if user has purchased this book
+ */
+public function hasUserPurchased($userId)
+{
+    return $this->purchases()->where('user_id', $userId)->where('status', 'completed')->exists();
+}
+
+/**
+ * Get purchases relationship
+ */
+public function purchases()
+{
+    return $this->hasMany(BookshopPurchase::class);
+}
 }

@@ -3,29 +3,17 @@
 namespace App\Console\Commands;
 
 use App\Models\Institution;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\SubscriptionReminderNotification;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 
 class SendSubscriptionReminders extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'subscription:send-reminders';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Send subscription expiry reminders to users and institutions';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $this->info('Sending subscription reminders...');
@@ -46,43 +34,63 @@ class SendSubscriptionReminders extends Command
 
     private function sendInstitutionReminders()
     {
-        $institutions = Institution::where('subscription_status', 'active')
-            ->where('subscription_expires_at', '>', now())
+        // Get institutions with active subscriptions from subscriptions table
+        $subscriptions = Subscription::where('subscribable_type', Institution::class)
+            ->where('status', 'active')
+            ->where('ends_at', '>', Carbon::now())
+            ->with('subscribable')
             ->get();
 
-        $this->info("Found {$institutions->count()} active institution subscriptions.");
+        $this->info("Found {$subscriptions->count()} active institution subscriptions.");
 
-        foreach ($institutions as $institution) {
-            $daysLeft = $institution->getDaysLeft();
-            $this->sendReminder($institution, $daysLeft, 'institution');
+        foreach ($subscriptions as $subscription) {
+            $institution = $subscription->subscribable;
+            if ($institution) {
+                $daysLeft = $subscription->daysRemaining();
+                $this->sendReminder($institution, $subscription, $daysLeft, 'institution');
+            }
         }
     }
 
     private function sendUserReminders()
     {
-        $users = User::whereHas('activeSubscription')->get();
+        // Get users with active subscriptions
+        $subscriptions = Subscription::where('subscribable_type', User::class)
+            ->where('status', 'active')
+            ->where('ends_at', '>', Carbon::now())
+            ->with('subscribable')
+            ->get();
 
-        $this->info("Found {$users->count()} active user subscriptions.");
+        $this->info("Found {$subscriptions->count()} active user subscriptions.");
 
-        foreach ($users as $user) {
-            $daysLeft = $user->getSubscriptionDaysLeft();
-            $this->sendReminder($user, $daysLeft, 'user');
+        foreach ($subscriptions as $subscription) {
+            $user = $subscription->subscribable;
+            if ($user) {
+                $daysLeft = $subscription->daysRemaining();
+                $this->sendReminder($user, $subscription, $daysLeft, 'user');
+            }
         }
     }
 
-    private function sendReminder($subscribable, int $daysLeft, string $type)
+    private function sendReminder($subscribable, $subscription, int $daysLeft, string $type)
     {
         // Get the admins or the user to notify
         $notifiables = $this->getNotifiables($subscribable, $type);
 
         foreach ($notifiables as $notifiable) {
             // Check if we should send this reminder
-            if ($this->shouldSendReminder($notifiable, $subscribable, $daysLeft, $type)) {
-                $notifiable->notify(new SubscriptionReminderNotification($subscribable, $daysLeft, $type));
-                $this->info("Sent reminder to: {$notifiable->full_name} ({$type}) - {$daysLeft} days left");
-                
-                // Mark reminder as sent
-                $this->markReminderSent($subscribable, $daysLeft);
+            $field = $this->getReminderField($daysLeft);
+            if ($field && $this->shouldSendReminder($subscribable, $field)) {
+                // Send notification
+                try {
+                    $notifiable->notify(new SubscriptionReminderNotification($subscription, $daysLeft, $type));
+                    $this->info("Sent reminder to: {$notifiable->name} ({$type}) - {$daysLeft} days left");
+                    
+                    // Mark reminder as sent
+                    $this->markReminderSent($subscribable, $field);
+                } catch (\Exception $e) {
+                    $this->error("Failed to send reminder: " . $e->getMessage());
+                }
             }
         }
     }
@@ -91,26 +99,19 @@ class SendSubscriptionReminders extends Command
     {
         if ($type === 'institution') {
             // Notify all institution admins
-            return $subscribable->admins()->get();
+            if (method_exists($subscribable, 'admins')) {
+                return $subscribable->admins()->get();
+            }
+            // Fallback: get the institution owner
+            return [$subscribable->user ?? $subscribable];
         }
 
         // Notify the user themselves
         return [$subscribable];
     }
 
-    private function shouldSendReminder($notifiable, $subscribable, int $daysLeft, string $type): bool
+    private function shouldSendReminder($subscribable, string $field): bool
     {
-        // Don't send if already expired or no days left
-        if ($daysLeft <= 0) {
-            return false;
-        }
-
-        // Check which reminders have been sent
-        $field = $this->getReminderField($daysLeft);
-        if (!$field) {
-            return false;
-        }
-
         // Check if this reminder has already been sent
         return is_null($subscribable->$field);
     }
@@ -125,7 +126,7 @@ class SendSubscriptionReminders extends Command
             1 => 'reminder_1_sent_at',
         ];
 
-        // Find the closest reminder that matches
+        // Find the closest reminder
         foreach ($reminders as $days => $field) {
             if ($daysLeft <= $days) {
                 return $field;
@@ -135,11 +136,8 @@ class SendSubscriptionReminders extends Command
         return null;
     }
 
-    private function markReminderSent($subscribable, int $daysLeft)
+    private function markReminderSent($subscribable, string $field)
     {
-        $field = $this->getReminderField($daysLeft);
-        if ($field) {
-            $subscribable->update([$field => now()]);
-        }
+        $subscribable->update([$field => Carbon::now()]);
     }
 }

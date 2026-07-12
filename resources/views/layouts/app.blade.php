@@ -149,7 +149,7 @@
             position: absolute;
             top: calc(100% + 8px);
             left: 0;
-            width: 380px;
+            width: 480px;
             max-height: 60vh;
             overflow-y: auto;
             background: white;
@@ -263,6 +263,31 @@
                 display: none !important;
             }
         }
+        
+        /* Search result item hover */
+        .search-result-item:hover {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(236, 72, 153, 0.05));
+        }
+        
+        /* Scrollbar styling */
+        #global-search-results::-webkit-scrollbar,
+        #notifications-dropdown::-webkit-scrollbar,
+        #profile-dropdown::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        #global-search-results::-webkit-scrollbar-track,
+        #notifications-dropdown::-webkit-scrollbar-track,
+        #profile-dropdown::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        #global-search-results::-webkit-scrollbar-thumb,
+        #notifications-dropdown::-webkit-scrollbar-thumb,
+        #profile-dropdown::-webkit-scrollbar-thumb {
+            background: #c4b5fd;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -352,8 +377,6 @@
                                     <span class="text-xs font-semibold text-green-700">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</span>
                                 </div>
                                 
-                               
-                                
                                 <!-- Avatar -->
                                 <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
                                     <i class="ti ti-user text-white text-xs sm:text-sm"></i>
@@ -380,87 +403,77 @@
                                         <span class="text-xs font-semibold text-green-700">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</span>
                                     </div>
                                     <div class="mt-2">
-    <span class="text-xs px-2 py-0.5 rounded-full inline-block 
-        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin')) bg-red-100 text-red-700
-        @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team')) bg-yellow-100 text-yellow-700
-        @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin')) bg-purple-100 text-purple-700
-        @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin')) bg-blue-100 text-blue-700
-        @elseif(auth()->user()->hasRole('author')) bg-green-100 text-green-700
-        @elseif(auth()->user()->hasRole('librarian')) bg-amber-100 text-amber-700
-        @elseif(auth()->user()->hasRole('instructor')) bg-cyan-100 text-cyan-700
-        @else bg-gray-100 text-gray-700 @endif">
-        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-            👑 Super Admin
-        @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
-            🎨 Media Team
-        @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-            🛡️ Admin
-        @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
-            🏢 Institution Admin
-        @elseif(auth()->user()->hasRole('author'))
-            ✍️ Author
-        @elseif(auth()->user()->hasRole('librarian'))
-            📚 Librarian
-        @elseif(auth()->user()->hasRole('instructor'))
-            👨‍🏫 Instructor
-        @else
-            👤 Member
-        @endif
-    </span>
-</div>                                    
+                                        <span class="text-xs px-2 py-0.5 rounded-full inline-block 
+                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin')) bg-red-100 text-red-700
+                                            @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team')) bg-yellow-100 text-yellow-700
+                                            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin')) bg-purple-100 text-purple-700
+                                            @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin')) bg-blue-100 text-blue-700
+                                            @elseif(auth()->user()->hasRole('author')) bg-green-100 text-green-700
+                                            @elseif(auth()->user()->hasRole('librarian')) bg-amber-100 text-amber-700
+                                            @elseif(auth()->user()->hasRole('instructor')) bg-cyan-100 text-cyan-700
+                                            @else bg-gray-100 text-gray-700 @endif">
+                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                                👑 Super Admin
+                                            @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+                                                🎨 Media Team
+                                            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                                                🛡️ Admin
+                                            @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                                                🏢 Institution Admin
+                                            @elseif(auth()->user()->hasRole('author'))
+                                                ✍️ Author
+                                            @elseif(auth()->user()->hasRole('librarian'))
+                                                📚 Librarian
+                                            @elseif(auth()->user()->hasRole('instructor'))
+                                                👨‍🏫 Instructor
+                                            @else
+                                                👤 Member
+                                            @endif
+                                        </span>
+                                    </div>                                    
                                 </div>
 
-                               <!-- ========================================== -->
-<!-- ADMIN ACCESS - SINGLE LINK (PRIORITY)    -->
-<!-- ========================================== -->
-@if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-    <a href="{{ route('super-admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 border-b transition">
-        <i class="ti ti-crown text-lg text-yellow-500"></i>
-        <span class="font-medium text-gray-700">Super Dashboard</span>
-        <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded ml-auto">Super</span>
-    </a>
-@elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
-    <a href="{{ route('super-admin.media.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 border-b transition">
-        <i class="ti ti-palette text-lg text-yellow-500"></i>
-        <span class="font-medium text-gray-700">Media Dashboard</span>
-        <span class="text-xs bg-yellow-500 text-white px-2 py-0.5 rounded ml-auto">Media</span>
-    </a>
-@elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-    <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
-        <i class="ti ti-shield text-lg text-purple-600"></i>
-        <span class="font-medium text-gray-700">Admin Panel</span>
-        <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded ml-auto">Admin</span>
-    </a>
-@endif
+                                <!-- ADMIN ACCESS -->
+                                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                    <a href="{{ route('super-admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 border-b transition">
+                                        <i class="ti ti-crown text-lg text-yellow-500"></i>
+                                        <span class="font-medium text-gray-700">Super Dashboard</span>
+                                        <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded ml-auto">Super</span>
+                                    </a>
+                                @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+                                    <a href="{{ route('super-admin.media.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-yellow-50 border-b transition">
+                                        <i class="ti ti-palette text-lg text-yellow-500"></i>
+                                        <span class="font-medium text-gray-700">Media Dashboard</span>
+                                        <span class="text-xs bg-yellow-500 text-white px-2 py-0.5 rounded ml-auto">Media</span>
+                                    </a>
+                                @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                                    <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
+                                        <i class="ti ti-shield text-lg text-purple-600"></i>
+                                        <span class="font-medium text-gray-700">Admin Panel</span>
+                                        <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded ml-auto">Admin</span>
+                                    </a>
+                                @endif
 
-                                <!-- ========================================== -->
-<!-- MARKETPLACE SELLER - ONLY IF APPROVED     -->
-<!-- ========================================== -->
-@if(auth()->user()->canSellOnMarketplace())
-    <div class="px-4 py-2 text-xs text-gray-500 border-b">📚 Marketplace Seller</div>
-    
-    <a href="{{ route('seller.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition">
-        <i class="ti ti-dashboard text-lg text-purple-500"></i>
-        <span>Seller Dashboard</span>
-    </a>
-    
-    <a href="{{ route('marketplace.listings') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition">
-        <i class="ti ti-package text-lg text-blue-500"></i>
-        <span>My Books</span>
-        <span class="text-xs text-gray-400 ml-auto">{{ auth()->user()->marketplaceListings()->count() }}</span>
-    </a>
-    
-    <a href="{{ route('marketplace.create') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition">
-        <i class="ti ti-plus text-lg text-green-500"></i>
-        <span>Upload Book</span>
-    </a>
-    
-    <hr class="my-1">
-@endif
+                                <!-- MARKETPLACE SELLER -->
+                                @if(auth()->user()->canSellOnMarketplace())
+                                    <div class="px-4 py-2 text-xs text-gray-500 border-b">📚 Marketplace Seller</div>
+                                    <a href="{{ route('seller.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition">
+                                        <i class="ti ti-dashboard text-lg text-purple-500"></i>
+                                        <span>Seller Dashboard</span>
+                                    </a>
+                                    <a href="{{ route('marketplace.listings') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition">
+                                        <i class="ti ti-package text-lg text-blue-500"></i>
+                                        <span>My Books</span>
+                                        <span class="text-xs text-gray-400 ml-auto">{{ auth()->user()->marketplaceListings()->count() }}</span>
+                                    </a>
+                                    <a href="{{ route('marketplace.create') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition">
+                                        <i class="ti ti-plus text-lg text-green-500"></i>
+                                        <span>Upload Book</span>
+                                    </a>
+                                    <hr class="my-1">
+                                @endif
 
-                                <!-- ========================================== -->
-                                <!-- INSTITUTION ADMIN - ONLY IF NOT ADMIN    -->
-                                <!-- ========================================== -->
+                                <!-- INSTITUTION ADMIN -->
                                 @if(!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin() && (auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin')))
                                     <a href="{{ route('institution.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 border-b transition">
                                         <i class="ti ti-building text-lg text-blue-500"></i>
@@ -469,9 +482,7 @@
                                     </a>
                                 @endif
 
-                                <!-- ========================================== -->
-                                <!-- AUTHOR - ONLY IF NOT ADMIN               -->
-                                <!-- ========================================== -->
+                                <!-- AUTHOR -->
                                 @if(!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin() && auth()->user()->hasRole('author'))
                                     <a href="{{ route('author.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-green-50 border-b transition">
                                         <i class="ti ti-edit text-lg text-green-500"></i>
@@ -480,9 +491,7 @@
                                     </a>
                                 @endif
 
-                                <!-- ========================================== -->
-                                <!-- LIBRARIAN - ONLY IF NOT ADMIN            -->
-                                <!-- ========================================== -->
+                                <!-- LIBRARIAN -->
                                 @if(!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin() && auth()->user()->hasRole('librarian'))
                                     <a href="{{ route('librarian.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-amber-50 border-b transition">
                                         <i class="ti ti-library text-lg text-amber-500"></i>
@@ -491,9 +500,7 @@
                                     </a>
                                 @endif
 
-                                <!-- ========================================== -->
-                                <!-- INSTRUCTOR - ONLY IF NOT ADMIN           -->
-                                <!-- ========================================== -->
+                                <!-- INSTRUCTOR -->
                                 @if(!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin() && auth()->user()->hasRole('instructor'))
                                     <a href="{{ route('instructor.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-cyan-50 border-b transition">
                                         <i class="ti ti-school text-lg text-cyan-500"></i>
@@ -564,7 +571,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // ==========================================
-            // SIDEBAR TOGGLE - FIXED!
+            // SIDEBAR TOGGLE
             // ==========================================
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -614,22 +621,11 @@
                 });
             }
 
-            // Close sidebar with Escape key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     closeSidebar();
                 }
             });
-
-            // Close sidebar when clicking on main content (mobile only)
-            const mainContent = document.querySelector('main');
-            if (mainContent) {
-                mainContent.addEventListener('click', function(e) {
-                    if (window.innerWidth < 1024) {
-                        closeSidebar();
-                    }
-                });
-            }
 
             // ==========================================
             // PROFILE DROPDOWN
@@ -696,18 +692,11 @@
                             </div>
                         `).join('');
                         
-                        // Update badge count
                         const badge = document.getElementById('notification-badge');
                         if (data.unread_count > 0) {
                             if (badge) {
                                 badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
                                 badge.classList.remove('hidden');
-                            } else {
-                                const newBadge = document.createElement('span');
-                                newBadge.id = 'notification-badge';
-                                newBadge.className = 'absolute -top-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white text-[10px] sm:text-xs rounded-full flex items-center justify-center font-bold';
-                                newBadge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
-                                if (notificationBell) notificationBell.appendChild(newBadge);
                             }
                         } else {
                             if (badge) badge.classList.add('hidden');
@@ -724,6 +713,7 @@
             }
 
             function escapeHtml(text) {
+                if (!text) return '';
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
@@ -750,130 +740,217 @@
             }
 
             // ==========================================
-            // GLOBAL SEARCH
+            // GLOBAL SEARCH - COMPLETE FIX
             // ==========================================
-            const globalSearchInput = document.getElementById('global-search');
-            const globalResultsDiv = document.getElementById('global-search-results');
-            let globalSearchTimeout;
+            const searchInput = document.getElementById('global-search');
+            const resultsContainer = document.getElementById('global-search-results');
+            let searchTimeout;
+            let isSearching = false;
 
-            if (globalSearchInput) {
-                globalSearchInput.addEventListener('input', function() {
-                    clearTimeout(globalSearchTimeout);
+            if (searchInput && resultsContainer) {
+                // Input event with debounce
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
                     const query = this.value.trim();
                     
                     if (query.length < 2) {
-                        globalResultsDiv.classList.add('hidden');
+                        resultsContainer.classList.add('hidden');
                         return;
                     }
                     
-                    globalSearchTimeout = setTimeout(() => performGlobalSearch(query), 300);
+                    searchTimeout = setTimeout(() => {
+                        performSearch(query);
+                    }, 300);
                 });
-                
-                globalSearchInput.addEventListener('focus', function() {
-                    if (this.value.trim().length >= 2) {
-                        globalResultsDiv.classList.remove('hidden');
+
+                // Focus event
+                searchInput.addEventListener('focus', function() {
+                    if (this.value.trim().length >= 2 && !isSearching) {
+                        resultsContainer.classList.remove('hidden');
+                    }
+                });
+
+                // Click outside to close
+                document.addEventListener('click', function(e) {
+                    if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+                        resultsContainer.classList.add('hidden');
+                    }
+                });
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', function(e) {
+                    // Ctrl+K or Cmd+K to focus search
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                    // Escape to close results
+                    if (e.key === 'Escape') {
+                        resultsContainer.classList.add('hidden');
+                        searchInput.blur();
                     }
                 });
             }
 
-            async function performGlobalSearch(query) {
-                if (!globalResultsDiv) return;
+           async function performSearch(query) {
+    if (!resultsContainer) return;
+    isSearching = true;
+    
+    try {
+        console.log('Searching for:', query);
+        
+        const response = await fetch(`/api/global-search?q=${encodeURIComponent(query)}`);
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        console.log('Search results:', data);
+        
+        if (!data.results || data.results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="p-8 text-center">
+                    <i class="ti ti-search-off text-4xl text-gray-300 mb-3 block"></i>
+                    <p class="text-gray-500 text-sm font-medium">No results found</p>
+                    <p class="text-gray-400 text-xs mt-1">Try searching for books, courses, or documents</p>
+                </div>
+            `;
+        } else {
+            // Group results by type
+            const grouped = {};
+            data.results.forEach(item => {
+                if (!grouped[item.type]) grouped[item.type] = [];
+                grouped[item.type].push(item);
+            });
+
+            const typeLabels = {
+                book: '📚 Books',
+                chat: '💬 AI Chats',
+                certificate: '🎓 Certificates',
+                quiz: '📝 Quizzes',
+                group: '👥 Community Groups',
+                marketplace: '🛒 Marketplace',
+                document: '📄 Documents',
+                transaction: '💰 Transactions',
+                referral: '🎁 Referrals',
+                conversion: '🔄 File Conversions',
+                institution: '🏛️ Institutions',
+                shelf: '📚 Shelves',
+                category: '🏷️ Categories',
+                borrowing: '📖 Borrowings',
+                purchase: '🛍️ Purchases',
+                notification: '🔔 Notifications',
+                withdrawal: '💳 Withdrawals',
+                author: '✍️ Authors'
+            };
+
+            const typeColors = {
+                book: 'from-purple-500 to-indigo-500',
+                chat: 'from-green-500 to-emerald-500',
+                certificate: 'from-pink-500 to-rose-500',
+                quiz: 'from-indigo-500 to-blue-500',
+                group: 'from-blue-500 to-cyan-500',
+                marketplace: 'from-orange-500 to-red-500',
+                document: 'from-cyan-500 to-teal-500',
+                transaction: 'from-amber-500 to-yellow-500',
+                referral: 'from-green-500 to-teal-500',
+                conversion: 'from-purple-500 to-pink-500',
+                institution: 'from-violet-500 to-purple-500',
+                shelf: 'from-blue-500 to-indigo-500',
+                category: 'from-gray-500 to-slate-500',
+                borrowing: 'from-amber-500 to-orange-500',
+                purchase: 'from-emerald-500 to-green-500',
+                notification: 'from-red-500 to-pink-500',
+                withdrawal: 'from-rose-500 to-red-500',
+                author: 'from-cyan-500 to-blue-500'
+            };
+
+            let html = '';
+            
+            // Priority order for display
+            const priorityTypes = ['book', 'institution', 'group', 'marketplace', 'quiz', 'certificate', 'document'];
+            
+            const sortedKeys = Object.keys(grouped).sort((a, b) => {
+                const indexA = priorityTypes.indexOf(a);
+                const indexB = priorityTypes.indexOf(b);
+                if (indexA === -1 && indexB === -1) return 0;
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+
+            for (const type of sortedKeys) {
+                const items = grouped[type];
+                const label = typeLabels[type] || type.charAt(0).toUpperCase() + type.slice(1) + 's';
+                const color = typeColors[type] || 'from-gray-400 to-gray-500';
                 
-                try {
-                    const response = await fetch(`/api/global-search?q=${encodeURIComponent(query)}`);
-                    const data = await response.json();
-                    
-                    if (!data.results || data.results.length === 0) {
-                        globalResultsDiv.innerHTML = `
-                            <div class="p-6 text-center">
-                                <i class="ti ti-search-off text-3xl text-gray-300 mb-2 block"></i>
-                                <p class="text-gray-500 text-sm">No results found for "${escapeHtml(query)}"</p>
-                            </div>
-                        `;
-                    } else {
-                        const typeNames = {
-                            book: '📚 Books',
-                            chat: '💬 AI Chats',
-                            certificate: '🎓 Certificates',
-                            quiz: '📝 Quizzes',
-                            user: '👤 Users',
-                            group: '👥 Community Groups',
-                            marketplace: '🛒 Marketplace',
-                            document: '📄 Documents',
-                            transaction: '💰 Wallet Transactions',
-                            referral: '🎁 Referrals',
-                            conversion: '🔄 File Conversions'
-                        };
-                        
-                        const typeColors = {
-                            book: 'from-purple-500 to-indigo-500',
-                            chat: 'from-green-500 to-emerald-500',
-                            user: 'from-blue-500 to-cyan-500',
-                            certificate: 'from-pink-500 to-rose-500',
-                            quiz: 'from-indigo-500 to-blue-500'
-                        };
-                        
-                        const grouped = {};
-                        data.results.forEach(item => {
-                            if (!grouped[item.type]) grouped[item.type] = [];
-                            grouped[item.type].push(item);
-                        });
-                        
-                        let html = '';
-                        for (const [type, items] of Object.entries(grouped)) {
-                            html += `
-                                <div class="border-b border-gray-100 last:border-0">
-                                    <div class="px-4 py-2 bg-gray-50">
-                                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${typeNames[type] || type + 's'}</p>
-                                    </div>
-                                    <div class="divide-y divide-gray-50">
-                                        ${items.map(item => `
-                                            <a href="${item.url}" class="flex items-center gap-3 p-3 hover:bg-purple-50 transition group">
-                                                <div class="w-9 h-9 bg-gradient-to-br ${typeColors[type] || 'from-gray-400 to-gray-500'} rounded-lg flex items-center justify-center flex-shrink-0">
-                                                    <i class="ti ti-search text-white text-sm"></i>
-                                                </div>
-                                                <div class="flex-1 min-w-0">
-                                                    <p class="text-sm font-medium text-gray-800 group-hover:text-purple-600 truncate">${escapeHtml(item.title)}</p>
-                                                    <p class="text-xs text-gray-400 truncate">${escapeHtml(item.subtitle)}</p>
-                                                </div>
-                                                <i class="ti ti-arrow-right text-gray-400 group-hover:text-purple-500 text-sm flex-shrink-0"></i>
-                                            </a>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            `;
-                        }
-                        globalResultsDiv.innerHTML = html;
-                    }
-                    
-                    globalResultsDiv.classList.remove('hidden');
-                } catch (error) {
-                    console.error('Search error:', error);
-                    globalResultsDiv.innerHTML = `
-                        <div class="p-6 text-center">
-                            <i class="ti ti-alert-circle text-3xl text-red-300 mb-2 block"></i>
-                            <p class="text-gray-500 text-sm">Search failed. Please try again.</p>
+                html += `
+                    <div class="border-b border-gray-100 last:border-0">
+                        <div class="px-4 py-2 bg-gray-50/80 sticky top-0 z-10">
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${label}</p>
                         </div>
-                    `;
-                    globalResultsDiv.classList.remove('hidden');
-                }
+                        <div>
+                            ${items.slice(0, 5).map(item => `
+                                <a href="${item.url}" 
+                                   class="search-result-item flex items-center gap-3 px-4 py-2.5 hover:bg-purple-50/50 transition group cursor-pointer border-b border-gray-50 last:border-0">
+                                    <div class="w-8 h-8 bg-gradient-to-br ${color} rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                                        <i class="${item.icon || 'ti ti-search'} text-white text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-800 group-hover:text-purple-600 truncate">
+                                            ${escapeHtml(item.title)}
+                                        </p>
+                                        <p class="text-xs text-gray-400 truncate">${escapeHtml(item.subtitle || '')}</p>
+                                    </div>
+                                    ${item.badge ? `<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full flex-shrink-0">${escapeHtml(item.badge)}</span>` : ''}
+                                    <i class="ti ti-chevron-right text-gray-300 group-hover:text-purple-500 text-sm flex-shrink-0 ml-1"></i>
+                                </a>
+                            `).join('')}
+                            ${items.length > 5 ? `
+                                <div class="px-4 py-2 text-center border-t border-gray-50">
+                                    <span class="text-xs text-gray-400">+${items.length - 5} more results</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
             }
 
-            // Close results when clicking outside
-            document.addEventListener('click', function(e) {
-                if (globalSearchInput && !globalSearchInput.contains(e.target) && 
-                    globalResultsDiv && !globalResultsDiv.contains(e.target)) {
-                    globalResultsDiv.classList.add('hidden');
-                }
-            });
+            // View All link
+            html += `
+                <div class="p-3 text-center border-t border-gray-200 bg-gray-50/80 sticky bottom-0 rounded-b-xl">
+                    <a href="/global-search?q=${encodeURIComponent(query)}" 
+                       class="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center justify-center gap-1 group">
+                        View all results 
+                        <i class="ti ti-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                    </a>
+                </div>
+            `;
 
-            // Keyboard shortcut to focus search (Ctrl+K or Cmd+K)
-            document.addEventListener('keydown', function(e) {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                    e.preventDefault();
-                    if (globalSearchInput) globalSearchInput.focus();
-                }
-            });
+            resultsContainer.innerHTML = html;
+        }
+        
+        resultsContainer.classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('Search error:', error);
+        resultsContainer.innerHTML = `
+            <div class="p-8 text-center">
+                <i class="ti ti-alert-circle text-3xl text-red-400 mb-3 block"></i>
+                <p class="text-gray-700 text-sm font-medium">Search failed</p>
+                <p class="text-gray-400 text-xs mt-1">${error.message || 'Please try again'}</p>
+            </div>
+        `;
+        resultsContainer.classList.remove('hidden');
+    } finally {
+        isSearching = false;
+    }
+}
 
             // ==========================================
             // LOAD UNREAD NOTIFICATION COUNT

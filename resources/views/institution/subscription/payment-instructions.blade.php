@@ -28,11 +28,11 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Plan</p>
-                        <p style="color: #1a1a2e; font-weight: 600; margin: 0; text-transform: capitalize;">{{ $subscription->plan }}</p>
+                        <p style="color: #1a1a2e; font-weight: 600; margin: 0; text-transform: capitalize;">{{ $subscription->plan ?? 'N/A' }}</p>
                     </div>
                     <div>
                         <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Amount</p>
-                        <p style="color: #db570a; font-weight: 700; margin: 0;">TSh {{ number_format($subscription->amount, 2) }}</p>
+                        <p style="color: #db570a; font-weight: 700; margin: 0;">TSh {{ number_format($subscription->amount ?? 0, 2) }}</p>
                     </div>
                     <div>
                         <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Status</p>
@@ -42,7 +42,7 @@
                     </div>
                     <div>
                         <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Reference</p>
-                        <p style="color: #1a1a2e; font-family: monospace; font-size: 0.875rem; margin: 0;">{{ $subscription->id }}</p>
+                        <p style="color: #1a1a2e; font-family: monospace; font-size: 0.875rem; margin: 0;">#{{ $subscription->id }}</p>
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@
                 <ol style="display: flex; flex-direction: column; gap: 0.75rem; color: #4b5563; padding-left: 0; margin: 0; list-style: none;">
                     <li style="display: flex; gap: 0.75rem; align-items: flex-start;">
                         <span style="flex-shrink: 0; width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: rgba(37, 99, 235, 0.08); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700;">1</span>
-                        <span>Transfer the exact amount of <strong style="color: #1a1a2e;">TSh {{ number_format($subscription->amount, 2) }}</strong> to the bank account above</span>
+                        <span>Transfer the exact amount of <strong style="color: #1a1a2e;">TSh {{ number_format($subscription->amount ?? 0, 2) }}</strong> to the bank account above</span>
                     </li>
                     <li style="display: flex; gap: 0.75rem; align-items: flex-start;">
                         <span style="flex-shrink: 0; width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: rgba(37, 99, 235, 0.08); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700;">2</span>
@@ -115,6 +115,13 @@
                         <p style="color: #9ca3af; font-size: 0.7rem; margin-top: 0.25rem;">JPG, PNG, PDF (Max 5MB)</p>
                         <div id="fileName" class="mt-2" style="color: #065f46; font-size: 0.875rem; display: none;"></div>
                     </div>
+                    
+                    @if($errors->has('payment_proof'))
+                        <p style="color: #dc2626; font-size: 0.75rem; margin-top: 0.5rem;">
+                            <i class="ti ti-alert-circle"></i> {{ $errors->first('payment_proof') }}
+                        </p>
+                    @endif
+                    
                     <button type="submit" style="width: 100%; margin-top: 1rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.7rem 1.25rem; background: #db570a; color: white; border: none; border-radius: 0.5rem; font-weight: 600; font-size: 0.95rem; transition: all 0.2s; cursor: pointer;">
                         <i class="ti ti-check"></i> Submit Payment Confirmation
                     </button>
@@ -125,43 +132,52 @@
 </div>
 
 <script>
-document.getElementById('dropZone').addEventListener('click', function() {
-    document.getElementById('paymentProof').click();
-});
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('paymentProof');
+    const fileName = document.getElementById('fileName');
 
-document.getElementById('paymentProof').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const fileName = document.getElementById('fileName');
-        fileName.textContent = 'Selected: ' + file.name;
-        fileName.style.display = 'block';
+    if (dropZone) {
+        dropZone.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        // Drag and drop events
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.borderColor = '#db570a';
+            this.style.background = 'rgba(219, 87, 10, 0.04)';
+        });
+
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'rgba(30, 58, 95, 0.15)';
+            this.style.background = 'transparent';
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'rgba(30, 58, 95, 0.15)';
+            this.style.background = 'transparent';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                const file = files[0];
+                fileName.textContent = '📎 Selected: ' + file.name;
+                fileName.style.display = 'block';
+            }
+        });
     }
-});
 
-// Drop zone hover effect
-document.getElementById('dropZone').addEventListener('dragover', function(e) {
-    e.preventDefault();
-    this.style.borderColor = '#db570a';
-    this.style.background = 'rgba(219, 87, 10, 0.04)';
-});
-
-document.getElementById('dropZone').addEventListener('dragleave', function(e) {
-    e.preventDefault();
-    this.style.borderColor = 'rgba(30, 58, 95, 0.15)';
-    this.style.background = 'transparent';
-});
-
-document.getElementById('dropZone').addEventListener('drop', function(e) {
-    e.preventDefault();
-    this.style.borderColor = 'rgba(30, 58, 95, 0.15)';
-    this.style.background = 'transparent';
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-        document.getElementById('paymentProof').files = files;
-        const file = files[0];
-        const fileName = document.getElementById('fileName');
-        fileName.textContent = 'Selected: ' + file.name;
-        fileName.style.display = 'block';
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                fileName.textContent = '📎 Selected: ' + file.name;
+                fileName.style.display = 'block';
+            }
+        });
     }
 });
 </script>

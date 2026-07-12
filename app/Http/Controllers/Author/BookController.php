@@ -17,7 +17,15 @@ class BookController extends Controller
             ->latest()
             ->paginate(10);
         
-        return view('author.books.index', compact('books'));
+        // Stats
+        $stats = [
+            'total' => Book::where('uploaded_by', auth()->id())->count(),
+            'approved' => Book::where('uploaded_by', auth()->id())->where('status', 'approved')->count(),
+            'pending' => Book::where('uploaded_by', auth()->id())->where('status', 'pending')->count(),
+            'rejected' => Book::where('uploaded_by', auth()->id())->where('status', 'rejected')->count(),
+        ];
+        
+        return view('author.books.index', compact('books', 'stats'));
     }
     
     public function create()
@@ -36,6 +44,7 @@ class BookController extends Controller
             'book_file' => 'required|file|mimes:pdf|max:20480',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'total_pages' => 'nullable|integer|min:0',
+            'status' => 'nullable|in:pending,approved,rejected',
         ]);
         
         $bookPath = $request->file('book_file')->store('books', 'public');
@@ -44,6 +53,8 @@ class BookController extends Controller
         if ($request->hasFile('cover_image')) {
             $coverPath = $request->file('cover_image')->store('book-covers', 'public');
         }
+        
+        $status = $request->status ?? 'pending';
         
         Book::create([
             'title' => $request->title,
@@ -55,15 +66,18 @@ class BookController extends Controller
             'cover_image' => $coverPath,
             'total_pages' => $request->total_pages ?? 0,
             'uploaded_by' => auth()->id(),
-            'status' => 'pending', // Needs admin approval
+            'status' => $status,
         ]);
         
-        return redirect()->route('author.books.index')->with('success', 'Book uploaded successfully! Awaiting admin approval.');
+        $message = $status === 'approved' 
+            ? '✅ Book uploaded and published successfully!' 
+            : '📚 Book uploaded successfully! Awaiting admin approval.';
+        
+        return redirect()->route('author.books.index')->with('success', $message);
     }
     
     public function edit(Book $book)
     {
-        // Check if book belongs to this author
         if ($book->uploaded_by !== auth()->id()) {
             abort(403);
         }
@@ -84,6 +98,7 @@ class BookController extends Controller
             'price' => 'nullable|numeric|min:0',
             'is_paid' => 'boolean',
             'total_pages' => 'nullable|integer|min:0',
+            'status' => 'nullable|in:pending,approved,rejected',
         ]);
         
         $book->update([
@@ -93,6 +108,7 @@ class BookController extends Controller
             'price' => $request->price ?? 0,
             'is_paid' => $request->is_paid ?? false,
             'total_pages' => $request->total_pages ?? 0,
+            'status' => $request->status ?? 'pending',
         ]);
         
         if ($request->hasFile('cover_image')) {
@@ -112,7 +128,6 @@ class BookController extends Controller
             abort(403);
         }
         
-        // Delete files
         if ($book->file_path) {
             Storage::disk('public')->delete($book->file_path);
         }

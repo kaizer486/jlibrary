@@ -17,7 +17,7 @@ class ProcessSubscriptionExpirations extends Command
     {
         $this->info('Processing subscription expirations...');
         
-        // Find expired subscriptions using 'ends_at' column
+        // Find expired subscriptions
         $expiredSubscriptions = Subscription::where('status', 'active')
             ->whereNotNull('ends_at')
             ->where('ends_at', '<', Carbon::now())
@@ -30,7 +30,7 @@ class ProcessSubscriptionExpirations extends Command
         foreach ($expiredSubscriptions as $subscription) {
             $subscription->expire();
             $expired++;
-            $this->line("Expired subscription #{$subscription->id}");
+            $this->line("Expired subscription #{$subscription->id} for institution #{$subscription->institution_id}");
         }
         
         $this->info("Expired {$expired} subscriptions");

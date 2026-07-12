@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\BookshopBook;
 use App\Models\UserBook;
 use App\Models\Payment;
 use App\Models\Institution;
@@ -86,53 +87,104 @@ class LibraryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Book::where('status', 'approved');
-        
-        // Search by title or author
+        // ✅ Get books from BOTH tables
+        $regularBooks = Book::where('status', 'approved')->get();
+        $bookstoreBooks = BookshopBook::where('status', 'active')->get();
+
+        // ✅ Merge collections
+        $allBooks = $regularBooks->merge($bookstoreBooks);
+
+        // ✅ Apply filters
         if ($request->has('search') && $request->search) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->search . '%')
-                  ->orWhere('author', 'like', '%' . $request->search . '%');
+            $search = $request->search;
+            $allBooks = $allBooks->filter(function($book) use ($search) {
+                return stripos($book->title, $search) !== false || 
+                       stripos($book->author ?? '', $search) !== false;
             });
         }
-        
-        // Filter by category
+
         if ($request->has('category') && $request->category) {
-            $query->where('category', $request->category);
+            $allBooks = $allBooks->filter(function($book) use ($request) {
+                return $book->category == $request->category;
+            });
         }
-        
-        // Filter by type (free/paid)
-        if ($request->has('type') && $request->type) {
-            if ($request->type === 'free') {
-                $query->where('is_paid', false);
-            } elseif ($request->type === 'paid') {
-                $query->where('is_paid', true);
-            }
-        }
-        
-        $books = $query->latest()->paginate(12);
-        
+
+        // ✅ Sort by created_at
+        $allBooks = $allBooks->sortByDesc('created_at');
+
+        // ✅ Paginate
+        $books = new \Illuminate\Pagination\LengthAwarePaginator(
+            $allBooks->forPage($request->get('page', 1), 12),
+            $allBooks->count(),
+            12,
+            $request->get('page', 1),
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         // Get all categories (static list)
         $categories = $this->getCategories();
-        
+
         return view('library.index', compact('books', 'categories'));
     }
     
     /**
-     * Redirect to institution book page instead of showing here
+     * Show a single book - FIXED to work with both tables
      */
-    public function show($id)
-    {
-        $book = Book::findOrFail($id);
-        return redirect()->route('institution.public.show', [$book->institution_id, $book->id]);
+   /**
+ * Show a single book - FIXED to work with both tables
+ */
+public function show($id)
+{
+    // ✅ Try to find the book in BOTH tables
+    $book = Book::find($id);
+    if (!$book) {
+        $book = BookshopBook::find($id);
     }
     
+    if (!$book) {
+        abort(404, 'Book not found.');
+    }
+    
+    // ✅ If book has NO institution, show it directly in a dedicated view
+    if (!$book->institution_id) {
+        // Load relationships
+        $book->load(['uploader', 'ratings.user', 'reviews.user']);
+        $book->loadCount(['ratings', 'reviews', 'bookmarks']);
+        
+        // Check if user has access
+        $hasAccess = false;
+        $progress = null;
+        
+        if (auth()->check()) {
+            $hasAccess = !$book->is_paid || $book->userHasAccess(auth()->id());
+            $progress = auth()->user()->books()->where('book_id', $book->id)->first();
+        }
+        
+        return view('library.global-book-show', compact('book', 'hasAccess', 'progress'));
+    }
+    
+    // ✅ If book HAS institution, redirect to institution page
+    return redirect()->route('institution.public.show', [
+        'institutionId' => $book->institution_id, 
+        'book' => $book->id
+    ]);
+}    
     /**
      * Read book online (PDF viewer)
      */
-    public function read(Book $book)
+    public function read($bookId)
     {
         $user = auth()->user();
+        
+        // ✅ Try to find the book in BOTH tables
+        $book = Book::find($bookId);
+        if (!$book) {
+            $book = BookshopBook::find($bookId);
+        }
+        
+        if (!$book) {
+            abort(404, 'Book not found.');
+        }
         
         // For free books, always allow access
         if (!$book->is_paid) {
@@ -156,8 +208,8 @@ class LibraryController extends Controller
         }
         
         // For paid books, check access
-        if (!$book->userHasAccess($user->id)) {
-            return redirect()->route('institution.public.show', [$book->institution_id, $book->id])
+        if (method_exists($book, 'userHasAccess') && !$book->userHasAccess($user->id)) {
+            return redirect()->route('institution.public.show', ['institutionId' => $book->institution_id ?? 1, 'book' => $book->id])
                 ->with('error', 'You need to purchase this book to read it.');
         }
         
@@ -184,12 +236,22 @@ class LibraryController extends Controller
     /**
      * Update reading progress (AJAX)
      */
-    public function updateProgress(Request $request, Book $book)
+    public function updateProgress(Request $request, $bookId)
     {
         $request->validate([
             'page' => 'required|integer|min:1',
             'total_pages' => 'required|integer'
         ]);
+        
+        // ✅ Try to find the book
+        $book = Book::find($bookId);
+        if (!$book) {
+            $book = BookshopBook::find($bookId);
+        }
+        
+        if (!$book) {
+            return response()->json(['success' => false, 'message' => 'Book not found'], 404);
+        }
         
         $progressPercent = round(($request->page / $request->total_pages) * 100);
         
@@ -215,16 +277,30 @@ class LibraryController extends Controller
     /**
      * Download book
      */
-    public function download(Book $book)
+    public function download($bookId)
     {
+        $user = auth()->user();
+        
+        // ✅ Try to find the book
+        $book = Book::find($bookId);
+        if (!$book) {
+            $book = BookshopBook::find($bookId);
+        }
+        
+        if (!$book) {
+            abort(404, 'Book not found.');
+        }
+        
         // Check access for paid books
-        if ($book->is_paid && !$book->userHasAccess(Auth::id())) {
-            return redirect()->route('institution.public.show', [$book->institution_id, $book->id])
+        if ($book->is_paid && method_exists($book, 'userHasAccess') && !$book->userHasAccess($user->id)) {
+            return redirect()->route('institution.public.show', ['institutionId' => $book->institution_id ?? 1, 'book' => $book->id])
                 ->with('error', 'Please purchase this book to download it.');
         }
         
         // Increment download count
-        $book->increment('downloads');
+        if (isset($book->downloads)) {
+            $book->increment('downloads');
+        }
         
         // Get file path
         $filePath = storage_path('app/public/' . $book->file_path);
@@ -273,13 +349,23 @@ class LibraryController extends Controller
     /**
      * Serve PDF file with proper authentication
      */
-    public function servePdf(Book $book)
+    public function servePdf($bookId)
     {
         $user = auth()->user();
         
         // Check if user is logged in
         if (!$user) {
             abort(403, 'Please login to read this book.');
+        }
+        
+        // ✅ Try to find the book
+        $book = Book::find($bookId);
+        if (!$book) {
+            $book = BookshopBook::find($bookId);
+        }
+        
+        if (!$book) {
+            abort(404, 'Book not found.');
         }
         
         // Allow access if user is Super Admin or Admin
@@ -293,7 +379,7 @@ class LibraryController extends Controller
         }
         
         // For paid books, check if user has purchased
-        if ($book->userHasAccess($user->id)) {
+        if (method_exists($book, 'userHasAccess') && $book->userHasAccess($user->id)) {
             return $this->returnPdfFile($book);
         }
         
@@ -303,7 +389,7 @@ class LibraryController extends Controller
     /**
      * Return the PDF file
      */
-    private function returnPdfFile(Book $book)
+    private function returnPdfFile($book)
     {
         $filePath = storage_path('app/public/' . $book->file_path);
         
@@ -320,9 +406,19 @@ class LibraryController extends Controller
     /**
      * Add book to user's library
      */
-    public function addToLibrary(Request $request, Book $book)
+    public function addToLibrary(Request $request, $bookId)
     {
         $status = $request->status ?? 'want_to_read';
+        
+        // ✅ Try to find the book
+        $book = Book::find($bookId);
+        if (!$book) {
+            $book = BookshopBook::find($bookId);
+        }
+        
+        if (!$book) {
+            return redirect()->back()->with('error', 'Book not found.');
+        }
         
         UserBook::updateOrCreate(
             [

@@ -7,124 +7,106 @@
         <p class="text-gray-600">Convert your documents between different formats</p>
     </div>
     
-    @if(session('info'))
-        <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg mb-6">
-            <i class="ti ti-info-circle"></i> {{ session('info') }}
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <i class="ti ti-alert-circle"></i> {{ session('error') }}
+        </div>
+    @endif
+    
+    @if(session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6">
+            <i class="ti ti-check-circle"></i> {{ session('success') }}
         </div>
     @endif
     
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- PDF to Word -->
-        <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition">
+        <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition" x-data="{ loading: false, fileName: '' }">
             <div class="text-center mb-4">
                 <i class="ti ti-file-pdf text-5xl text-red-500"></i>
                 <i class="ti ti-arrow-right text-2xl text-gray-400 mx-2"></i>
                 <i class="ti ti-file-word text-5xl text-blue-500"></i>
             </div>
             <h2 class="text-xl font-semibold text-center mb-4">PDF to Word</h2>
-            <form method="POST" action="{{ route('converter.pdf-to-word') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('converter.pdf-to-word') }}" enctype="multipart/form-data" @submit="loading = true">
                 @csrf
                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-jlibrary-500 transition mb-3">
-                    <input type="file" name="file" accept=".pdf" required class="hidden" id="pdf-input">
+                    <input type="file" name="file" accept=".pdf" required class="hidden" id="pdf-input" @change="fileName = $event.target.files[0]?.name || ''">
                     <label for="pdf-input" class="cursor-pointer block">
                         <i class="ti ti-upload text-3xl text-gray-400 mb-2 block"></i>
-                        <span class="text-gray-500">Click to upload PDF</span>
+                        <span class="text-gray-500" x-text="fileName || 'Click to upload PDF'"></span>
                         <p class="text-xs text-gray-400 mt-1">Max 10MB</p>
                     </label>
                 </div>
-                <button type="submit" class="w-full bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
-                    Convert to Word
+                <button type="submit" class="w-full bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition flex items-center justify-center gap-2" :disabled="loading">
+                    <i class="ti ti-upload" x-show="!loading"></i>
+                    <i class="ti ti-loader animate-spin" x-show="loading"></i>
+                    <span x-text="loading ? 'Converting...' : 'Convert to Word'"></span>
                 </button>
             </form>
         </div>
         
         <!-- Word to PDF -->
-        <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition">
+        <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition" x-data="{ loading: false, fileName: '' }">
             <div class="text-center mb-4">
                 <i class="ti ti-file-word text-5xl text-blue-500"></i>
                 <i class="ti ti-arrow-right text-2xl text-gray-400 mx-2"></i>
                 <i class="ti ti-file-pdf text-5xl text-red-500"></i>
             </div>
             <h2 class="text-xl font-semibold text-center mb-4">Word to PDF</h2>
-            <form method="POST" action="{{ route('converter.word-to-pdf') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('converter.word-to-pdf') }}" enctype="multipart/form-data" @submit="loading = true">
                 @csrf
                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-jlibrary-500 transition mb-3">
-                    <input type="file" name="file" accept=".doc,.docx" required class="hidden" id="word-input">
+                    <input type="file" name="file" accept=".doc,.docx" required class="hidden" id="word-input" @change="fileName = $event.target.files[0]?.name || ''">
                     <label for="word-input" class="cursor-pointer block">
                         <i class="ti ti-upload text-3xl text-gray-400 mb-2 block"></i>
-                        <span class="text-gray-500">Click to upload Word</span>
+                        <span class="text-gray-500" x-text="fileName || 'Click to upload Word'"></span>
                         <p class="text-xs text-gray-400 mt-1">Max 10MB</p>
                     </label>
                 </div>
-                <button type="submit" class="w-full bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
-                    Convert to PDF
+                <button type="submit" class="w-full bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition flex items-center justify-center gap-2" :disabled="loading">
+                    <i class="ti ti-upload" x-show="!loading"></i>
+                    <i class="ti ti-loader animate-spin" x-show="loading"></i>
+                    <span x-text="loading ? 'Converting...' : 'Convert to PDF'"></span>
                 </button>
             </form>
         </div>
         
         <!-- Book to Audio -->
-        <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition">
+        <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-lg transition" x-data="{ loading: false, fileName: '' }">
             <div class="text-center mb-4">
                 <i class="ti ti-book text-5xl text-jlibrary-600"></i>
                 <i class="ti ti-arrow-right text-2xl text-gray-400 mx-2"></i>
                 <i class="ti ti-headphone text-5xl text-green-500"></i>
             </div>
             <h2 class="text-xl font-semibold text-center mb-4">Book to Audio</h2>
-            <form method="POST" action="{{ route('converter.book-to-audio') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('converter.book-to-audio') }}" enctype="multipart/form-data" @submit="loading = true">
                 @csrf
                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-jlibrary-500 transition mb-3">
-                    <input type="file" name="file" accept=".pdf,.txt" required class="hidden" id="audio-input">
+                    <input type="file" name="file" accept=".pdf,.txt" required class="hidden" id="audio-input" @change="fileName = $event.target.files[0]?.name || ''">
                     <label for="audio-input" class="cursor-pointer block">
                         <i class="ti ti-upload text-3xl text-gray-400 mb-2 block"></i>
-                        <span class="text-gray-500">Click to upload book</span>
+                        <span class="text-gray-500" x-text="fileName || 'Click to upload book'"></span>
                         <p class="text-xs text-gray-400 mt-1">PDF or TXT, Max 20MB</p>
                     </label>
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
-                    Convert to Audio
+                <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2" :disabled="loading">
+                    <i class="ti ti-upload" x-show="!loading"></i>
+                    <i class="ti ti-loader animate-spin" x-show="loading"></i>
+                    <span x-text="loading ? 'Converting...' : 'Convert to Audio'"></span>
                 </button>
             </form>
         </div>
     </div>
     
-    <!-- Coming Soon Banner -->
-    <div class="mt-8 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 text-center">
-        <div class="flex items-center justify-center gap-6 flex-wrap">
-            <div class="text-center">
-                <i class="ti ti-file-text text-2xl text-gray-600"></i>
-                <p class="text-sm text-gray-500 mt-1">EPUB to PDF</p>
-                <span class="text-xs bg-gray-200 px-2 py-0.5 rounded">Soon</span>
-            </div>
-            <div class="text-center">
-                <i class="ti ti-image text-2xl text-gray-600"></i>
-                <p class="text-sm text-gray-500 mt-1">Image to Text</p>
-                <span class="text-xs bg-gray-200 px-2 py-0.5 rounded">Soon</span>
-            </div>
-            <div class="text-center">
-                <i class="ti ti-file-zip text-2xl text-gray-600"></i>
-                <p class="text-sm text-gray-500 mt-1">Batch Convert</p>
-                <span class="text-xs bg-gray-200 px-2 py-0.5 rounded">Soon</span>
-            </div>
-        </div>
-    </div>
+   
 </div>
 
+@push('scripts')
 <script>
-    // Display file name when selected
-    document.getElementById('pdf-input')?.addEventListener('change', function(e) {
-        if (e.target.files[0]) {
-            alert('Selected: ' + e.target.files[0].name);
-        }
-    });
-    document.getElementById('word-input')?.addEventListener('change', function(e) {
-        if (e.target.files[0]) {
-            alert('Selected: ' + e.target.files[0].name);
-        }
-    });
-    document.getElementById('audio-input')?.addEventListener('change', function(e) {
-        if (e.target.files[0]) {
-            alert('Selected: ' + e.target.files[0].name);
-        }
-    });
+    // Alpine.js is already included in your layout
+    // The x-data attributes handle the loading states
 </script>
+@endpush
+
 @endsection

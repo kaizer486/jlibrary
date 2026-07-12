@@ -14,17 +14,20 @@ class PaymentService
     protected $tigopesaService;
     protected $halopesaService;
     protected $pesapalService;
+    protected $stripeService;
     
     public function __construct(
         MpesaService $mpesaService,
         TigopesaService $tigopesaService,
         HalopesaService $halopesaService,
-        PesapalService $pesapalService
+        PesapalService $pesapalService,
+        StripeService $stripeService
     ) {
         $this->mpesaService = $mpesaService;
         $this->tigopesaService = $tigopesaService;
         $this->halopesaService = $halopesaService;
         $this->pesapalService = $pesapalService;
+        $this->stripeService = $stripeService;
     }
     
     /**
@@ -43,6 +46,8 @@ class PaymentService
                 return $this->processPesapal($subscription, $data);
             case 'bank':
                 return $this->processBankTransfer($subscription, $data);
+            case 'stripe':
+                return $this->processStripe($subscription, $data);
             default:
                 throw new \Exception('Unsupported payment method: ' . $method);
         }
@@ -74,21 +79,22 @@ class PaymentService
             'payment_method' => 'mpesa',
             'payment_status' => 'pending',
             'status' => 'pending',
-            'mpesa_checkout_request_id' => $result['CheckoutRequestID'],
+            'mpesa_checkout_request_id' => $result['CheckoutRequestID'] ?? null,
             'mpesa_response_code' => $result['ResponseCode'] ?? '0',
             'mpesa_response_description' => $result['ResponseDescription'] ?? '',
         ]);
         
         // Create transaction record
         $this->createTransaction($subscription, 'mpesa', 'pending', [
-            'checkout_request_id' => $result['CheckoutRequestID'],
+            'checkout_request_id' => $result['CheckoutRequestID'] ?? null,
             'phone_number' => $phoneNumber,
+            'response' => $result,
         ]);
         
         return [
             'success' => true,
-            'message' => 'M-Pesa STK Push sent! Please check your phone.',
-            'checkout_request_id' => $result['CheckoutRequestID'],
+            'message' => 'M-Pesa STK Push sent! Please check your phone and enter PIN.',
+            'checkout_request_id' => $result['CheckoutRequestID'] ?? null,
             'redirect_url' => route('institution.subscription.payment-status', $subscription->id)
         ];
     }
@@ -220,6 +226,37 @@ class PaymentService
     }
     
     /**
+     * Process Stripe Payment
+     */
+    protected function processStripe(Subscription $subscription, array $data)
+    {
+        $result = $this->stripeService->createPaymentIntent(
+            $subscription->amount,
+            $subscription->id,
+            $subscription->plan . ' Plan Subscription'
+        );
+        
+        $subscription->update([
+            'payment_method' => 'stripe',
+            'payment_status' => 'pending',
+            'status' => 'pending',
+            'transaction_reference' => $result['payment_intent_id'] ?? null,
+        ]);
+        
+        $this->createTransaction($subscription, 'stripe', 'pending', [
+            'payment_intent_id' => $result['payment_intent_id'] ?? null,
+            'client_secret' => $result['client_secret'] ?? null,
+        ]);
+        
+        return [
+            'success' => true,
+            'message' => 'Redirecting to Stripe...',
+            'client_secret' => $result['client_secret'] ?? null,
+            'payment_intent_id' => $result['payment_intent_id'] ?? null,
+        ];
+    }
+    
+    /**
      * Create payment transaction record
      */
     protected function createTransaction(Subscription $subscription, string $method, string $status, array $metadata = [])
@@ -239,7 +276,7 @@ class PaymentService
     /**
      * Get bank details for manual transfer
      */
-    protected function getBankDetails()
+    protected function getBankDetails(): array
     {
         return [
             'bank_name' => 'CRDB Bank',

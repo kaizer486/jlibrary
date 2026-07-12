@@ -63,16 +63,16 @@
                         User Role <span class="text-red-500">*</span>
                     </label>
                     <select name="role" id="role-select" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-purple-500">
-                        <option value="user" {{ old('role') == 'user' ? 'selected' : '' }}>👤 Regular User</option>
-                        <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>🛡️ Admin</option>
-                        <option value="institution_admin" {{ old('role') == 'institution_admin' ? 'selected' : '' }}>🏢 Institution Admin</option>
-                        <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>👑 Super Admin</option>
+                        <option value="">-- Select Role --</option>
+                        @foreach($availableRoles as $role => $label)
+                            <option value="{{ $role }}" {{ old('role') == $role ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
                     </select>
                     @error('role') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
-                <!-- Institution Assignment (shows only for Institution Admin) -->
-                <div id="institution-fields" style="display: {{ old('role') == 'institution_admin' ? 'block' : 'none' }};" class="p-4 bg-gray-50 rounded-xl">
+                <!-- Institution Assignment -->
+                <div id="institution-fields" style="display: {{ old('role') && in_array(old('role'), ['institution_admin', 'school_admin', 'college_admin', 'university_admin', 'library_admin', 'bookstore_admin', 'publisher_admin', 'librarian', 'instructor']) ? 'block' : 'none' }};" class="p-4 bg-gray-50 rounded-xl">
                     <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                         <i class="ti ti-building"></i> Institution Settings
                     </h3>
@@ -118,9 +118,11 @@
     const roleSelect = document.getElementById('role-select');
     const institutionFields = document.getElementById('institution-fields');
     
+    const institutionRoles = ['institution_admin', 'school_admin', 'college_admin', 'university_admin', 'library_admin', 'bookstore_admin', 'publisher_admin', 'librarian', 'instructor'];
+    
     if (roleSelect) {
         roleSelect.addEventListener('change', function() {
-            if (this.value === 'institution_admin') {
+            if (institutionRoles.includes(this.value)) {
                 institutionFields.style.display = 'block';
             } else {
                 institutionFields.style.display = 'none';

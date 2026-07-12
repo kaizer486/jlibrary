@@ -40,6 +40,7 @@ use App\Http\Controllers\SuperAdmin\ApplicationController as SuperAdminApplicati
 use App\Http\Controllers\SuperAdmin\SubscriptionController as SuperAdminSubscriptionController;
 use App\Http\Controllers\SuperAdmin\InstitutionSubscriptionController as SuperAdminInstitutionSubscriptionController;
 use App\Http\Controllers\Institution\SubscriptionController as InstitutionSubscriptionController;
+use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\BorrowRequestController;
 
 // ==========================================
@@ -48,6 +49,8 @@ use App\Http\Controllers\BorrowRequestController;
 
 Route::get('/', [FrontController::class, 'welcome'])->name('welcome');
 Route::get('/home', [FrontController::class, 'home'])->name('home');
+
+
 
 Route::get('/health', function () {
     return response()->json([
@@ -64,6 +67,32 @@ if (app()->environment('local')) {
     });
 }
 
+
+
+// Socialite Routes
+Route::get('/auth/{provider}', [SocialiteController::class, 'redirect'])->name('socialite.redirect');
+Route::get('/auth/{provider}/callback', [SocialiteController::class, 'callback'])->name('socialite.callback');
+
+// ==========================================
+// ✅ GLOBAL LIBRARY ROUTES - MUST COME FIRST!
+// ==========================================
+Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
+Route::get('/library/{id}', [LibraryController::class, 'show'])->name('library.show');
+Route::get('/library/{book}/read', [LibraryController::class, 'read'])->name('library.read');
+Route::get('/library/{book}/pdf', [LibraryController::class, 'servePdf'])->name('library.pdf');
+Route::get('/library/{book}/download', [LibraryController::class, 'download'])->name('library.download');
+Route::post('/library/{book}/progress', [LibraryController::class, 'updateProgress'])->name('library.progress');
+Route::post('/library/{book}/add-to-library', [LibraryController::class, 'addToLibrary'])->name('library.add-to-library');
+
+// ==========================================
+// ✅ INSTITUTION PUBLIC ROUTES - COME AFTER GLOBAL
+// ==========================================
+Route::prefix('institution')->name('institution.public.')->group(function () {
+    Route::get('/{institutionId}/library', [PublicController::class, 'index'])->name('index');
+    Route::get('/{institutionId}/library/{book}', [PublicController::class, 'show'])->name('show');
+    Route::get('/{institutionId}/shelf/{shelfId}', [PublicController::class, 'shelfShow'])->name('shelf.show');
+});
+
 // ==========================================
 // PUBLIC BORROW REQUEST ROUTES
 // ==========================================
@@ -73,8 +102,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/borrow/request', [BorrowRequestController::class, 'store'])
         ->name('borrow.request.store');
 });
-
-
 
 // ==========================================
 // LIBRARIAN BORROW REQUEST MANAGEMENT
@@ -90,24 +117,6 @@ Route::middleware(['auth', 'librarian'])->prefix('librarian')->group(function ()
 
 Route::get('/certificates/serve/{id}', [CertificateController::class, 'serve'])->name('certificates.serve');
 Route::get('/@{username}', [ProfileController::class, 'show'])->name('profile.show');
-
-// ==========================================
-// INSTITUTION PUBLIC ROUTES
-// ==========================================
-Route::prefix('institution')->name('institution.public.')->group(function () {
-    Route::get('/{institutionId}/library', [App\Http\Controllers\Library\PublicController::class, 'index'])->name('index');
-    Route::get('/{institutionId}/library/{book}', [App\Http\Controllers\Library\PublicController::class, 'show'])->name('show');
-    Route::get('/{institutionId}/shelf/{shelfId}', [App\Http\Controllers\Library\PublicController::class, 'shelfShow'])->name('shelf.show');
-});
-
-// ==========================================
-// GLOBAL LIBRARY ROUTES
-// ==========================================
-Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
-// Individual book view - redirects to institution page
-Route::get('/library/{id}', [LibraryController::class, 'show'])->name('library.show');
-
-Route::get('/refer/{code}', [ReferralController::class, 'processReferral'])->name('referral.process');
 
 // ==========================================
 // PAYMENT WEBHOOKS
@@ -185,17 +194,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/subscription/cancel', [App\Http\Controllers\User\SubscriptionController::class, 'cancel'])->name('subscription.cancel');
     });
 
+    // AUTHENTICATED LIBRARY ROUTES (additional actions)
     Route::prefix('library')->name('library.')->group(function () {
-        Route::get('/', [LibraryController::class, 'index'])->name('index');
         Route::get('/my-library', [LibraryController::class, 'myLibrary'])->name('my-library');
-        Route::get('/{book}', [LibraryController::class, 'show'])->name('show');
-        Route::get('/{book}/read', [LibraryController::class, 'read'])->name('read');
-        Route::get('/{book}/pdf', [LibraryController::class, 'servePdf'])->name('pdf');
-        Route::get('/{book}/download', [LibraryController::class, 'download'])->name('download');
         Route::post('/{book}/progress', [LibraryController::class, 'updateProgress'])->name('progress');
         Route::post('/{book}/add-to-library', [LibraryController::class, 'addToLibrary'])->name('add-to-library');
     });
-
 
     Route::prefix('user/library')->name('user.library.')->group(function () {
         Route::get('/', [UserLibraryController::class, 'index'])->name('index');
@@ -286,12 +290,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{group}/messages/{lastId?}', [CommunityController::class, 'getMessages'])->name('messages');
     });
 
-    Route::prefix('converter')->name('converter.')->group(function () {
-        Route::get('/', [ConverterController::class, 'index'])->name('index');
-        Route::post('/pdf-to-word', [ConverterController::class, 'pdfToWord'])->name('pdf-to-word');
-        Route::post('/word-to-pdf', [ConverterController::class, 'wordToPdf'])->name('word-to-pdf');
-        Route::post('/book-to-audio', [ConverterController::class, 'bookToAudio'])->name('book-to-audio');
-    });
+    Route::middleware(['auth'])->prefix('converter')->name('converter.')->group(function () {
+    Route::get('/', [ConverterController::class, 'index'])->name('index');
+    Route::post('/pdf-to-word', [ConverterController::class, 'pdfToWord'])->name('pdf-to-word');
+    Route::post('/word-to-pdf', [ConverterController::class, 'wordToPdf'])->name('word-to-pdf');
+    Route::post('/book-to-audio', [ConverterController::class, 'bookToAudio'])->name('book-to-audio');
+});
 
     Route::prefix('documents')->name('documents.')->group(function () {
         Route::get('/', [DocumentController::class, 'index'])->name('index');
@@ -321,29 +325,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/quote/next', [App\Http\Controllers\QuoteController::class, 'nextQuote']);
 });
 
-// ==========================================
-// SECTION 3: INSTITUTION ROUTES
-// ==========================================
-
-Route::prefix('institution')->middleware(['auth'])->group(function () {
-    Route::post('/books/{book}/progress', [App\Http\Controllers\Institution\BookController::class, 'updateProgress'])
-        ->name('institution.books.progress');
-});
-// ==========================================
-// INSTITUTION LIBRARY ROUTES (Admin Only)
-// ==========================================
-Route::middleware(['auth', 'institution'])->prefix('institution')->name('institution.')->group(function () {
-    Route::get('/books', [App\Http\Controllers\Institution\LibraryController::class, 'index'])->name('books.index');
-    Route::get('/books/{book}', [App\Http\Controllers\Institution\LibraryController::class, 'show'])->name('books.show');
-    Route::get('/books/shelf/{shelfId}/books', [App\Http\Controllers\Institution\LibraryController::class, 'getShelfBooks'])->name('books.shelf.books');
-    Route::get('/books/stats', [App\Http\Controllers\Institution\LibraryController::class, 'getStats'])->name('books.stats');
-});
 
 // ==========================================
-// GLOBAL LIBRARY ROUTES (Public)
+// ORDER ROUTES
 // ==========================================
-Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
-Route::get('/library/{id}', [LibraryController::class, 'show'])->name('library.show');
 Route::middleware(['auth'])->group(function () {
     Route::get('/orders/create/{book}', [App\Http\Controllers\Institution\OrderController::class, 'create'])
         ->name('orders.create');
@@ -360,16 +345,57 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+
+// ==========================================
+// INSTITUTION SUBSCRIPTION ROUTES - FIXED
+// ==========================================
 Route::middleware(['auth', 'institution'])
     ->prefix('institution')
     ->name('institution.subscription.')
     ->group(function () {
-        Route::post('/initiate-payment', [InstitutionSubscriptionController::class, 'initiatePayment'])
+        
+        // Main subscription management
+        Route::get('/', [App\Http\Controllers\Institution\SubscriptionController::class, 'index'])
+            ->name('index');
+        
+        Route::get('/history', [App\Http\Controllers\Institution\SubscriptionController::class, 'history'])
+            ->name('history');
+        
+        // Payment routes
+        Route::post('/initiate-payment', [App\Http\Controllers\Institution\SubscriptionController::class, 'initiatePayment'])
             ->name('initiate-payment');
-        Route::get('/payment-status/{subscriptionId}', [InstitutionSubscriptionController::class, 'paymentStatus'])
+        
+        Route::get('/payment-status/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'paymentStatus'])
             ->name('payment-status');
-        Route::get('/payment-instructions/{subscriptionId}', [InstitutionSubscriptionController::class, 'paymentInstructions'])
+        
+        Route::get('/payment-instructions/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'paymentInstructions'])
             ->name('payment-instructions');
+        
+        Route::post('/upload-payment-proof/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'uploadPaymentProof'])
+            ->name('upload-payment-proof');
+        
+        // Extension and cancellation (Super Admin only for manual)
+        Route::post('/extend', [App\Http\Controllers\Institution\SubscriptionController::class, 'extend'])
+            ->name('extend');
+        
+        Route::post('/cancel', [App\Http\Controllers\Institution\SubscriptionController::class, 'cancel'])
+            ->name('cancel');
+        
+        // Webhook callbacks
+        Route::post('/mpesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'mpesaCallback'])
+            ->name('mpesa-callback');
+        
+        Route::post('/tigopesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'tigopesaCallback'])
+            ->name('tigopesa-callback');
+        
+        Route::post('/halopesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'halopesaCallback'])
+            ->name('halopesa-callback');
+        
+        Route::get('/pesapal-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'pesapalCallback'])
+            ->name('pesapal-callback');
+        
+        Route::post('/stripe-webhook', [App\Http\Controllers\Institution\SubscriptionController::class, 'stripeWebhook'])
+            ->name('stripe-webhook');
     });
 
 // ==========================================
@@ -382,11 +408,13 @@ Route::middleware(['auth', 'institution'])
         
         Route::get('/dashboard', [App\Http\Controllers\Institution\DashboardController::class, 'index'])->name('dashboard');
         
-        Route::resource('books', App\Http\Controllers\Institution\BookController::class);
+         Route::resource('books', App\Http\Controllers\Institution\BookController::class);
         Route::post('/books/{book}/approve', [App\Http\Controllers\Institution\BookController::class, 'approve'])->name('books.approve');
         Route::post('/books/{book}/toggle-stock', [App\Http\Controllers\Institution\BookController::class, 'toggleStock'])->name('books.toggle-stock');
-Route::post('/books/bulk-action', [App\Http\Controllers\Institution\BookController::class, 'bulkAction'])->name('books.bulk-action');
-        
+        Route::post('/books/bulk-action', [App\Http\Controllers\Institution\BookController::class, 'bulkAction'])->name('books.bulk-action');
+
+        Route::post('/books/{book}/progress', [App\Http\Controllers\Institution\BookController::class, 'updateProgress'])
+            ->name('books.progress');
         Route::resource('shelves', App\Http\Controllers\Institution\ShelfController::class);
         
         Route::resource('members', App\Http\Controllers\Institution\MemberController::class);
@@ -584,10 +612,10 @@ Route::middleware(['auth', \App\Http\Middleware\MediaTeamMiddleware::class])->pr
     // CONTENT MANAGEMENT - Media Team & Super Admin
     // ==========================================
     
-   Route::resource('hero-slides', App\Http\Controllers\SuperAdmin\HeroSlideController::class);
-        Route::post('hero-slides/{heroSlide}/toggle-status', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'toggleStatus'])->name('hero-slides.toggle-status');
-        Route::post('hero-slides/reorder', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'reorder'])->name('hero-slides.reorder');
-        
+    Route::resource('hero-slides', App\Http\Controllers\SuperAdmin\HeroSlideController::class);
+    Route::post('hero-slides/{heroSlide}/toggle-status', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'toggleStatus'])->name('hero-slides.toggle-status');
+    Route::post('hero-slides/reorder', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'reorder'])->name('hero-slides.reorder');
+    
     // News Items
     Route::resource('news-items', App\Http\Controllers\SuperAdmin\NewsItemController::class);
     Route::post('news-items/{newsItem}/toggle-featured', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'toggleFeatured'])->name('news-items.toggle-featured');
@@ -603,6 +631,7 @@ Route::middleware(['auth', \App\Http\Middleware\MediaTeamMiddleware::class])->pr
     Route::get('site-settings', [App\Http\Controllers\SuperAdmin\SiteSettingController::class, 'index'])->name('site-settings.index');
     Route::put('site-settings', [App\Http\Controllers\SuperAdmin\SiteSettingController::class, 'update'])->name('site-settings.update');
 });
+
 // ==========================================
 // MEDIA TEAM DASHBOARD ROUTE
 // ==========================================
@@ -666,13 +695,17 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
     Route::get('/analytics/export', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'export'])->name('analytics.export');
 
     // ==========================================
-    // PLATFORM MANAGEMENT
+    // BOOK MANAGEMENT
     // ==========================================
-    
-    // Books
     Route::resource('books', App\Http\Controllers\SuperAdmin\BookController::class);
     Route::post('/books/{book}/toggle-status', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleStatus'])->name('books.toggle-status');
+    Route::post('/books/{book}/toggle-featured', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleFeatured'])->name('books.toggle-featured');
+    Route::post('/books/{book}/toggle-trending', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleTrending'])->name('books.toggle-trending');
     Route::post('/books/bulk-action', [App\Http\Controllers\SuperAdmin\BookController::class, 'bulkAction'])->name('books.bulk-action');
+
+    // ==========================================
+    // PLATFORM MANAGEMENT
+    // ==========================================
     
     // Users
     Route::resource('users', App\Http\Controllers\SuperAdmin\UserController::class);
@@ -813,7 +846,6 @@ Route::middleware(['auth'])->group(function () {
         ->name('book.download');
 });
 
-
 // ==========================================
 // WALLET API ROUTES
 // ==========================================
@@ -842,6 +874,7 @@ Route::middleware(['auth'])->group(function () {
 
 Route::post('/shelves/sync-counts', [App\Http\Controllers\Institution\ShelfController::class, 'syncCounts'])
     ->name('institution.shelves.sync-counts');
+
 // ==========================================
 // SECTION 13: AUTHENTICATION ROUTES
 // ==========================================

@@ -19,7 +19,7 @@
 </div>
 
 <!-- Stats Cards -->
-<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
     <div class="bg-white rounded-xl p-4 border-l-4 border-purple-500 shadow-sm">
         <p class="text-gray-500 text-sm">Total Users</p>
         <p class="text-2xl font-bold text-gray-900">{{ number_format($totalUsers) }}</p>
@@ -33,12 +33,16 @@
         <p class="text-2xl font-bold text-purple-600">{{ number_format($adminCount) }}</p>
     </div>
     <div class="bg-white rounded-xl p-4 border-l-4 border-blue-500 shadow-sm">
-        <p class="text-gray-500 text-sm">Institution Admins</p>
+        <p class="text-gray-500 text-sm">Inst. Admins</p>
         <p class="text-2xl font-bold text-blue-600">{{ number_format($institutionAdminCount) }}</p>
     </div>
+    <div class="bg-white rounded-xl p-4 border-l-4 border-green-500 shadow-sm">
+        <p class="text-gray-500 text-sm">With Institution</p>
+        <p class="text-2xl font-bold text-green-600">{{ number_format($withInstitutionCount) }}</p>
+    </div>
     <div class="bg-white rounded-xl p-4 border-l-4 border-gray-500 shadow-sm">
-        <p class="text-gray-500 text-sm">Regular Users</p>
-        <p class="text-2xl font-bold text-gray-600">{{ number_format($userCount) }}</p>
+        <p class="text-gray-500 text-sm">Without Institution</p>
+        <p class="text-2xl font-bold text-gray-600">{{ number_format($withoutInstitutionCount) }}</p>
     </div>
 </div>
 
@@ -51,17 +55,35 @@
                    class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500">
         </div>
         <div>
-            <select name="role" class="px-4 py-2 border border-gray-200 rounded-lg bg-white">
-                <option value="">All Roles</option>
+            <select name="role" class="px-4 py-2 border border-gray-200 rounded-lg bg-white min-w-[150px]">
+                <option value="all">All Roles</option>
                 <option value="super_admin" {{ request('role') == 'super_admin' ? 'selected' : '' }}>👑 Super Admin</option>
                 <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>🛡️ Admin</option>
+                <option value="media_team" {{ request('role') == 'media_team' ? 'selected' : '' }}>🎨 Media Team</option>
                 <option value="institution_admin" {{ request('role') == 'institution_admin' ? 'selected' : '' }}>🏢 Institution Admin</option>
-                <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>👤 User</option>
+                <option value="school_admin" {{ request('role') == 'school_admin' ? 'selected' : '' }}>🏫 School Admin</option>
+                <option value="college_admin" {{ request('role') == 'college_admin' ? 'selected' : '' }}>🎓 College Admin</option>
+                <option value="university_admin" {{ request('role') == 'university_admin' ? 'selected' : '' }}>🏛️ University Admin</option>
+                <option value="library_admin" {{ request('role') == 'library_admin' ? 'selected' : '' }}>📚 Library Admin</option>
+                <option value="bookstore_admin" {{ request('role') == 'bookstore_admin' ? 'selected' : '' }}>📖 Bookstore Admin</option>
+                <option value="publisher_admin" {{ request('role') == 'publisher_admin' ? 'selected' : '' }}>📰 Publisher Admin</option>
+                <option value="librarian" {{ request('role') == 'librarian' ? 'selected' : '' }}>📚 Librarian</option>
+                <option value="instructor" {{ request('role') == 'instructor' ? 'selected' : '' }}>👨‍🏫 Instructor</option>
+                <option value="researcher" {{ request('role') == 'researcher' ? 'selected' : '' }}>🔬 Researcher</option>
+                <option value="author" {{ request('role') == 'author' ? 'selected' : '' }}>✍️ Author</option>
+                <option value="user" {{ request('role') == 'user' ? 'selected' : '' }}>👤 Member</option>
             </select>
         </div>
         <div>
-            <select name="institution_id" class="px-4 py-2 border border-gray-200 rounded-lg bg-white">
-                <option value="">All Institutions</option>
+            <select name="institution_status" class="px-4 py-2 border border-gray-200 rounded-lg bg-white min-w-[150px]">
+                <option value="all">All Users</option>
+                <option value="with_institution" {{ request('institution_status') == 'with_institution' ? 'selected' : '' }}>🏢 With Institution</option>
+                <option value="without_institution" {{ request('institution_status') == 'without_institution' ? 'selected' : '' }}>👤 Without Institution</option>
+            </select>
+        </div>
+        <div>
+            <select name="institution_id" class="px-4 py-2 border border-gray-200 rounded-lg bg-white min-w-[150px]">
+                <option value="all">All Institutions</option>
                 @foreach($institutions as $inst)
                     <option value="{{ $inst->id }}" {{ request('institution_id') == $inst->id ? 'selected' : '' }}>{{ $inst->name }}</option>
                 @endforeach
@@ -108,10 +130,20 @@
                             <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">👑 Super Admin</span>
                         @elseif($user->isAdmin())
                             <span class="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">🛡️ Admin</span>
+                        @elseif($user->isMediaTeam())
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-pink-100 text-pink-700">🎨 Media Team</span>
                         @elseif($user->isAnyInstitutionAdmin())
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">🏢 Institution Admin</span>
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">🏢 Inst. Admin</span>
+                        @elseif($user->role === 'librarian')
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">📚 Librarian</span>
+                        @elseif($user->role === 'instructor')
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">👨‍🏫 Instructor</span>
+                        @elseif($user->role === 'author')
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">✍️ Author</span>
+                        @elseif($user->role === 'researcher')
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-cyan-100 text-cyan-700">🔬 Researcher</span>
                         @else
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">👤 User</span>
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">👤 Member</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $user->institution->name ?? 'N/A' }}</td>

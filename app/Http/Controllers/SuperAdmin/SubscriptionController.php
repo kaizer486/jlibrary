@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
 {
@@ -78,11 +79,18 @@ class SubscriptionController extends Controller
             'bank' => Subscription::where('payment_method', 'bank')->count(),
         ];
         
+        // Calculate revenue
+        $subscriptionStats = [
+            'revenue' => Subscription::whereIn('status', ['active', 'paid'])
+                ->sum('amount'),
+        ];
+        
         return view('super-admin.subscriptions.index', compact(
             'subscriptions',
             'statusCounts',
             'planCounts',
-            'paymentMethods'
+            'paymentMethods',
+            'subscriptionStats'
         ));
     }
     
@@ -114,84 +122,22 @@ class SubscriptionController extends Controller
     }
     
     /**
-     * Activate a pending subscription
+     * Show override form
      */
-    public function activate(Request $request, $id)
+    public function overrideForm($id)
     {
-        $subscription = Subscription::findOrFail($id);
+        $subscription = Subscription::with('institution')->findOrFail($id);
         
-        DB::transaction(function () use ($subscription) {
-            // Cancel any other active subscriptions for this institution
-            $subscription->institution->subscriptions()
-                ->where('id', '!=', $subscription->id)
-                ->where('status', 'active')
-                ->update(['status' => 'cancelled']);
-            
-            // Activate this subscription
-            $subscription->update([
-                'status' => 'active',
-                'payment_status' => 'paid',
-                'starts_at' => now(),
-                'ends_at' => now()->addMonth(),
-            ]);
-            
-            // Update institution
-            $subscription->institution->update([
-                'subscription_tier' => $subscription->plan,
-                'subscription_expires_at' => $subscription->ends_at,
-                'subscription_status' => 'active',
-            ]);
-        });
-        
-        return redirect()->back()->with('success', 'Subscription activated successfully!');
-    }
-    
-    /**
-     * Cancel a subscription
-     */
-    public function cancel($id)
-    {
-        $subscription = Subscription::findOrFail($id);
-        
-        $subscription->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-            'auto_renew' => false,
-        ]);
-        
-        // Update institution
-        $subscription->institution->update([
-            'subscription_status' => 'cancelled',
-        ]);
-        
-        return redirect()->back()->with('warning', 'Subscription cancelled.');
-    }
-    
-    /**
-     * Mark a subscription as expired
-     */
-    public function markExpired($id)
-    {
-        $subscription = Subscription::findOrFail($id);
-        
-        $subscription->update([
-            'status' => 'expired',
-        ]);
-        
-        $subscription->institution->update([
-            'subscription_status' => 'expired',
-            'subscription_tier' => 'free',
-        ]);
-        
-        return redirect()->back()->with('info', 'Subscription marked as expired.');
+        return view('super-admin.subscriptions.override', compact('subscription'));
     }
     
     /**
      * Override subscription plan (Super Admin only)
+     * ✅ FIXED: Properly updates institution and creates new subscription
      */
     public function override(Request $request, $id)
     {
-        $subscription = Subscription::findOrFail($id);
+        $subscription = Subscription::with('institution')->findOrFail($id);
         
         $request->validate([
             'plan' => 'required|in:basic,premium,enterprise',
@@ -201,18 +147,29 @@ class SubscriptionController extends Controller
             'note' => 'nullable|string|max:500',
         ]);
         
-        $endDate = $this->calculateExpiry(now(), $request->period);
+        $institution = $subscription->institution;
         
-        DB::transaction(function () use ($subscription, $request, $endDate) {
-            // Cancel existing
+        if (!$institution) {
+            return back()->with('error', 'Institution not found for this subscription.');
+        }
+        
+        $endDate = $this->calculateExpiry(now(), $request->period);
+        $planLimits = $this->getPlanLimits($request->plan);
+        
+        DB::beginTransaction();
+        
+        try {
+            // 1. Cancel the old subscription
             $subscription->status = 'cancelled';
+            $subscription->cancelled_at = now();
+            $subscription->auto_renew = false;
             $subscription->save();
             
-            // Create new subscription with overridden plan
+            // 2. Create new subscription
             $newSubscription = Subscription::create([
                 'subscribable_type' => Institution::class,
-                'subscribable_id' => $subscription->institution_id,
-                'institution_id' => $subscription->institution_id,
+                'subscribable_id' => $institution->id,
+                'institution_id' => $institution->id,
                 'plan' => $request->plan,
                 'amount' => $request->amount,
                 'status' => 'active',
@@ -221,64 +178,258 @@ class SubscriptionController extends Controller
                 'starts_at' => now(),
                 'ends_at' => $endDate,
                 'auto_renew' => false,
-                'transaction_reference' => 'OVERRIDE-' . Str::random(12),
+                'billing_period' => $request->period,
+                'transaction_reference' => 'OVERRIDE-' . Str::random(12) . '-' . time(),
                 'mpesa_response_description' => $request->note ?? 'Overridden by Super Admin',
             ]);
             
-            // Update institution
-            $subscription->institution->update([
+            // 3. ✅ UPDATE INSTITUTION - This is what makes it show up!
+            $institution->update([
                 'subscription_tier' => $request->plan,
                 'subscription_expires_at' => $endDate,
                 'subscription_status' => 'active',
                 'subscription_price_paid' => $request->amount,
+                'subscription_payment_method' => $request->payment_method ?? $subscription->payment_method,
             ]);
-        });
-        
-        return redirect()->route('super-admin.subscriptions.show', $subscription->id)
-            ->with('success', 'Subscription overridden successfully! New plan: ' . ucfirst($request->plan));
+            
+            // 4. ✅ UPDATE PLAN LIMITS
+            if ($planLimits['max_users'] !== null) {
+                $institution->max_users = $planLimits['max_users'];
+            } else {
+                $institution->max_users = null; // Unlimited
+            }
+            
+            if ($planLimits['max_books'] !== null) {
+                $institution->max_books = $planLimits['max_books'];
+            } else {
+                $institution->max_books = null; // Unlimited
+            }
+            
+            $institution->save();
+            
+            // 5. ✅ Update the user's subscription fields (if user exists)
+            // This ensures the sidebar shows correctly
+            $admin = $institution->users()->where('is_institution_admin', true)->first();
+            if ($admin) {
+                $admin->update([
+                    'subscription_tier' => $request->plan,
+                    'subscription_expires_at' => $endDate,
+                ]);
+            }
+            
+            // 6. Log the override
+            Log::info('Subscription overridden by Super Admin', [
+                'admin_id' => auth()->id(),
+                'admin_name' => auth()->user()->full_name,
+                'subscription_id' => $subscription->id,
+                'new_subscription_id' => $newSubscription->id,
+                'institution_id' => $institution->id,
+                'institution_name' => $institution->name,
+                'old_plan' => $subscription->plan,
+                'new_plan' => $request->plan,
+                'amount' => $request->amount,
+                'period' => $request->period,
+                'note' => $request->note,
+            ]);
+            
+            DB::commit();
+            
+            return redirect()->route('super-admin.subscriptions.show', $newSubscription->id)
+                ->with('success', 'Subscription overridden successfully! 
+                    ' . ucfirst($request->plan) . ' plan activated until ' . $endDate->format('M d, Y'));
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Subscription override failed: ' . $e->getMessage(), [
+                'subscription_id' => $subscription->id,
+                'institution_id' => $institution->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return back()->with('error', 'Failed to override subscription: ' . $e->getMessage());
+        }
     }
     
     /**
-     * Bulk action on subscriptions
+     * Get plan limits
      */
-    public function bulkAction(Request $request)
+    private function getPlanLimits($plan)
     {
-        $request->validate([
-            'subscription_ids' => 'required|array',
-            'subscription_ids.*' => 'exists:subscriptions,id',
-            'action' => 'required|in:activate,cancel,expire,delete',
+        return match($plan) {
+            'basic' => ['max_users' => 50, 'max_books' => 100],
+            'premium' => ['max_users' => 200, 'max_books' => 500],
+            'enterprise' => ['max_users' => null, 'max_books' => null],
+            default => ['max_users' => 50, 'max_books' => 100],
+        };
+    }
+    
+    /**
+     * Activate a pending subscription
+     */
+   /**
+ * Activate a pending subscription
+ */
+public function activate(Request $request, $id)
+{
+    $subscription = Subscription::with('institution')->findOrFail($id);
+    
+    // ✅ Use the model's activate method
+    $subscription->activate();
+    
+    // ✅ Update the institution
+    if ($subscription->institution) {
+        $subscription->institution->update([
+            'subscription_status' => 'active',
+            'subscription_tier' => $subscription->plan,
+            'subscription_expires_at' => $subscription->ends_at,
         ]);
         
-        $count = 0;
+        // ✅ Update all users in this institution
+        $subscription->institution->users()->update([
+            'subscription_tier' => $subscription->plan,
+            'subscription_expires_at' => $subscription->ends_at,
+        ]);
+    }
+    
+    return redirect()->back()->with('success', 'Subscription activated successfully!');
+}
+    
+    /**
+     * Cancel a subscription
+     */
+    /**
+ * Cancel a subscription
+ */
+/**
+ * Cancel a subscription
+ */
+public function cancel($id)
+{
+    $subscription = Subscription::with('institution')->findOrFail($id);
+    
+    // ✅ Use the model's cancel method
+    $subscription->cancel();
+    
+    // ✅ Also update the institution fields (in case the model method doesn't)
+    if ($subscription->institution) {
+        $subscription->institution->update([
+            'subscription_status' => 'cancelled',
+            'subscription_tier' => 'free',
+            'subscription_expires_at' => null,
+        ]);
         
-        foreach ($request->subscription_ids as $id) {
-            $subscription = Subscription::find($id);
-            
-            if (!$subscription) continue;
-            
-            switch ($request->action) {
-                case 'activate':
-                    $subscription->update(['status' => 'active']);
-                    $subscription->institution->update(['subscription_status' => 'active']);
-                    break;
-                case 'cancel':
-                    $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
-                    $subscription->institution->update(['subscription_status' => 'cancelled']);
-                    break;
-                case 'expire':
-                    $subscription->update(['status' => 'expired']);
-                    $subscription->institution->update(['subscription_status' => 'expired']);
-                    break;
-                case 'delete':
-                    $subscription->delete();
-                    break;
-            }
-            
-            $count++;
+        // ✅ Update all users in this institution
+        $subscription->institution->users()->update([
+            'subscription_tier' => 'free',
+            'subscription_expires_at' => null,
+        ]);
+    }
+    
+    return redirect()->back()->with('warning', 'Subscription cancelled successfully.');
+}
+    
+  /**
+ * Mark a subscription as expired
+ */
+public function markExpired($id)
+{
+    $subscription = Subscription::with('institution')->findOrFail($id);
+    
+    // ✅ Use the model's expire method
+    $subscription->expire();
+    
+    // ✅ Also update the institution fields
+    if ($subscription->institution) {
+        $subscription->institution->update([
+            'subscription_status' => 'expired',
+            'subscription_tier' => 'free',
+            'subscription_expires_at' => null,
+        ]);
+        
+        // ✅ Update all users in this institution
+        $subscription->institution->users()->update([
+            'subscription_tier' => 'free',
+            'subscription_expires_at' => null,
+        ]);
+    }
+    
+    return redirect()->back()->with('info', 'Subscription marked as expired.');
+}
+    
+   /**
+ * Bulk action on subscriptions
+ */
+public function bulkAction(Request $request)
+{
+    $request->validate([
+        'subscription_ids' => 'required|array',
+        'subscription_ids.*' => 'exists:subscriptions,id',
+        'action' => 'required|in:activate,cancel,expire,delete',
+    ]);
+    
+    $count = 0;
+    
+    foreach ($request->subscription_ids as $id) {
+        $subscription = Subscription::with('institution')->find($id);
+        
+        if (!$subscription) continue;
+        
+        switch ($request->action) {
+            case 'activate':
+                $subscription->update(['status' => 'active']);
+                if ($subscription->institution) {
+                    $subscription->institution->update([
+                        'subscription_status' => 'active',
+                        'subscription_tier' => $subscription->plan,
+                        'subscription_expires_at' => $subscription->ends_at,
+                    ]);
+                    $subscription->institution->users()->update([
+                        'subscription_tier' => $subscription->plan,
+                        'subscription_expires_at' => $subscription->ends_at,
+                    ]);
+                }
+                break;
+                
+            case 'cancel':
+                $subscription->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+                if ($subscription->institution) {
+                    $subscription->institution->update([
+                        'subscription_status' => 'cancelled',
+                        'subscription_tier' => null,
+                        'subscription_expires_at' => null,
+                    ]);
+                    $subscription->institution->users()->update([
+                        'subscription_tier' => null,
+                        'subscription_expires_at' => null,
+                    ]);
+                }
+                break;
+                
+            case 'expire':
+                $subscription->update(['status' => 'expired']);
+                if ($subscription->institution) {
+                    $subscription->institution->update([
+                        'subscription_status' => 'expired',
+                        'subscription_tier' => null,
+                        'subscription_expires_at' => null,
+                    ]);
+                    $subscription->institution->users()->update([
+                        'subscription_tier' => null,
+                        'subscription_expires_at' => null,
+                    ]);
+                }
+                break;
+                
+            case 'delete':
+                $subscription->delete();
+                break;
         }
         
-        return redirect()->back()->with('success', $count . ' subscription(s) updated successfully!');
+        $count++;
     }
+    
+    return redirect()->back()->with('success', $count . ' subscription(s) updated successfully!');
+}
     
     /**
      * Export subscriptions to CSV
@@ -298,46 +449,47 @@ class SubscriptionController extends Controller
         $subscriptions = $query->get();
         
         $filename = 'subscriptions_' . date('Y-m-d') . '.csv';
-        $handle = fopen('php://output', 'w');
         
-        // Headers
-        fputcsv($handle, [
-            'ID',
-            'Institution',
-            'Plan',
-            'Amount',
-            'Status',
-            'Payment Method',
-            'Starts At',
-            'Ends At',
-            'Created At',
-        ]);
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
         
-        // Data
-        foreach ($subscriptions as $sub) {
+        $callback = function() use ($subscriptions) {
+            $handle = fopen('php://output', 'w');
+            
+            // Headers
             fputcsv($handle, [
-                $sub->id,
-                $sub->institution->name ?? 'N/A',
-                $sub->plan,
-                $sub->amount,
-                $sub->status,
-                $sub->payment_method ?? 'N/A',
-                $sub->starts_at ? $sub->starts_at->format('Y-m-d') : 'N/A',
-                $sub->ends_at ? $sub->ends_at->format('Y-m-d') : 'N/A',
-                $sub->created_at->format('Y-m-d H:i:s'),
+                'ID',
+                'Institution',
+                'Plan',
+                'Amount',
+                'Status',
+                'Payment Method',
+                'Starts At',
+                'Ends At',
+                'Created At',
             ]);
-        }
+            
+            // Data
+            foreach ($subscriptions as $sub) {
+                fputcsv($handle, [
+                    $sub->id,
+                    $sub->institution->name ?? 'N/A',
+                    $sub->plan,
+                    $sub->amount,
+                    $sub->status,
+                    $sub->payment_method ?? 'N/A',
+                    $sub->starts_at ? $sub->starts_at->format('Y-m-d') : 'N/A',
+                    $sub->ends_at ? $sub->ends_at->format('Y-m-d') : 'N/A',
+                    $sub->created_at->format('Y-m-d H:i:s'),
+                ]);
+            }
+            
+            fclose($handle);
+        };
         
-        fclose($handle);
-        
-        return response()->stream(
-            function() use ($handle) {},
-            200,
-            [
-                'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-            ]
-        );
+        return response()->stream($callback, 200, $headers);
     }
     
     /**
@@ -346,26 +498,18 @@ class SubscriptionController extends Controller
     private function calculateExpiry($startDate, $period)
     {
         $map = [
-            'monthly' => 'addMonth',
-            'quarterly' => 'addMonths',
-            'semi_annual' => 'addMonths',
-            'annual' => 'addYear',
+            'monthly' => ['method' => 'addMonths', 'count' => 1],
+            'quarterly' => ['method' => 'addMonths', 'count' => 3],
+            'semi_annual' => ['method' => 'addMonths', 'count' => 6],
+            'annual' => ['method' => 'addYear', 'count' => 1],
         ];
         
-        $counts = [
-            'monthly' => 1,
-            'quarterly' => 3,
-            'semi_annual' => 6,
-            'annual' => 1,
-        ];
+        $config = $map[$period] ?? $map['monthly'];
         
-        $method = $map[$period];
-        $count = $counts[$period];
-        
-        if ($method === 'addMonths') {
-            return $startDate->copy()->addMonths($count);
+        if ($config['method'] === 'addMonths') {
+            return $startDate->copy()->addMonths($config['count']);
         }
         
-        return $startDate->copy()->$method();
+        return $startDate->copy()->addYear();
     }
 }

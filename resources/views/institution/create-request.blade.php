@@ -74,11 +74,11 @@
                     <!-- Description -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            Description
+                            Description <span class="text-red-500">*</span>
                         </label>
                         <textarea name="description" rows="4" 
                                   class="w-full bg-white/80 border border-slate-200/60 rounded-lg px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
-                                  placeholder="Describe your institution...">{{ old('description') }}</textarea>
+                                  placeholder="Describe your institution (min 20 characters)...">{{ old('description') }}</textarea>
                         @error('description')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -87,9 +87,9 @@
                     <!-- Address -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            Address
+                            Address <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="address" value="{{ old('address') }}"
+                        <input type="text" name="address" value="{{ old('address') }}" required
                                class="w-full bg-white/80 border border-slate-200/60 rounded-lg px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
                                placeholder="Street address">
                         @error('address')
@@ -100,12 +100,25 @@
                     <!-- City -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            City
+                            City <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="city" value="{{ old('city') }}"
+                        <input type="text" name="city" value="{{ old('city') }}" required
                                class="w-full bg-white/80 border border-slate-200/60 rounded-lg px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
                                placeholder="City">
                         @error('city')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Region -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            Region <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="region" value="{{ old('region') }}" required
+                               class="w-full bg-white/80 border border-slate-200/60 rounded-lg px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
+                               placeholder="Region or State">
+                        @error('region')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
                     </div>
@@ -126,9 +139,9 @@
                     <!-- Phone -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            Phone Number
+                            Phone Number <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="phone" value="{{ old('phone') }}"
+                        <input type="text" name="phone" value="{{ old('phone') }}" required
                                class="w-full bg-white/80 border border-slate-200/60 rounded-lg px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
                                placeholder="+255 700 000 000">
                         @error('phone')
@@ -139,7 +152,7 @@
                     <!-- Website -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
-                            Website
+                            Website <span class="text-slate-400 text-xs font-normal">(Optional)</span>
                         </label>
                         <input type="url" name="website" value="{{ old('website') }}"
                                class="w-full bg-white/80 border border-slate-200/60 rounded-lg px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
@@ -149,7 +162,33 @@
                         @enderror
                     </div>
 
-                    <!-- Logo Upload -->
+                    <!-- ✅ MOTIVATION - ADD THIS FIELD -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            Motivation <span class="text-red-500">*</span>
+                        </label>
+                        <textarea name="motivation" rows="4" required
+                                  class="w-full bg-white/80 border border-slate-200/60 rounded-lg px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition"
+                                  placeholder="Why do you want to create this institution? (min 20 characters)...">{{ old('motivation') }}</textarea>
+                        @error('motivation')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- ✅ SUPPORTING DOCUMENT - ADD THIS FIELD -->
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            Supporting Document <span class="text-red-500">*</span>
+                        </label>
+                        <input type="file" name="document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required
+                               class="w-full bg-white/80 border border-slate-200/60 rounded-lg px-4 py-3 text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-600 file:text-white hover:file:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 transition">
+                        <p class="text-xs text-slate-400 mt-1">Allowed: PDF, DOC, DOCX, JPG, JPEG, PNG (Max 10MB)</p>
+                        @error('document')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Logo Upload (Optional) -->
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-2">
                             Logo (Optional)

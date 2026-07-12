@@ -4,8 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\Subscription;
 use App\Models\Transaction;
-use App\Models\User;
-use App\Models\Institution;
 use App\Models\InstitutionWallet;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -28,12 +26,13 @@ class ProcessSubscriptionBilling extends Command
             $this->warn('Running in DRY RUN mode - no actual charges will be made');
         }
         
-        // Find subscriptions that need billing - using 'ends_at' column
+        // Find subscriptions that need billing (expiring in next 3 days)
         $subscriptions = Subscription::where('status', 'active')
-            ->where(function ($query) {
-                $query->whereNull('ends_at')
-                      ->orWhere('ends_at', '<=', Carbon::now());
-            })
+            ->where('auto_renew', true)
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '<=', Carbon::now()->addDays(3))
+            ->where('ends_at', '>', Carbon::now())
+            ->with('institution')
             ->get();
         
         $this->info("Found {$subscriptions->count()} subscriptions to process");
@@ -90,15 +89,25 @@ class ProcessSubscriptionBilling extends Command
             }
             
             $amount = $subscription->amount;
-            $wallet = $institution->wallet;
             
-            if (!$wallet || $wallet->balance < $amount) {
-                $subscription->status = 'expired';
+            // Check if institution has wallet
+            $wallet = InstitutionWallet::where('institution_id', $institution->id)->first();
+            
+            if (!$wallet) {
+                return [
+                    'success' => false,
+                    'message' => "No wallet found for institution"
+                ];
+            }
+            
+            if ($wallet->balance < $amount) {
+                // Notify admins about insufficient balance
+                $subscription->status = 'pending_payment';
                 $subscription->save();
                 
                 return [
                     'success' => false,
-                    'message' => "Insufficient balance. Needs {$amount}, has " . ($wallet->balance ?? 0)
+                    'message' => "Insufficient balance. Needs {$amount}, has " . $wallet->balance
                 ];
             }
             
@@ -121,19 +130,19 @@ class ProcessSubscriptionBilling extends Command
                 
                 // Create transaction record
                 Transaction::create([
-                    'user_id' => $institution->admin_id ?? 1,
+                    'institution_id' => $institution->id,
                     'type' => 'debit',
                     'amount' => $amount,
                     'balance_after' => $lockedWallet->balance,
                     'description' => "Subscription renewal: {$subscription->plan}",
                     'reference' => 'SUB_RENEW_' . uniqid(),
                     'status' => 'completed',
-                    'method' => 'wallet',
+                    'payment_method' => 'wallet',
                 ]);
                 
-                // Update subscription dates using correct column names
+                // Update subscription dates
                 $subscription->starts_at = Carbon::now();
-                $subscription->ends_at = Carbon::now()->addMonth();
+                $subscription->ends_at = $this->calculateNewExpiry($subscription);
                 $subscription->status = 'active';
                 $subscription->save();
                 
@@ -141,7 +150,7 @@ class ProcessSubscriptionBilling extends Command
                 
                 return [
                     'success' => true,
-                    'message' => "Successfully charged {$amount} from wallet"
+                    'message' => "Successfully charged {$amount} from wallet. New expiry: " . $subscription->ends_at->format('Y-m-d')
                 ];
                 
             } catch (\Exception $e) {
@@ -160,5 +169,18 @@ class ProcessSubscriptionBilling extends Command
                 'message' => $e->getMessage()
             ];
         }
+    }
+    
+    private function calculateNewExpiry(Subscription $subscription): Carbon
+    {
+        $period = $subscription->billing_period ?? 'monthly';
+        
+        return match($period) {
+            'monthly' => Carbon::now()->addMonth(),
+            'quarterly' => Carbon::now()->addMonths(3),
+            'semi_annual' => Carbon::now()->addMonths(6),
+            'annual' => Carbon::now()->addYear(),
+            default => Carbon::now()->addMonth(),
+        };
     }
 }

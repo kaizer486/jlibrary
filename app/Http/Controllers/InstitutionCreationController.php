@@ -53,7 +53,7 @@ class InstitutionCreationController extends Controller
             'region' => 'required|string|max:255',
             'address' => 'required|string|max:500',
             'description' => 'required|string|min:20|max:1000',
-            'website' => 'required|url|max:255',
+            'website' => 'nullable|url|max:255',
             'motivation' => 'required|string|min:20|max:1000',
             'document' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
         ], [
@@ -69,8 +69,7 @@ class InstitutionCreationController extends Controller
             'address.required' => 'Please enter the address.',
             'description.required' => 'Please describe your institution.',
             'description.min' => 'Description must be at least 20 characters.',
-            'website.required' => 'Please enter the website URL.',
-            'website.url' => 'Please enter a valid website URL (e.g., https://example.com).',
+            
             'motivation.required' => 'Please explain your motivation.',
             'motivation.min' => 'Motivation must be at least 20 characters.',
             'document.required' => 'Please upload a supporting document.',

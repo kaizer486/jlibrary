@@ -19,7 +19,7 @@
 </div>
 
 <!-- Stats Cards -->
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
     <div class="bg-white rounded-xl p-4 border-l-4 border-purple-500 shadow-sm">
         <p class="text-gray-500 text-sm">Total Books</p>
         <p class="text-2xl font-bold text-gray-900">{{ number_format($totalBooks) }}</p>
@@ -36,6 +36,14 @@
         <p class="text-gray-500 text-sm">Free Books</p>
         <p class="text-2xl font-bold text-blue-600">{{ number_format($freeBooks) }}</p>
     </div>
+    <div class="bg-white rounded-xl p-4 border-l-4 border-yellow-500 shadow-sm">
+        <p class="text-gray-500 text-sm">⭐ Featured</p>
+        <p class="text-2xl font-bold text-yellow-600">{{ number_format($featuredBooks) }}</p>
+    </div>
+    <div class="bg-white rounded-xl p-4 border-l-4 border-orange-500 shadow-sm">
+        <p class="text-gray-500 text-sm">🔥 Trending</p>
+        <p class="text-2xl font-bold text-orange-600">{{ number_format($trendingBooks) }}</p>
+    </div>
 </div>
 
 <!-- Search and Filter Bar -->
@@ -47,8 +55,18 @@
                    class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500">
         </div>
         <div>
+            <select name="category" class="px-4 py-2 border border-gray-200 rounded-lg bg-white min-w-[180px]">
+                <option value="all">All Categories</option>
+                @foreach($categories as $category)
+                    <option value="{{ $category }}" {{ request('category') == $category ? 'selected' : '' }}>
+                        {{ $category }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div>
             <select name="status" class="px-4 py-2 border border-gray-200 rounded-lg bg-white">
-                <option value="">All Status</option>
+                <option value="all">All Status</option>
                 <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>✅ Approved</option>
                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>⏳ Pending</option>
                 <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>❌ Rejected</option>
@@ -56,7 +74,7 @@
         </div>
         <div>
             <select name="institution_id" class="px-4 py-2 border border-gray-200 rounded-lg bg-white">
-                <option value="">All Institutions</option>
+                <option value="all">All Institutions</option>
                 @foreach($institutions as $inst)
                     <option value="{{ $inst->id }}" {{ request('institution_id') == $inst->id ? 'selected' : '' }}>{{ $inst->name }}</option>
                 @endforeach
@@ -64,9 +82,16 @@
         </div>
         <div>
             <select name="price_type" class="px-4 py-2 border border-gray-200 rounded-lg bg-white">
-                <option value="">All Books</option>
+                <option value="all">All Books</option>
                 <option value="free" {{ request('price_type') == 'free' ? 'selected' : '' }}>🆓 Free Only</option>
                 <option value="paid" {{ request('price_type') == 'paid' ? 'selected' : '' }}>💰 Paid Only</option>
+            </select>
+        </div>
+        <div>
+            <select name="featured" class="px-4 py-2 border border-gray-200 rounded-lg bg-white">
+                <option value="all">All</option>
+                <option value="yes" {{ request('featured') == 'yes' ? 'selected' : '' }}>⭐ Featured</option>
+                <option value="no" {{ request('featured') == 'no' ? 'selected' : '' }}>Not Featured</option>
             </select>
         </div>
         <div>
@@ -87,9 +112,11 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Author</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Institution</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flags</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Downloads</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
@@ -106,11 +133,20 @@
                                     <i class="ti ti-book text-gray-400"></i>
                                 </div>
                             @endif
-                            <span class="font-medium text-gray-800">{{ Str::limit($book->title, 40) }}</span>
+                            <span class="font-medium text-gray-800">{{ Str::limit($book->title, 35) }}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ $book->author }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600">{{ $book->institution->name ?? 'N/A' }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">{{ Str::limit($book->author, 20) }}</td>
+                    <td class="px-6 py-4 text-sm">
+                        <span class="text-xs">{{ $book->category_label ?? 'N/A' }}</span>
+                    </td>
+                  <td class="px-6 py-4 text-sm text-gray-600">
+    @if($book->institution_id && $book->institution)
+        {{ $book->institution->name }}
+    @else
+        <span class="text-gray-400 text-xs">Global</span>
+    @endif
+</td>
                     <td class="px-6 py-4 text-sm">
                         @if($book->is_paid)
                             <span class="font-semibold text-blue-600">${{ number_format($book->price, 2) }}</span>
@@ -128,15 +164,58 @@
                             </button>
                         </form>
                     </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-1">
+                            @if($book->is_featured)
+                                <span class="text-yellow-500" title="Featured">⭐</span>
+                            @endif
+                            @if($book->is_trending)
+                                <span class="text-orange-500" title="Trending">🔥</span>
+                            @endif
+                            @if(!$book->is_featured && !$book->is_trending)
+                                <span class="text-gray-400 text-xs">—</span>
+                            @endif
+                        </div>
+                    </td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ number_format($book->downloads ?? 0) }}</td>
                     <td class="px-6 py-4 text-sm">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1">
                             <a href="{{ route('super-admin.books.show', $book) }}" class="text-blue-600 hover:text-blue-800" title="View">
                                 <i class="ti ti-eye"></i>
                             </a>
                             <a href="{{ route('super-admin.books.edit', $book) }}" class="text-green-600 hover:text-green-800" title="Edit">
                                 <i class="ti ti-edit"></i>
                             </a>
+                            @if($book->is_featured)
+                                <form action="{{ route('super-admin.books.toggle-featured', $book) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-yellow-600 hover:text-yellow-800" title="Unfeature">
+                                        <i class="ti ti-star-filled"></i>
+                                    </button>
+                                </form>
+                            @else
+                                <form action="{{ route('super-admin.books.toggle-featured', $book) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-gray-400 hover:text-yellow-600" title="Mark Featured">
+                                        <i class="ti ti-star"></i>
+                                    </button>
+                                </form>
+                            @endif
+                            @if($book->is_trending)
+                                <form action="{{ route('super-admin.books.toggle-trending', $book) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-orange-600 hover:text-orange-800" title="Untrend">
+                                        <i class="ti ti-flame-filled"></i>
+                                    </button>
+                                </form>
+                            @else
+                                <form action="{{ route('super-admin.books.toggle-trending', $book) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-gray-400 hover:text-orange-600" title="Mark Trending">
+                                        <i class="ti ti-flame"></i>
+                                    </button>
+                                </form>
+                            @endif
                             <form method="POST" action="{{ route('super-admin.books.destroy', $book) }}" class="inline" onsubmit="return confirm('Delete {{ addslashes($book->title) }} permanently?')">
                                 @csrf
                                 @method('DELETE')

@@ -13,130 +13,7 @@ use Illuminate\Http\Request;
 class PublicController extends Controller
 {
     
-public function index(Request $request, $institutionId)
-{
-    $institution = Institution::where('status', 'approved')
-        ->findOrFail($institutionId);
-
-    // ✅ Determine which model to use
-    $bookModel = $institution->type === 'bookstore' ? BookshopBook::class : Book::class;
-    $statusCondition = $institution->type === 'bookstore' ? 'active' : 'approved';
-
-    // ✅ Get shelves
-    $shelves = Shelf::where('institution_id', $institution->id)
-        ->where('status', 'active')
-        ->get();
-
-    // ✅ DEBUG: Log shelves count
-    \Log::info('Total shelves: ' . $shelves->count());
-
-    // ✅ For each shelf, load books manually
-    foreach ($shelves as $shelf) {
-        // Load books for this shelf using the correct model
-        $shelf->books = $bookModel::where('institution_id', $institution->id)
-            ->where('shelf_number', $shelf->code)
-            ->where('status', $statusCondition)
-            ->limit(10)
-            ->get();
-        
-        // Set books_count
-        $shelf->books_count = $bookModel::where('institution_id', $institution->id)
-            ->where('shelf_number', $shelf->code)
-            ->where('status', $statusCondition)
-            ->count();
-        
-        // ✅ DEBUG: Log each shelf's book count
-        \Log::info('Shelf ' . $shelf->code . ' has ' . $shelf->books_count . ' books');
-    }
-
-    // ✅ Get books using the correct model
-    $query = $bookModel::where('institution_id', $institution->id)
-        ->where('status', $statusCondition);
-
-    // Search
-    if ($request->filled('search')) {
-        $search = $request->search;
-        $query->where(function($q) use ($search) {
-            $q->where('title', 'LIKE', "%{$search}%")
-              ->orWhere('author', 'LIKE', "%{$search}%");
-        });
-    }
-
-    // Filter by shelf
-    if ($request->filled('shelf')) {
-        $query->where('shelf_number', $request->shelf);
-    }
-
-    // Filter by category
-    if ($request->filled('category')) {
-        $query->where('category', $request->category);
-    }
-
-    $books = $query->latest()->paginate(12);
-
-    // Get categories
-    $categories = $bookModel::where('institution_id', $institution->id)
-        ->whereNotNull('category')
-        ->distinct()
-        ->pluck('category');
-
-    $location = $institution->location ?? null;
-
-    return view('institution.public.index', compact(
-        'institution',
-        'shelves',
-        'books',
-        'categories',
-        'location'
-    ));
-}
-    /**
-     * Display all books on a specific shelf (Public view).
-     */
-   public function shelfShow($institutionId, $shelfId)
-{
-    $institution = Institution::where('status', 'approved')
-        ->findOrFail($institutionId);
-
-    $shelf = Shelf::where('institution_id', $institution->id)
-        ->where('id', $shelfId)
-        ->firstOrFail();
-
-    // ✅ Determine which model to use
-    $bookModel = $institution->type === 'bookstore' ? BookshopBook::class : Book::class;
-    $statusCondition = $institution->type === 'bookstore' ? 'active' : 'approved';
-
-    // ✅ Now filter by shelf_number for BOTH bookstore and regular libraries
-    $books = $bookModel::where('institution_id', $institution->id)
-        ->where('shelf_number', $shelf->code)  // ✅ This will now work
-        ->where('status', $statusCondition)
-        ->latest()
-        ->paginate(12);
-
-    // Get all shelves for navigation
-    $allShelves = Shelf::where('institution_id', $institution->id)
-        ->where('status', 'active')
-        ->withCount('books')
-        ->get();
-
-    // Get categories for filter
-    $categories = $bookModel::where('institution_id', $institution->id)
-        ->whereNotNull('category')
-        ->distinct()
-        ->pluck('category');
-
-    return view('institution.public.shelf-show', compact(
-        'institution',
-        'shelf',
-        'books',
-        'allShelves',
-        'categories'
-    ));
-}
-    /**
-     * Display a single book in the public library.
-     */
-    public function show($institutionId, $bookId)
+    public function index(Request $request, $institutionId)
     {
         $institution = Institution::where('status', 'approved')
             ->findOrFail($institutionId);
@@ -145,55 +22,184 @@ public function index(Request $request, $institutionId)
         $bookModel = $institution->type === 'bookstore' ? BookshopBook::class : Book::class;
         $statusCondition = $institution->type === 'bookstore' ? 'active' : 'approved';
 
-        // ✅ For bookstore, use ONLY columns that exist in bookshop_books
-        if ($institution->type === 'bookstore') {
-            $book = $bookModel::where('institution_id', $institution->id)
+        // ✅ Get shelves
+        $shelves = Shelf::where('institution_id', $institution->id)
+            ->where('status', 'active')
+            ->get();
+
+        // ✅ For each shelf, load books manually
+        foreach ($shelves as $shelf) {
+            $shelf->books = $bookModel::where('institution_id', $institution->id)
+                ->where('shelf_number', $shelf->code)
                 ->where('status', $statusCondition)
-                ->select([
-                    'id', 'title', 'author', 'category', 'description',
-                    'cover_image', 'price',
-                    'pages as total_pages',
-                    'stock_quantity',
-                    'sold_count as downloads',
-                    'institution_id', 'status',
-                    'isbn', 'publisher', 'publication_year'
-                ])
-                ->findOrFail($bookId);
+                ->limit(10)
+                ->get();
             
-            // ✅ Bookstore books don't have views_count, skip increment
-        } else {
-            // Regular book - includes all columns
-            $book = $bookModel::where('institution_id', $institution->id)
+            $shelf->books_count = $bookModel::where('institution_id', $institution->id)
+                ->where('shelf_number', $shelf->code)
                 ->where('status', $statusCondition)
-                ->select([
-                    'id', 'title', 'author', 'category', 'description',
-                    'cover_image', 'file_path', 'is_paid', 'price',
-                    'total_pages', 'downloads', 'views_count',
-                    'shelf_number', 'shelf_name', 'column_location',
-                    'position', 'floor', 'section',
-                    'is_bookstore_item', 'book_type',
-                    'softcopy_price', 'hardcopy_price', 'stock_quantity',
-                    'institution_id', 'status',
-                ])
-                ->findOrFail($bookId);
-            
-            // ✅ Only regular books have views_count
-            $book->increment('views_count');
+                ->count();
         }
 
-        // Check if user has certificate for this book
-        $hasCertificate = false;
-        $certificate = null;
-        if (auth()->check()) {
-            $certificate = Certificate::where('user_id', auth()->id())
-                ->where('book_id', $book->id)
-                ->first();
-            $hasCertificate = !is_null($certificate);
+        // ✅ Get books using the correct model - ONLY from this institution
+        $query = $bookModel::where('institution_id', $institution->id)
+            ->where('status', $statusCondition);
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'LIKE', "%{$search}%")
+                  ->orWhere('author', 'LIKE', "%{$search}%");
+            });
         }
 
-        // ✅ Related books using the correct model
-        $relatedBooks = $bookModel::where('institution_id', $institution->id)
+        // Filter by shelf
+        if ($request->filled('shelf')) {
+            $query->where('shelf_number', $request->shelf);
+        }
+
+        // Filter by category
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        $books = $query->latest()->paginate(12);
+
+        // Get categories
+        $categories = $bookModel::where('institution_id', $institution->id)
+            ->whereNotNull('category')
+            ->distinct()
+            ->pluck('category');
+
+        $location = $institution->location ?? null;
+
+        return view('institution.public.index', compact(
+            'institution',
+            'shelves',
+            'books',
+            'categories',
+            'location'
+        ));
+    }
+
+    /**
+     * Display all books on a specific shelf (Public view).
+     */
+    public function shelfShow($institutionId, $shelfId)
+    {
+        $institution = Institution::where('status', 'approved')
+            ->findOrFail($institutionId);
+
+        $shelf = Shelf::where('institution_id', $institution->id)
+            ->where('id', $shelfId)
+            ->firstOrFail();
+
+        // ✅ Determine which model to use
+        $bookModel = $institution->type === 'bookstore' ? BookshopBook::class : Book::class;
+        $statusCondition = $institution->type === 'bookstore' ? 'active' : 'approved';
+
+        // ✅ Filter by shelf_number for BOTH bookstore and regular libraries
+        $books = $bookModel::where('institution_id', $institution->id)
+            ->where('shelf_number', $shelf->code)
             ->where('status', $statusCondition)
+            ->latest()
+            ->paginate(12);
+
+        // Get all shelves for navigation
+        $allShelves = Shelf::where('institution_id', $institution->id)
+            ->where('status', 'active')
+            ->withCount('books')
+            ->get();
+
+        // Get categories for filter
+        $categories = $bookModel::where('institution_id', $institution->id)
+            ->whereNotNull('category')
+            ->distinct()
+            ->pluck('category');
+
+        return view('institution.public.shelf-show', compact(
+            'institution',
+            'shelf',
+            'books',
+            'allShelves',
+            'categories'
+        ));
+    }
+
+   /**
+ * Display a single book in the public library.
+ * ✅ FIXED: Properly finds books from both tables
+ */
+/**
+ * Display a single book in the public library.
+ */
+public function show($institutionId, $bookId)
+{
+    // ✅ Get the institution
+    $institution = Institution::where('status', 'approved')
+        ->findOrFail($institutionId);
+
+    // ✅ Try to find the book in Book model first (regular library)
+    $book = Book::where('id', $bookId)
+        ->where(function($query) use ($institutionId) {
+            $query->where('institution_id', $institutionId)
+                  ->orWhereNull('institution_id');
+        })
+        ->where('status', 'approved')
+        ->first();
+
+    // ✅ If not found in Book, try BookshopBook (bookstore)
+    $isBookstore = false;
+    if (!$book) {
+        $book = BookshopBook::where('id', $bookId)
+            ->where(function($query) use ($institutionId) {
+                $query->where('institution_id', $institutionId)
+                      ->orWhereNull('institution_id');
+            })
+            ->where('status', 'active')
+            ->first();
+        $isBookstore = true;
+    }
+
+    // ✅ If still not found, abort
+    if (!$book) {
+        abort(404, 'Book not found.');
+    }
+
+    // ✅ If book has NO institution, redirect to global library show
+    if (!$book->institution_id) {
+        return redirect()->route('library.show', $book->id);
+    }
+
+    // ✅ If book belongs to a different institution, redirect
+    if ($book->institution_id != $institution->id) {
+        return redirect()->route('institution.public.show', [
+            'institutionId' => $book->institution_id,
+            'book' => $book->id
+        ]);
+    }
+
+    // ✅ Only increment views for regular books (not bookstore)
+    if (!$isBookstore && method_exists($book, 'increment')) {
+        $book->increment('views_count');
+    }
+
+    // ✅ Check if user has certificate for this book
+    $hasCertificate = false;
+    $certificate = null;
+    if (auth()->check()) {
+        $certificate = Certificate::where('user_id', auth()->id())
+            ->where('book_id', $book->id)
+            ->first();
+        $hasCertificate = !is_null($certificate);
+    }
+
+    // ✅ Get related books - only for regular books
+    $relatedBooks = collect();
+    if (!$isBookstore) {
+        $relatedBooks = Book::where('institution_id', $institution->id)
+            ->where('status', 'approved')
             ->where('id', '!=', $book->id)
             ->where(function($q) use ($book) {
                 if ($book->category) {
@@ -202,16 +208,67 @@ public function index(Request $request, $institutionId)
             })
             ->limit(4)
             ->get();
-
-        return view('institution.public.show', compact(
-            'institution',
-            'book',
-            'relatedBooks',
-            'hasCertificate',
-            'certificate'
-        ));
+        
+        // If not enough related books, get from global
+        if ($relatedBooks->count() < 4) {
+            $globalBooks = Book::whereNull('institution_id')
+                ->where('status', 'approved')
+                ->where('id', '!=', $book->id)
+                ->where(function($q) use ($book) {
+                    if ($book->category) {
+                        $q->orWhere('category', $book->category);
+                    }
+                })
+                ->limit(4 - $relatedBooks->count())
+                ->get();
+            $relatedBooks = $relatedBooks->merge($globalBooks);
+        }
     }
 
+    // ✅ Check if user has access
+    $hasAccess = false;
+    if (auth()->check()) {
+        if ($isBookstore) {
+            $hasAccess = !$book->is_paid || $book->userHasAccess(auth()->id());
+        } else {
+            $hasAccess = !$book->is_paid || $book->userHasAccess(auth()->id());
+        }
+    }
+
+    // ✅ Get reading progress (only for regular books)
+    $progress = null;
+    if (auth()->check() && !$isBookstore) {
+        $progress = auth()->user()->books()->where('book_id', $book->id)->first();
+    }
+
+    // ✅ For bookstore books, set default values WITHOUT modifying the model
+    $ratingsCount = 0;
+    $reviewsCount = 0;
+    $bookmarksCount = 0;
+
+    if (!$isBookstore) {
+        // Regular books - load counts properly
+        $book->loadCount(['ratings', 'reviews', 'bookmarks']);
+        $ratingsCount = $book->ratings_count ?? 0;
+        $reviewsCount = $book->reviews_count ?? 0;
+        $bookmarksCount = $book->bookmarks_count ?? 0;
+    }
+
+    // ✅ Pass counts to view separately
+    return view('institution.public.show', compact(
+        'institution',
+        'book',
+        'relatedBooks',
+        'hasCertificate',
+        'certificate',
+        'hasAccess',
+        'progress',
+        'isBookstore',
+        'ratingsCount',
+        'reviewsCount',
+        'bookmarksCount'
+    ));
+}
     /**
      * Get user's progress for a book (AJAX).
      */
@@ -244,15 +301,15 @@ public function index(Request $request, $institutionId)
             'progress' => 'required|integer|min:0|max:100',
         ]);
 
-        $institution = Institution::where('status', 'approved')
-            ->findOrFail($institutionId);
-
-        $bookModel = $institution->type === 'bookstore' ? BookshopBook::class : Book::class;
-        $statusCondition = $institution->type === 'bookstore' ? 'active' : 'approved';
-
-        $book = $bookModel::where('institution_id', $institution->id)
-            ->where('status', $statusCondition)
-            ->findOrFail($bookId);
+        // ✅ Find the book in either table
+        $book = Book::find($bookId);
+        if (!$book) {
+            $book = BookshopBook::find($bookId);
+        }
+        
+        if (!$book) {
+            return response()->json(['error' => 'Book not found'], 404);
+        }
 
         $user = auth()->user();
         $progress = $request->input('progress');

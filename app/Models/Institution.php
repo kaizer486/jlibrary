@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -39,6 +40,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $reminder_30_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_15_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_7_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_3_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_1_sent_at
+ * @property \Illuminate\Support\Carbon|null $reminder_expired_sent_at
  * 
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
  * @property-read \App\Models\InstitutionWallet|null $wallet
@@ -53,42 +60,82 @@ class Institution extends Model
     use SoftDeletes;
     
     protected $table = 'institutions';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Auto-generate slug when creating
+        static::creating(function ($institution) {
+            if (empty($institution->slug)) {
+                $slug = Str::slug($institution->name);
+                
+                // Make sure slug is unique
+                $originalSlug = $slug;
+                $counter = 1;
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $originalSlug . '-' . $counter;
+                    $counter++;
+                }
+                
+                $institution->slug = $slug;
+            }
+        });
+
+        // Auto-update slug when name changes
+        static::updating(function ($institution) {
+            if ($institution->isDirty('name') && empty($institution->slug)) {
+                $slug = Str::slug($institution->name);
+                
+                $originalSlug = $slug;
+                $counter = 1;
+                while (static::where('slug', $slug)->where('id', '!=', $institution->id)->exists()) {
+                    $slug = $originalSlug . '-' . $counter;
+                    $counter++;
+                }
+                
+                $institution->slug = $slug;
+            }
+        });
+    }
     
-  protected $fillable = [
-    'name', 'slug', 'email', 'phone', 'address', 'city', 'region',
-    'postal_code', 'country', 'logo', 'website', 'type', 'status',
-    'subscription_tier', 'subscription_expires_at', 'max_users',
-    'max_books', 'settings', 'metadata', 'approved_by', 'approved_at',
-    'is_featured', 'is_verified', 'views_count', 'institution_id',
-    // ==========================================
-    // REMINDER FIELDS 
-    // ==========================================
-    'reminder_30_sent_at',
-    'reminder_15_sent_at',
-    'reminder_7_sent_at',
-    'reminder_3_sent_at',
-    'reminder_1_sent_at',
-    'reminder_expired_sent_at',
-];
+    protected $fillable = [
+        'name', 'slug', 'email', 'phone', 'address', 'city', 'region',
+        'postal_code', 'country', 'logo', 'website', 'type', 'status',
+        'subscription_tier', 'subscription_expires_at', 'max_users',
+        'max_books', 'settings', 'metadata', 'approved_by', 'approved_at',
+        'is_featured', 'is_verified', 'views_count', 'institution_id',
+        // ==========================================
+        // REMINDER FIELDS
+        // ==========================================
+        'reminder_30_sent_at',
+        'reminder_15_sent_at',
+        'reminder_7_sent_at',
+        'reminder_3_sent_at',
+        'reminder_1_sent_at',
+        'reminder_expired_sent_at',
+    ];
     
- protected $casts = [
-    'settings' => 'array',
-    'metadata' => 'array',
-    'subscription_expires_at' => 'datetime',
-    'approved_at' => 'datetime',
-    'is_featured' => 'boolean',
-    'is_verified' => 'boolean',
-    'views_count' => 'integer',
-    // ==========================================
-    // REMINDER CASTS (ADD THESE)
-    // ==========================================
-    'reminder_30_sent_at' => 'datetime',
-    'reminder_15_sent_at' => 'datetime',
-    'reminder_7_sent_at' => 'datetime',
-    'reminder_3_sent_at' => 'datetime',
-    'reminder_1_sent_at' => 'datetime',
-    'reminder_expired_sent_at' => 'datetime',
-];
+    protected $casts = [
+        'settings' => 'array',
+        'metadata' => 'array',
+        'subscription_expires_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'is_featured' => 'boolean',
+        'is_verified' => 'boolean',
+        'views_count' => 'integer',
+        // ==========================================
+        // REMINDER CASTS
+        // ==========================================
+        'reminder_30_sent_at' => 'datetime',
+        'reminder_15_sent_at' => 'datetime',
+        'reminder_7_sent_at' => 'datetime',
+        'reminder_3_sent_at' => 'datetime',
+        'reminder_1_sent_at' => 'datetime',
+        'reminder_expired_sent_at' => 'datetime',
+        'deleted_at' => 'datetime',
+    ];
+    
     protected $appends = [
         'logo_url', 'type_label', 'status_label', 'subscription_label',
         'total_users', 'total_books',
@@ -107,33 +154,34 @@ class Institution extends Model
     {
         return $this->hasOne(InstitutionWallet::class);
     }
-/**
- * Create a wallet for the institution.
- */
-public function createWallet()
-{
-    // Check if wallet already exists
-    if ($this->wallet) {
-        return $this->wallet;
+    
+    /**
+     * Create a wallet for the institution.
+     */
+    public function createWallet()
+    {
+        if ($this->wallet) {
+            return $this->wallet;
+        }
+        
+        return $this->wallet()->create([
+            'balance' => 0,
+            'total_deposited' => 0,
+            'total_withdrawn' => 0,
+        ]);
     }
     
-    return $this->wallet()->create([
-        'balance' => 0,
-        'total_deposited' => 0,
-        'total_withdrawn' => 0,
-    ]);
-}
     public function withdrawalRequests()
     {
         return $this->hasMany(WithdrawalRequest::class);
     }
 
     // ==========================================
-    // SUBSCRIPTION RELATIONSHIPS (Polymorphic)
+    // SUBSCRIPTION RELATIONSHIPS
     // ==========================================
     
     /**
-     * Get all subscriptions for this institution.
+     * Get all subscriptions for this institution (polymorphic).
      */
     public function subscriptions(): MorphMany
     {
@@ -142,23 +190,22 @@ public function createWallet()
 
     /**
      * Get the active subscription.
+     * ✅ FIXED: Use hasOne with explicit conditions
      */
-   /**
- * Get the active subscription.
- */
-public function activeSubscription()
-{
-    return $this->morphOne(Subscription::class, 'subscribable')
-        ->where('status', 'active')
-        ->where(function($query) {
-            $query->whereNull('ends_at')      // ✅ Use ends_at
-                  ->orWhere('ends_at', '>', now());  // ✅ Use ends_at
-        })
-        ->latest();
-}
+    public function activeSubscription()
+    {
+        return $this->hasOne(Subscription::class, 'subscribable_id')
+            ->where('subscribable_type', Institution::class)
+            ->where('status', 'active')
+            ->where(function($query) {
+                $query->whereNull('ends_at')
+                      ->orWhere('ends_at', '>', now());
+            })
+            ->latest();
+    }
 
     /**
-     * Get subscription history (all subscriptions).
+     * Get subscription history (all subscriptions ordered by latest).
      */
     public function subscriptionHistory()
     {
@@ -188,6 +235,11 @@ public function activeSubscription()
         return $this->belongsTo(User::class, 'approved_by');
     }
     
+    public function shelves()
+    {
+        return $this->hasMany(Shelf::class);
+    }
+    
     // Get institution admins
     public function admins()
     {
@@ -198,6 +250,357 @@ public function activeSubscription()
     public function librarians()
     {
         return $this->users()->where('role', 'librarian');
+    }
+    
+    // ==========================================
+    // SUBSCRIPTION METHODS - FIXED
+    // ==========================================
+    
+    /**
+     * Check if institution has an active subscription.
+     */
+    public function hasActiveSubscription(): bool
+    {
+        // Check 1: Institution fields
+        if ($this->subscription_tier && $this->subscription_tier !== 'free' && $this->subscription_expires_at) {
+            return $this->subscription_expires_at > now();
+        }
+        
+        // Check 2: Subscriptions table (use property, not method)
+        $subscription = $this->activeSubscription;
+        
+        return $subscription !== null;
+    }
+
+    /**
+     * Get days left in subscription.
+     */
+    public function getSubscriptionDaysLeft(): int
+    {
+        // Check 1: Institution fields
+        if ($this->subscription_expires_at) {
+            if ($this->subscription_expires_at->isPast()) {
+                return 0;
+            }
+            return max(0, now()->diffInDays($this->subscription_expires_at, false));
+        }
+        
+        // Check 2: Subscriptions table (use property, not method)
+        $subscription = $this->activeSubscription;
+        
+        if ($subscription && $subscription->ends_at) {
+            if ($subscription->ends_at->isPast()) {
+                return 0;
+            }
+            return max(0, now()->diffInDays($subscription->ends_at, false));
+        }
+        
+        return 0;
+    }
+
+    /**
+     * Get plan label.
+     */
+    public function getPlanLabel(): string
+    {
+        // Check 1: Institution fields
+        if ($this->subscription_tier) {
+            return match($this->subscription_tier) {
+                'basic' => '📘 Basic',
+                'premium' => '📚 Premium',
+                'enterprise' => '🏢 Enterprise',
+                'free' => '🆓 Free',
+                default => '📘 ' . ucfirst($this->subscription_tier),
+            };
+        }
+        
+        // Check 2: Subscriptions table (use property, not method)
+        $subscription = $this->activeSubscription;
+        
+        if ($subscription) {
+            return match($subscription->plan) {
+                'basic' => '📘 Basic',
+                'premium' => '📚 Premium',
+                'enterprise' => '🏢 Enterprise',
+                'free' => '🆓 Free',
+                default => '📘 ' . ucfirst($subscription->plan),
+            };
+        }
+        
+        return '🆓 Free';
+    }
+
+    /**
+     * Get subscription status color.
+     */
+    public function getSubscriptionStatusColor(): string
+    {
+        $daysLeft = $this->getSubscriptionDaysLeft();
+        
+        if ($daysLeft <= 0) {
+            return 'red';
+        } elseif ($daysLeft <= 7) {
+            return 'red';
+        } elseif ($daysLeft <= 30) {
+            return 'yellow';
+        } elseif ($daysLeft <= 60) {
+            return 'orange';
+        }
+        return 'green';
+    }
+
+    /**
+     * Get subscription status label with icon.
+     */
+    public function getSubscriptionStatusLabel(): string
+    {
+        if (!$this->hasActiveSubscription()) {
+            return '⚠️ No Active Subscription';
+        }
+        
+        $daysLeft = $this->getSubscriptionDaysLeft();
+        
+        if ($daysLeft <= 0) {
+            return '🔴 Expired';
+        } elseif ($daysLeft <= 7) {
+            return "🔴 Expires in {$daysLeft} days";
+        } elseif ($daysLeft <= 30) {
+            return "🟡 Expires in {$daysLeft} days";
+        } elseif ($daysLeft <= 60) {
+            return "🟠 Expires in {$daysLeft} days";
+        }
+        return "✅ Active ({$daysLeft} days left)";
+    }
+
+    /**
+     * Check if institution has an active subscription (alias).
+     */
+    public function isSubscriptionActive(): bool
+    {
+        return $this->hasActiveSubscription();
+    }
+
+    /**
+     * Get days left (alias).
+     */
+    public function getDaysLeft(): int
+    {
+        return $this->getSubscriptionDaysLeft();
+    }
+
+    /**
+     * Get subscription progress percentage.
+     */
+    public function getSubscriptionProgress(): int
+    {
+        $subscription = $this->activeSubscription;
+        
+        if ($subscription && $subscription->starts_at && $subscription->ends_at) {
+            $total = $subscription->starts_at->diffInDays($subscription->ends_at);
+            $elapsed = $subscription->starts_at->diffInDays(now());
+            
+            if ($total <= 0) return 0;
+            return min(100, max(0, round(($elapsed / $total) * 100)));
+        }
+        
+        // Fallback: use institution dates
+        if ($this->subscription_expires_at) {
+            $start = $this->created_at ?? now()->subDays(30);
+            $total = $start->diffInDays($this->subscription_expires_at);
+            $elapsed = $start->diffInDays(now());
+            
+            if ($total <= 0) return 0;
+            return min(100, max(0, round(($elapsed / $total) * 100)));
+        }
+        
+        return 0;
+    }
+
+    /**
+     * Get the active subscription instance.
+     */
+    public function getActiveSubscription()
+    {
+        return $this->activeSubscription;
+    }
+
+    /**
+     * Get all subscription history.
+     */
+    public function getSubscriptionHistory()
+    {
+        return $this->subscriptions()->orderBy('created_at', 'desc')->get();
+    }
+
+    /**
+     * Check if institution can accept new members.
+     */
+    public function canAddUser(): bool
+    {
+        if (!$this->max_users) {
+            return true;
+        }
+        return $this->users()->count() < $this->max_users;
+    }
+
+    /**
+     * Get available user slots.
+     */
+    public function getAvailableUserSlots(): int
+    {
+        if (!$this->max_users) {
+            return PHP_INT_MAX;
+        }
+        $currentUsers = $this->users()->count();
+        return max(0, $this->max_users - $currentUsers);
+    }
+
+    /**
+     * Check if institution can add more books.
+     */
+    public function canAddBook(): bool
+    {
+        if (!$this->max_books) {
+            return true;
+        }
+        return $this->books()->count() < $this->max_books;
+    }
+
+    /**
+     * Get available book slots.
+     */
+    public function getAvailableBookSlots(): int
+    {
+        if (!$this->max_books) {
+            return PHP_INT_MAX;
+        }
+        $currentBooks = $this->books()->count();
+        return max(0, $this->max_books - $currentBooks);
+    }
+
+    /**
+     * Get cached total users count.
+     */
+    public function getCachedTotalUsers()
+    {
+        return Cache::remember("institution_{$this->id}_users_count", 3600, function () {
+            return $this->users()->count();
+        });
+    }
+    
+    /**
+     * Get cached total books count.
+     */
+    public function getCachedTotalBooks()
+    {
+        return Cache::remember("institution_{$this->id}_books_count", 3600, function () {
+            return $this->books()->count();
+        });
+    }
+    
+    /**
+     * Clear all cached data for this institution.
+     */
+    public function clearCache(): void
+    {
+        Cache::forget("institution_{$this->id}_users_count");
+        Cache::forget("institution_{$this->id}_books_count");
+        Cache::forget("institution_{$this->id}_stats");
+    }
+    
+    /**
+     * Increment views count.
+     */
+    public function incrementViews(): void
+    {
+        $this->increment('views_count');
+    }
+    
+    // ==========================================
+    // STATUS METHODS
+    // ==========================================
+    
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+    
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+    
+    public function isSuspended(): bool
+    {
+        return $this->status === 'suspended';
+    }
+    
+    public function isActive(): bool
+    {
+        return $this->isApproved() && !$this->isSuspended();
+    }
+    
+    public function isFeatured(): bool
+    {
+        return $this->is_featured ?? false;
+    }
+    
+    public function isVerified(): bool
+    {
+        return $this->is_verified ?? false;
+    }
+    
+    // ==========================================
+    // JOIN METHOD CHECKS
+    // ==========================================
+    
+    /**
+     * Check if institution requires approval to join.
+     */
+    public function requiresApproval(): bool
+    {
+        return in_array($this->type, ['school', 'college', 'university']);
+    }
+
+    /**
+     * Check if institution allows free join (no approval needed).
+     */
+    public function allowsFreeJoin(): bool
+    {
+        return !$this->requiresApproval();
+    }
+
+    /**
+     * Get the join type label for display.
+     */
+    public function getJoinTypeLabelAttribute(): string
+    {
+        if ($this->requiresApproval()) {
+            return '🛡️ Requires Approval';
+        }
+        return '✅ Instant Join';
+    }
+
+    /**
+     * Get the join button text.
+     */
+    public function getJoinButtonTextAttribute(): string
+    {
+        if ($this->requiresApproval()) {
+            return 'Request to Join';
+        }
+        return 'Join Now (Free)';
+    }
+
+    /**
+     * Get the join button color class.
+     */
+    public function getJoinButtonColorAttribute(): string
+    {
+        if ($this->requiresApproval()) {
+            return 'bg-gradient-to-r from-purple-600 to-pink-600';
+        }
+        return 'bg-gradient-to-r from-emerald-600 to-emerald-500';
     }
     
     // ==========================================
@@ -277,289 +680,6 @@ public function activeSubscription()
     }
     
     // ==========================================
-    // VALIDATION & CAPACITY METHODS
-    // ==========================================
-    
-    /**
-     * Check if institution can accept new members.
-     */
-    public function canAddUser(): bool
-    {
-        if (!$this->max_users) {
-            return true;
-        }
-        return $this->users()->count() < $this->max_users;
-    }
-
-    /**
-     * Get available user slots.
-     */
-    public function getAvailableUserSlots(): int
-    {
-        if (!$this->max_users) {
-            return PHP_INT_MAX;
-        }
-        $currentUsers = $this->users()->count();
-        return max(0, $this->max_users - $currentUsers);
-    }
-
-    /**
-     * Check if institution can add more books.
-     */
-    public function canAddBook(): bool
-    {
-        if (!$this->max_books) {
-            return true;
-        }
-        return $this->books()->count() < $this->max_books;
-    }
-
-    /**
-     * Get available book slots.
-     */
-    public function getAvailableBookSlots(): int
-    {
-        if (!$this->max_books) {
-            return PHP_INT_MAX;
-        }
-        $currentBooks = $this->books()->count();
-        return max(0, $this->max_books - $currentBooks);
-    }
-    
-  public function shelves()
-{
-    return $this->hasMany(Shelf::class);
-}
-    /**
-     * Get cached total users count.
-     */
-    public function getCachedTotalUsers()
-    {
-        return Cache::remember("institution_{$this->id}_users_count", 3600, function () {
-            return $this->users()->count();
-        });
-    }
-    
-    /**
-     * Get cached total books count.
-     */
-    public function getCachedTotalBooks()
-    {
-        return Cache::remember("institution_{$this->id}_books_count", 3600, function () {
-            return $this->books()->count();
-        });
-    }
-    
-    /**
-     * Clear all cached data for this institution.
-     */
-    public function clearCache(): void
-    {
-        Cache::forget("institution_{$this->id}_users_count");
-        Cache::forget("institution_{$this->id}_books_count");
-        Cache::forget("institution_{$this->id}_stats");
-    }
-    
-    /**
-     * Increment views count.
-     */
-    public function incrementViews(): void
-    {
-        $this->increment('views_count');
-    }
-    
-    // ==========================================
-    // HELPER METHODS
-    // ==========================================
-    
-    public function isApproved(): bool
-    {
-        return $this->status === 'approved';
-    }
-    
-    public function isPending(): bool
-    {
-        return $this->status === 'pending';
-    }
-    
-    public function isSuspended(): bool
-    {
-        return $this->status === 'suspended';
-    }
-    
-    public function isActive(): bool
-    {
-        return $this->isApproved() && !$this->isSuspended();
-    }
-    
-    public function isFeatured(): bool
-    {
-        return $this->is_featured ?? false;
-    }
-    
-    public function isVerified(): bool
-    {
-        return $this->is_verified ?? false;
-    }
-    
-    // ==========================================
-    // SUBSCRIPTION METHODS
-    // ==========================================
-    
-    /**
-     * Check if institution has an active subscription.
-     */
-    public function isSubscriptionActive(): bool
-    {
-        // Check if institution has an active subscription via polymorphic relationship
-        $activeSubscription = $this->activeSubscription;
-        
-        if ($activeSubscription && $activeSubscription->isActive()) {
-            return true;
-        }
-        
-        // Fallback: check the institution's subscription_tier and expiry date
-        if ($this->subscription_tier && $this->subscription_tier !== 'free' && 
-            $this->subscription_expires_at && $this->subscription_expires_at->isFuture()) {
-            return true;
-        }
-        
-        return false;
-    }
-
-    /**
-     * Get days left in subscription.
-     */
-    public function getDaysLeft(): int
-    {
-        // Check active subscription first
-        $activeSubscription = $this->activeSubscription;
-        
-        if ($activeSubscription && $activeSubscription->end_date) {
-            $days = $activeSubscription->daysRemaining();
-            if ($days > 0) {
-                return $days;
-            }
-        }
-        
-        // Fallback: check institution's expiry date
-        if ($this->subscription_expires_at && $this->subscription_expires_at->isFuture()) {
-            return max(0, now()->diffInDays($this->subscription_expires_at, false));
-        }
-        
-        return 0;
-    }
-
-    /**
-     * Get subscription progress percentage.
-     */
-    public function getSubscriptionProgress(): int
-    {
-        $activeSubscription = $this->activeSubscription;
-        
-        if ($activeSubscription && $activeSubscription->start_date && $activeSubscription->end_date) {
-            $total = $activeSubscription->start_date->diffInDays($activeSubscription->end_date);
-            $elapsed = $activeSubscription->start_date->diffInDays(now());
-            $remaining = $total - $elapsed;
-            
-            if ($total <= 0) return 0;
-            return min(100, max(0, round(($remaining / $total) * 100)));
-        }
-        
-        // Fallback: use institution dates
-        if ($this->subscription_expires_at && $this->subscription_started_at) {
-            $total = $this->subscription_started_at->diffInDays($this->subscription_expires_at);
-            $elapsed = $this->subscription_started_at->diffInDays(now());
-            $remaining = $total - $elapsed;
-            
-            if ($total <= 0) return 0;
-            return min(100, max(0, round(($remaining / $total) * 100)));
-        }
-        
-        return 0;
-    }
-
-    /**
-     * Get subscription status color.
-     */
-    public function getSubscriptionStatusColor(): string
-    {
-        $daysLeft = $this->getDaysLeft();
-        
-        if ($daysLeft <= 0) {
-            return 'red';
-        } elseif ($daysLeft <= 7) {
-            return 'red';
-        } elseif ($daysLeft <= 30) {
-            return 'yellow';
-        } elseif ($daysLeft <= 60) {
-            return 'orange';
-        }
-        return 'green';
-    }
-
-    /**
-     * Get subscription status label with icon.
-     */
-    public function getSubscriptionStatusLabel(): string
-    {
-        $daysLeft = $this->getDaysLeft();
-        
-        if ($daysLeft <= 0) {
-            return '⚠️ Expired';
-        } elseif ($daysLeft <= 7) {
-            return "🔴 Expires in {$daysLeft} days";
-        } elseif ($daysLeft <= 30) {
-            return "🟡 Expires in {$daysLeft} days";
-        } elseif ($daysLeft <= 60) {
-            return "🟠 Expires in {$daysLeft} days";
-        }
-        return "✅ Active ({$daysLeft} days left)";
-    }
-
-    /**
-     * Get plan label.
-     */
-    public function getPlanLabel(): string
-    {
-        // Check active subscription first
-        $activeSubscription = $this->activeSubscription;
-        
-        if ($activeSubscription && $activeSubscription->plan) {
-            return $activeSubscription->plan->name ?? match($activeSubscription->plan) {
-                'basic' => '📘 Basic',
-                'premium' => '📚 Premium',
-                'enterprise' => '🏢 Enterprise',
-                default => '📘 Basic'
-            };
-        }
-        
-        // Fallback: use institution's subscription_tier
-        return match($this->subscription_tier) {
-            'basic' => '📘 Basic',
-            'premium' => '📚 Premium',
-            'enterprise' => '🏢 Enterprise',
-            default => '📘 Basic'
-        };
-    }
-
-    /**
-     * Get the active subscription instance.
-     */
-    public function getActiveSubscription()
-    {
-        return $this->activeSubscription;
-    }
-
-    /**
-     * Get all subscription history.
-     */
-    public function getSubscriptionHistory()
-    {
-        return $this->subscriptionHistory;
-    }
-    
-    // ==========================================
     // ACCESSORS
     // ==========================================
     
@@ -598,27 +718,14 @@ public function activeSubscription()
     
     public function getSubscriptionLabelAttribute(): string
     {
-        $activeSubscription = $this->activeSubscription;
-        
-        if ($activeSubscription && $activeSubscription->plan) {
-            return $activeSubscription->plan->name ?? '📘 Basic';
-        }
-        
-        return match($this->subscription_tier) {
-            'basic' => '📘 Basic',
-            'premium' => '📚 Premium',
-            'enterprise' => '🏢 Enterprise',
-            default => '📘 Basic'
-        };
+        return $this->getPlanLabel();
     }
     
-    // Get total users count (non-cached, for real-time)
     public function getTotalUsersAttribute()
     {
         return $this->users()->count();
     }
     
-    // Get total books count (non-cached, for real-time)
     public function getTotalBooksAttribute()
     {
         return $this->books()->count();
@@ -641,63 +748,10 @@ public function activeSubscription()
             'wallet_balance' => $this->wallet?->balance ?? 0,
             'pending_withdrawals' => $this->withdrawalRequests()->where('status', 'pending')->sum('amount'),
             'pending_join_requests' => \App\Models\JoinRequest::where('institution_id', $this->id)->where('status', 'pending')->count(),
-            'subscription_active' => $this->isSubscriptionActive(),
-            'subscription_days_left' => $this->getDaysLeft(),
+            'subscription_active' => $this->hasActiveSubscription(),
+            'subscription_days_left' => $this->getSubscriptionDaysLeft(),
             'subscription_plan' => $this->getPlanLabel(),
+            'subscription_progress' => $this->getSubscriptionProgress(),
         ];
-    }
-        // ==========================================
-    // JOIN METHOD CHECKS
-    // ==========================================
-    
-    /**
-     * Check if institution requires approval to join.
-     * School, College, University require approval.
-     */
-    public function requiresApproval(): bool
-    {
-        return in_array($this->type, ['school', 'college', 'university']);
-    }
-
-    /**
-     * Check if institution allows free join (no approval needed).
-     * Library, Bookstore, Publisher, Research Center, Other.
-     */
-    public function allowsFreeJoin(): bool
-    {
-        return !$this->requiresApproval();
-    }
-
-    /**
-     * Get the join type label for display.
-     */
-    public function getJoinTypeLabelAttribute(): string
-    {
-        if ($this->requiresApproval()) {
-            return '🛡️ Requires Approval';
-        }
-        return '✅ Instant Join';
-    }
-
-    /**
-     * Get the join button text.
-     */
-    public function getJoinButtonTextAttribute(): string
-    {
-        if ($this->requiresApproval()) {
-            return 'Request to Join';
-        }
-        return 'Join Now (Free)';
-    }
-
-    /**
-     * Get the join button color class.
-     */
-    public function getJoinButtonColorAttribute(): string
-    {
-        if ($this->requiresApproval()) {
-            return 'bg-gradient-to-r from-purple-600 to-pink-600';
-        }
-        return 'bg-gradient-to-r from-emerald-600 to-emerald-500';
     }
 }
