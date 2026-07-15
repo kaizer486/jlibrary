@@ -49,10 +49,10 @@
                     <select name="category" id="category" 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
                         <option value="">Select Category</option>
-                        <option value="Books" {{ old('category') == 'Books' ? 'selected' : '' }}>📚 Books</option>
-                        <option value="Events" {{ old('category') == 'Events' ? 'selected' : '' }}>🎉 Events</option>
-                        <option value="Certificates" {{ old('category') == 'Certificates' ? 'selected' : '' }}>🏆 Certificates</option>
-                        <option value="Announcements" {{ old('category') == 'Announcements' ? 'selected' : '' }}>📢 Announcements</option>
+                        <option value="Books" {{ old('category') == 'Books' ? 'selected' : '' }}>Books</option>
+                        <option value="Events" {{ old('category') == 'Events' ? 'selected' : '' }}> Events</option>
+                        <option value="Certificates" {{ old('category') == 'Certificates' ? 'selected' : '' }}> Certificates</option>
+                        <option value="Announcements" {{ old('category') == 'Announcements' ? 'selected' : '' }}> Announcements</option>
                         <option value="Authors" {{ old('category') == 'Authors' ? 'selected' : '' }}>👤 Authors</option>
                     </select>
                     @error('category')

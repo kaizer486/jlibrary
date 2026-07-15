@@ -1,132 +1,473 @@
 @extends('layouts.super-admin')
 
-@section('title', 'Transaction History')
+@section('title', 'Transactions')
 
 @section('content')
-<div class="mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <i class="ti ti-history text-purple-600"></i>
-            Transaction History
-        </h1>
-        <p class="text-gray-500 text-sm mt-1">View all wallet transactions across the platform</p>
-    </div>
-</div>
-
-<!-- Stats Cards -->
-<div class="grid grid-cols-2 gap-4 mb-6">
-    <div class="bg-white rounded-xl p-4 border-l-4 border-green-500 shadow-sm">
-        <p class="text-gray-500 text-sm">Total Credits (Incoming)</p>
-        <p class="text-2xl font-bold text-green-600">TSh {{ number_format($totalCredits, 2) }}</p>
-    </div>
-    <div class="bg-white rounded-xl p-4 border-l-4 border-red-500 shadow-sm">
-        <p class="text-gray-500 text-sm">Total Debits (Outgoing)</p>
-        <p class="text-2xl font-bold text-red-600">TSh {{ number_format($totalDebits, 2) }}</p>
-    </div>
-</div>
-
-<!-- Tabs -->
-<div class="border-b border-gray-200 mb-6">
-    <nav class="flex gap-8">
-        <a href="{{ route('super-admin.payments.index') }}" class="pb-3 px-1 text-gray-500 hover:text-gray-700">All Payments</a>
-        <a href="{{ route('super-admin.payments.transactions') }}" class="pb-3 px-1 text-purple-600 border-b-2 border-purple-600 font-medium">Transactions</a>
-        <a href="{{ route('super-admin.payments.withdrawals') }}" class="pb-3 px-1 text-gray-500 hover:text-gray-700">Withdrawals</a>
-    </nav>
-</div>
-
-<!-- Search and Filter -->
-<div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-    <form method="GET" action="{{ route('super-admin.payments.transactions') }}" class="flex flex-col md:flex-row gap-4">
-        <div class="flex-1 relative">
-            <i class="ti ti-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            <input type="text" name="search" placeholder="Search by user name or email..." value="{{ request('search') }}" 
-                   class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500">
-        </div>
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
         <div>
-            <select name="type" class="px-4 py-2 border border-gray-200 rounded-lg bg-white">
-                <option value="">All Types</option>
-                <option value="credit" {{ request('type') == 'credit' ? 'selected' : '' }}>💰 Credit (Incoming)</option>
-                <option value="debit" {{ request('type') == 'debit' ? 'selected' : '' }}>💸 Debit (Outgoing)</option>
-                <option value="withdrawal" {{ request('type') == 'withdrawal' ? 'selected' : '' }}>🏦 Withdrawal</option>
-                <option value="commission" {{ request('type') == 'commission' ? 'selected' : '' }}>📊 Commission</option>
-            </select>
+            <h1 class="text-2xl font-bold text-gray-800">Transactions</h1>
+            <p class="text-gray-500 text-sm mt-1">Manage all platform transactions</p>
         </div>
-        <div>
-            <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">🔍 Filter</button>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('super-admin.payments.export') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition text-sm flex items-center gap-2">
+                <i class="ti ti-download"></i> Export
+            </a>
+            <a href="{{ route('super-admin.payments.index') }}" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition text-sm flex items-center gap-2">
+                <i class="ti ti-arrow-left"></i> Back
+            </a>
         </div>
-        <div>
-            <a href="{{ route('super-admin.payments.transactions') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition inline-block">Clear</a>
-        </div>
-    </form>
-</div>
+    </div>
 
-<!-- Transactions Table -->
-@if($transactions->count() > 0)
-<div class="bg-white rounded-xl shadow-sm overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Balance After</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-                @foreach($transactions as $transaction)
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 text-sm text-gray-500">{{ $transaction->created_at->format('M d, Y H:i') }}</td>
-                    <td class="px-6 py-4">
-                        <p class="font-medium text-gray-800">{{ $transaction->user->full_name ?? 'N/A' }}</p>
-                        <p class="text-xs text-gray-500">{{ $transaction->user->email ?? 'N/A' }}</p>
-                    </td>
-                    <td class="px-6 py-4">
-                        @if($transaction->type === 'credit')
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">💰 Credit</span>
-                        @elseif($transaction->type === 'debit')
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">💸 Debit</span>
-                        @elseif($transaction->type === 'withdrawal')
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">🏦 Withdrawal</span>
-                        @else
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">📊 Commission</span>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="font-semibold {{ $transaction->type === 'credit' ? 'text-green-600' : 'text-red-600' }}">
-                            {{ $transaction->type === 'credit' ? '+' : '-' }} TSh {{ number_format($transaction->amount, 2) }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-600">TSh {{ number_format($transaction->balance_after, 2) }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">{{ Str::limit($transaction->description, 50) }}</td>
-                    <td class="px-6 py-4">
-                        @if($transaction->status === 'completed')
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">✅ Completed</span>
-                        @elseif($transaction->status === 'pending')
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">⏳ Pending</span>
-                        @else
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">❌ Failed</span>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-blue-500">
+            <p class="text-sm text-gray-500">Total Credits</p>
+            <p class="text-2xl font-bold text-gray-800">{{ number_format($totalCredits ?? 0, 2) }} TSh</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
+            <p class="text-sm text-gray-500">Total Debits</p>
+            <p class="text-2xl font-bold text-gray-800">{{ number_format($totalDebits ?? 0, 2) }} TSh</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-yellow-500">
+            <p class="text-sm text-gray-500">Pending</p>
+            <p class="text-2xl font-bold text-yellow-600">{{ number_format($transactions->where('status', 'pending')->sum('amount'), 2) }} TSh</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
+            <p class="text-sm text-gray-500">Completed</p>
+            <p class="text-2xl font-bold text-green-600">{{ number_format($transactions->where('status', 'completed')->sum('amount'), 2) }} TSh</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-purple-500">
+            <p class="text-sm text-gray-500">Total</p>
+            <p class="text-2xl font-bold text-purple-600">{{ number_format($transactions->sum('amount'), 2) }} TSh</p>
+        </div>
+    </div>
+
+    <!-- Filter & Search -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <form action="{{ route('super-admin.payments.transactions') }}" method="GET" class="flex flex-wrap items-center gap-3">
+            <div class="flex-1 min-w-[200px]">
+                <input type="text" name="search" placeholder="Search by user or email..." 
+                       value="{{ request('search') }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
+            </div>
+            
+            <div>
+                <select name="type" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
+                    <option value="all" {{ request('type') == 'all' ? 'selected' : '' }}>All Types</option>
+                    <option value="credit" {{ request('type') == 'credit' ? 'selected' : '' }}>Credit</option>
+                    <option value="debit" {{ request('type') == 'debit' ? 'selected' : '' }}>Debit</option>
+                </select>
+            </div>
+            
+            <div>
+                <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
+                    <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Status</option>
+                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
+                    <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="failed" {{ request('status') == 'failed' ? 'selected' : '' }}>Failed</option>
+                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                </select>
+            </div>
+            
+            <div>
+                <input type="date" name="from_date" value="{{ request('from_date') }}"
+                       class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
+            </div>
+            <div>
+                <input type="date" name="to_date" value="{{ request('to_date') }}"
+                       class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
+            </div>
+            
+            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                <i class="ti ti-search"></i> Filter
+            </button>
+            
+            @if(request()->anyFilled(['search', 'type', 'status', 'from_date', 'to_date']))
+            <a href="{{ route('super-admin.payments.transactions') }}" class="text-gray-500 hover:text-gray-700 text-sm">
+                <i class="ti ti-x"></i> Clear
+            </a>
+            @endif
+        </form>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden" id="transactions-table">
+        @if($transactions->count() > 0)
+        <form id="bulk-delete-form" action="{{ route('super-admin.payments.bulk-delete-transactions') }}" method="POST">
+            @csrf
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-4 py-3 text-left w-10">
+                                <input type="checkbox" id="select-all" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @foreach($transactions as $transaction)
+                        <tr class="hover:bg-gray-50 transition" data-id="{{ $transaction->id }}">
+                            <td class="px-4 py-3">
+                                <input type="checkbox" name="transaction_ids[]" value="{{ $transaction->id }}" 
+                                       class="transaction-checkbox rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                            </td>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                                <span class="font-mono">{{ $transaction->reference }}</span>
+                                @if($transaction->order_id)
+                                <br><span class="text-xs text-gray-500">Order: {{ $transaction->order_id }}</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center gap-2">
+                                    @if($transaction->user)
+                                    <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-sm font-medium">
+                                        {{ substr($transaction->user->full_name ?? 'U', 0, 1) }}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $transaction->user->full_name ?? 'N/A' }}</p>
+                                        <p class="text-xs text-gray-500">{{ $transaction->user->email ?? '' }}</p>
+                                    </div>
+                                    @else
+                                    <span class="text-sm text-gray-500">User deleted</span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="text-sm font-medium {{ $transaction->type === 'credit' ? 'text-green-600' : 'text-red-600' }}">
+                                    {{ ucfirst($transaction->type) }}
+                                    <span class="text-xs text-gray-400 block">{{ str_replace('_', ' ', $transaction->method ?? '') }}</span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="text-sm font-bold {{ $transaction->type === 'credit' ? 'text-green-600' : 'text-red-600' }}">
+                                    {{ $transaction->type === 'credit' ? '+' : '-' }} {{ number_format($transaction->amount, 2) }} TSh
+                                </span>
+                                @if($transaction->balance_before !== null)
+                                <br><span class="text-xs text-gray-400">Bal: {{ number_format($transaction->balance_after ?? 0, 2) }} TSh</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 text-xs rounded-full font-medium
+                                    {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : '' }}
+                                    {{ $transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                    {{ $transaction->status === 'processing' ? 'bg-blue-100 text-blue-800' : '' }}
+                                    {{ $transaction->status === 'failed' ? 'bg-red-100 text-red-800' : '' }}
+                                    {{ $transaction->status === 'cancelled' ? 'bg-gray-100 text-gray-800' : '' }}">
+                                    {{ ucfirst($transaction->status) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500">
+                                {{ $transaction->created_at->format('d M Y, H:i') }}
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex items-center justify-center gap-2">
+                                    <!-- View Details -->
+                                    <a href="{{ route('super-admin.payments.show', $transaction->id) }}" 
+                                       class="text-blue-600 hover:text-blue-800 transition" title="View Details">
+                                        <i class="ti ti-eye text-lg"></i>
+                                    </a>
+                                    
+                                    <!-- Delete Button - Opens Modal -->
+                                    <button type="button" 
+                                            class="text-red-600 hover:text-red-800 transition delete-btn"
+                                            data-id="{{ $transaction->id }}"
+                                            data-reference="{{ $transaction->reference }}"
+                                            data-amount="{{ number_format($transaction->amount, 2) }}"
+                                            title="Permanently Delete">
+                                        <i class="ti ti-trash text-lg"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Bulk Actions -->
+            <div class="px-4 py-3 bg-gray-50 border-t flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <span id="selected-count" class="text-sm text-gray-500">0 selected</span>
+                    
+                    <!-- Bulk Delete -->
+                    <button type="button" id="bulk-delete-btn" 
+                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled>
+                        <i class="ti ti-trash"></i> Delete Selected
+                    </button>
+                    
+                    <!-- Select All Visible -->
+                    <button type="button" id="select-all-visible" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition text-sm">
+                        <i class="ti ti-checkbox"></i> Select All Visible
+                    </button>
+                </div>
+                
+                <div>
+                    {{ $transactions->appends(request()->query())->links() }}
+                </div>
+            </div>
+        </form>
+        @else
+        <div class="text-center py-12">
+            <div class="text-6xl mb-4">📭</div>
+            <h3 class="text-lg font-medium text-gray-900">No transactions found</h3>
+            <p class="text-gray-500">Try adjusting your filters or search terms</p>
+        </div>
+        @endif
     </div>
 </div>
 
-<div class="mt-6">
-    {{ $transactions->appends(request()->query())->links() }}
+<!-- ========================================== -->
+<!-- DELETE CONFIRMATION MODAL (Single) -->
+<!-- ========================================== -->
+<div id="deleteModal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closeModal()"></div>
+        
+        <!-- Modal Box -->
+        <div class="relative bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl transform transition-all">
+            <div class="text-center">
+                <!-- Warning Icon -->
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                    <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Delete Transaction?</h3>
+                
+                <div class="bg-gray-50 rounded-lg p-3 mb-4 text-left text-sm">
+                    <p><span class="font-medium">Reference:</span> <span id="modal-ref" class="font-mono"></span></p>
+                    <p><span class="font-medium">Amount:</span> <span id="modal-amount" class="font-bold text-red-600"></span></p>
+                </div>
+                
+                <p class="text-red-600 font-medium text-sm mb-6">⚠️ This action cannot be undone!</p>
+                
+                <div class="flex gap-3 justify-center">
+                    <button onclick="closeModal()" 
+                            class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition text-sm font-medium">
+                        Cancel
+                    </button>
+                    <form id="deleteForm" method="POST" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" 
+                                class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm font-medium">
+                            Yes, Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-@else
-<div class="bg-white rounded-xl shadow-sm p-12 text-center">
-    <i class="ti ti-history text-6xl text-gray-400 mb-4 block"></i>
-    <h3 class="text-xl font-semibold text-gray-900 mb-2">No Transactions Found</h3>
-    <p class="text-gray-500">Transactions will appear here when users make wallet transactions.</p>
+<!-- ========================================== -->
+<!-- BULK DELETE CONFIRMATION MODAL -->
+<!-- ========================================== -->
+<div id="bulkDeleteModal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closeBulkModal()"></div>
+        <div class="relative bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl transform transition-all">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                    <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Delete Selected Transactions?</h3>
+                <p class="text-sm text-gray-600 mb-2"><span id="bulk-count" class="font-bold text-red-600"></span> transaction(s) selected</p>
+                <p class="text-red-600 font-medium text-sm mb-6">⚠️ This action cannot be undone!</p>
+                
+                <div class="flex gap-3 justify-center">
+                    <button onclick="closeBulkModal()" 
+                            class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition text-sm font-medium">
+                        Cancel
+                    </button>
+                    <button onclick="submitBulkDelete()" 
+                            class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm font-medium">
+                        Yes, Delete All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-@endif
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ==========================================
+        // SELECT ALL / BULK DELETE LOGIC
+        // ==========================================
+        
+        const selectAll = document.getElementById('select-all');
+        const selectAllVisible = document.getElementById('select-all-visible');
+        const checkboxes = document.querySelectorAll('.transaction-checkbox');
+        const selectedCount = document.getElementById('selected-count');
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll('.transaction-checkbox:checked').length;
+            const total = document.querySelectorAll('.transaction-checkbox').length;
+            selectedCount.textContent = checked + ' selected of ' + total;
+            bulkDeleteBtn.disabled = checked === 0;
+            
+            if (selectAll) {
+                selectAll.checked = checked > 0 && checked === total;
+            }
+        }
+        
+        selectAll?.addEventListener('change', function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+        
+        selectAllVisible?.addEventListener('click', function() {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectedCount();
+        });
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedCount);
+        });
+        
+        updateSelectedCount();
+        
+        // ==========================================
+        // SINGLE DELETE - Open Modal
+        // ==========================================
+        
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const reference = this.dataset.reference;
+                const amount = this.dataset.amount;
+                
+                document.getElementById('modal-ref').textContent = reference;
+                document.getElementById('modal-amount').textContent = 'TSh ' + amount;
+                document.getElementById('deleteForm').action = '{{ route("super-admin.payments.delete-transaction", "") }}/' + id;
+                document.getElementById('deleteModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+        });
+        
+        // ==========================================
+        // BULK DELETE - Open Modal
+        // ==========================================
+        
+        bulkDeleteBtn?.addEventListener('click', function() {
+            const checked = document.querySelectorAll('.transaction-checkbox:checked');
+            if (checked.length === 0) {
+                alert('Please select at least one transaction to delete.');
+                return;
+            }
+            document.getElementById('bulk-count').textContent = checked.length;
+            document.getElementById('bulkDeleteModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        // ==========================================
+        // KEEP SCROLL POSITION
+        // ==========================================
+        
+        function restoreScrollPosition() {
+            const scrollPosition = localStorage.getItem('scrollPosition');
+            const currentPage = localStorage.getItem('currentPage');
+            
+            if (currentPage && window.location.href === currentPage) {
+                if (scrollPosition) {
+                    setTimeout(function() {
+                        window.scrollTo(0, parseInt(scrollPosition));
+                        localStorage.removeItem('scrollPosition');
+                        localStorage.removeItem('currentPage');
+                    }, 100);
+                }
+            } else {
+                localStorage.removeItem('scrollPosition');
+                localStorage.removeItem('currentPage');
+            }
+        }
+        
+        // Store scroll position before any form submit
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                localStorage.setItem('scrollPosition', window.scrollY);
+                localStorage.setItem('currentPage', window.location.href);
+            });
+        });
+        
+        restoreScrollPosition();
+    });
+    
+    // ==========================================
+    // MODAL FUNCTIONS
+    // ==========================================
+    
+    function closeModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    function closeBulkModal() {
+        document.getElementById('bulkDeleteModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    function submitBulkDelete() {
+        document.getElementById('bulk-delete-form').submit();
+    }
+    
+    // Close modals on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeBulkModal();
+        }
+    });
+    
+    // Close modals on overlay click
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('bg-black')) {
+            closeModal();
+            closeBulkModal();
+        }
+    });
+</script>
+
+<style>
+    #deleteModal, #bulkDeleteModal {
+        animation: fadeIn 0.2s ease-out;
+    }
+    #deleteModal .relative, #bulkDeleteModal .relative {
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes slideUp {
+        from { transform: translateY(20px) scale(0.95); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+</style>
+@endpush
 @endsection

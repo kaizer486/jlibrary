@@ -105,7 +105,7 @@
                                 @csrf
                                 <button type="submit" class="px-3 py-1 rounded-full text-xs font-semibold transition
                                     {{ $item->is_featured ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
-                                    {{ $item->is_featured ? '⭐ Featured' : 'Not Featured' }}
+                                    {{ $item->is_featured ? ' Featured' : 'Not Featured' }}
                                 </button>
                             </form>
                         </td>

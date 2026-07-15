@@ -24,7 +24,10 @@ class NewsItemController extends Controller
     public function create()
     {
         $categories = ['Books', 'Events', 'Certificates', 'Announcements', 'Authors'];
-        return view('super-admin.news-items.create', compact('categories'));
+        // Get all news items to calculate the next order number
+        $newsItems = NewsItem::ordered()->get();
+        
+        return view('super-admin.news-items.create', compact('categories', 'newsItems'));
     }
 
     /**
@@ -60,7 +63,9 @@ class NewsItemController extends Controller
     public function edit(NewsItem $newsItem)
     {
         $categories = ['Books', 'Events', 'Certificates', 'Announcements', 'Authors'];
-        return view('super-admin.news-items.edit', compact('newsItem', 'categories'));
+        $newsItems = NewsItem::ordered()->get();
+        
+        return view('super-admin.news-items.edit', compact('newsItem', 'categories', 'newsItems'));
     }
 
     /**

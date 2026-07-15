@@ -19,12 +19,12 @@ class InvoiceController extends Controller
         $payment = Payment::with('user')->findOrFail($paymentId);
         
         // Check authorization
-        if ($payment->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
-            abort(403);
+        if ($payment->user_id !== Auth::id() && !Auth::user()->isSuperAdmin()) {
+            abort(403, 'Unauthorized access to this invoice.');
         }
         
         $data = [
-            'invoice_number' => $payment->reference ?? 'INV-' . $payment->id,
+            'invoice_number' => $payment->reference ?? 'INV-' . str_pad($payment->id, 6, '0', STR_PAD_LEFT),
             'date' => $payment->created_at,
             'user' => $payment->user,
             'amount' => $payment->amount,
@@ -32,12 +32,18 @@ class InvoiceController extends Controller
             'status' => $payment->status,
             'type' => $payment->payable_type === 'App\\Models\\Book' ? 'Book Purchase' : 'Wallet Deposit',
             'item_name' => $payment->payable_type === 'App\\Models\\Book' 
-                ? optional($payment->payable)->title 
+                ? optional($payment->payable)->title ?? 'Book Purchase'
                 : 'Wallet Deposit',
+            'reference' => $payment->reference,
         ];
         
-        $pdf = Pdf::loadView('invoices.payment', $data);
+        // Check if super admin view exists, otherwise use regular
+        $view = 'invoices.payment';
+        if (Auth::user()->isSuperAdmin() && view()->exists('super-admin.invoices.payment-invoice')) {
+            $view = 'super-admin.invoices.payment-invoice';
+        }
         
+        $pdf = Pdf::loadView($view, $data);
         return $pdf->download("invoice_{$data['invoice_number']}.pdf");
     }
     
@@ -48,23 +54,29 @@ class InvoiceController extends Controller
     {
         $transaction = Transaction::with('user')->findOrFail($transactionId);
         
-        if ($transaction->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
-            abort(403);
+        if ($transaction->user_id !== Auth::id() && !Auth::user()->isSuperAdmin()) {
+            abort(403, 'Unauthorized access to this invoice.');
         }
         
         $data = [
-            'invoice_number' => $transaction->reference ?? 'TXN-' . $transaction->id,
+            'invoice_number' => $transaction->reference ?? 'TXN-' . str_pad($transaction->id, 6, '0', STR_PAD_LEFT),
             'date' => $transaction->created_at,
             'user' => $transaction->user,
             'amount' => $transaction->amount,
-            'type' => $transaction->type,
-            'description' => $transaction->description,
+            'type' => ucfirst($transaction->type),
+            'method' => $transaction->method ?? 'N/A',
+            'description' => $transaction->description ?? ucfirst($transaction->type) . ' Transaction',
             'balance_after' => $transaction->balance_after,
             'status' => $transaction->status,
+            'reference' => $transaction->reference,
         ];
         
-        $pdf = Pdf::loadView('invoices.transaction', $data);
+        $view = 'invoices.transaction';
+        if (Auth::user()->isSuperAdmin() && view()->exists('super-admin.invoices.transaction-invoice')) {
+            $view = 'super-admin.invoices.transaction-invoice';
+        }
         
+        $pdf = Pdf::loadView($view, $data);
         return $pdf->download("invoice_{$data['invoice_number']}.pdf");
     }
     
@@ -76,20 +88,31 @@ class InvoiceController extends Controller
         $payment = SubscriptionPayment::with('subscription')->findOrFail($subscriptionPaymentId);
         $subscription = $payment->subscription;
         
+        if ($subscription->user_id !== Auth::id() && !Auth::user()->isSuperAdmin()) {
+            abort(403, 'Unauthorized access to this invoice.');
+        }
+        
         $data = [
-            'invoice_number' => $payment->invoice_number,
+            'invoice_number' => $payment->invoice_number ?? 'SUB-' . str_pad($payment->id, 6, '0', STR_PAD_LEFT),
             'date' => $payment->created_at,
-            'paid_at' => $payment->paid_at,
+            'paid_at' => $payment->paid_at ?? $payment->created_at,
+            'user' => $subscription->user,
             'amount' => $payment->amount,
-            'currency' => $payment->currency,
+            'currency' => $payment->currency ?? 'TSh',
             'plan_name' => $subscription->plan ?? 'Subscription',
-            'billing_period_start' => $payment->billing_period_start,
-            'billing_period_end' => $payment->billing_period_end,
+            'billing_period_start' => $payment->billing_period_start ?? $payment->created_at,
+            'billing_period_end' => $payment->billing_period_end ?? $payment->created_at->addMonth(),
             'status' => $payment->status,
+            'method' => $payment->method ?? 'N/A',
+            'reference' => $payment->reference,
         ];
         
-        $pdf = Pdf::loadView('invoices.subscription', $data);
+        $view = 'invoices.subscription';
+        if (Auth::user()->isSuperAdmin() && view()->exists('super-admin.invoices.subscription-invoice')) {
+            $view = 'super-admin.invoices.subscription-invoice';
+        }
         
-        return $pdf->download("invoice_{$payment->invoice_number}.pdf");
+        $pdf = Pdf::loadView($view, $data);
+        return $pdf->download("invoice_{$data['invoice_number']}.pdf");
     }
 }

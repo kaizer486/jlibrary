@@ -1,47 +1,54 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FrontController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\CommunityController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AIController;
 use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ConverterController;
 use App\Http\Controllers\MarketplaceController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\BookController as AdminBookController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Admin\MarketplaceController as AdminMarketplaceController;
-use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\RatingReviewController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SearchController;
-use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\JoinRequestController;
 use App\Http\Controllers\AuthorWalletController;
 use App\Http\Controllers\InstitutionCreationController;
-use App\Http\Controllers\SuperAdmin\InstitutionRequestController;
 use App\Http\Controllers\BookPurchaseController;
 use App\Http\Controllers\UserLibraryController;
-use App\Http\Controllers\Library\PublicController;
-use App\Http\Controllers\Institution\LibraryController as InstitutionLibraryController;
 use App\Http\Controllers\SellerController;
+use App\Http\Controllers\Auth\SocialiteController;
+use App\Http\Controllers\BorrowRequestController;
+use App\Http\Controllers\Institution\SubscriptionController as InstitutionSubscriptionController;
+
+// Admin Controllers
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\BookController as AdminBookController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\MarketplaceController as AdminMarketplaceController;
+use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
+
+// Super Admin Controllers
+use App\Http\Controllers\SuperAdmin\InstitutionRequestController;
 use App\Http\Controllers\SuperAdmin\ApplicationController as SuperAdminApplicationController;
 use App\Http\Controllers\SuperAdmin\SubscriptionController as SuperAdminSubscriptionController;
 use App\Http\Controllers\SuperAdmin\InstitutionSubscriptionController as SuperAdminInstitutionSubscriptionController;
-use App\Http\Controllers\Institution\SubscriptionController as InstitutionSubscriptionController;
-use App\Http\Controllers\Auth\SocialiteController;
-use App\Http\Controllers\BorrowRequestController;
+use App\Http\Controllers\SuperAdmin\PaymentController as SuperAdminPaymentController;
+
+// Library Controllers
+use App\Http\Controllers\Library\PublicController;
+use App\Http\Controllers\Institution\LibraryController as InstitutionLibraryController;
 
 // ==========================================
 // SECTION 1: PUBLIC ROUTES (No login required)
@@ -49,8 +56,6 @@ use App\Http\Controllers\BorrowRequestController;
 
 Route::get('/', [FrontController::class, 'welcome'])->name('welcome');
 Route::get('/home', [FrontController::class, 'home'])->name('home');
-
-
 
 Route::get('/health', function () {
     return response()->json([
@@ -67,14 +72,12 @@ if (app()->environment('local')) {
     });
 }
 
-
-
 // Socialite Routes
 Route::get('/auth/{provider}', [SocialiteController::class, 'redirect'])->name('socialite.redirect');
 Route::get('/auth/{provider}/callback', [SocialiteController::class, 'callback'])->name('socialite.callback');
 
 // ==========================================
-// ✅ GLOBAL LIBRARY ROUTES - MUST COME FIRST!
+// GLOBAL LIBRARY ROUTES
 // ==========================================
 Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
 Route::get('/library/{id}', [LibraryController::class, 'show'])->name('library.show');
@@ -85,7 +88,7 @@ Route::post('/library/{book}/progress', [LibraryController::class, 'updateProgre
 Route::post('/library/{book}/add-to-library', [LibraryController::class, 'addToLibrary'])->name('library.add-to-library');
 
 // ==========================================
-// ✅ INSTITUTION PUBLIC ROUTES - COME AFTER GLOBAL
+// INSTITUTION PUBLIC ROUTES
 // ==========================================
 Route::prefix('institution')->name('institution.public.')->group(function () {
     Route::get('/{institutionId}/library', [PublicController::class, 'index'])->name('index');
@@ -194,7 +197,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/subscription/cancel', [App\Http\Controllers\User\SubscriptionController::class, 'cancel'])->name('subscription.cancel');
     });
 
-    // AUTHENTICATED LIBRARY ROUTES (additional actions)
+    // AUTHENTICATED LIBRARY ROUTES
     Route::prefix('library')->name('library.')->group(function () {
         Route::get('/my-library', [LibraryController::class, 'myLibrary'])->name('my-library');
         Route::post('/{book}/progress', [LibraryController::class, 'updateProgress'])->name('progress');
@@ -290,12 +293,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{group}/messages/{lastId?}', [CommunityController::class, 'getMessages'])->name('messages');
     });
 
-    Route::middleware(['auth'])->prefix('converter')->name('converter.')->group(function () {
-    Route::get('/', [ConverterController::class, 'index'])->name('index');
-    Route::post('/pdf-to-word', [ConverterController::class, 'pdfToWord'])->name('pdf-to-word');
-    Route::post('/word-to-pdf', [ConverterController::class, 'wordToPdf'])->name('word-to-pdf');
-    Route::post('/book-to-audio', [ConverterController::class, 'bookToAudio'])->name('book-to-audio');
-});
+    Route::prefix('converter')->name('converter.')->group(function () {
+        Route::get('/', [ConverterController::class, 'index'])->name('index');
+        Route::post('/pdf-to-word', [ConverterController::class, 'pdfToWord'])->name('pdf-to-word');
+        Route::post('/word-to-pdf', [ConverterController::class, 'wordToPdf'])->name('word-to-pdf');
+        Route::post('/book-to-audio', [ConverterController::class, 'bookToAudio'])->name('book-to-audio');
+    });
 
     Route::prefix('documents')->name('documents.')->group(function () {
         Route::get('/', [DocumentController::class, 'index'])->name('index');
@@ -325,7 +328,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/quote/next', [App\Http\Controllers\QuoteController::class, 'nextQuote']);
 });
 
-
 // ==========================================
 // ORDER ROUTES
 // ==========================================
@@ -345,57 +347,28 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-
 // ==========================================
-// INSTITUTION SUBSCRIPTION ROUTES - FIXED
+// INSTITUTION SUBSCRIPTION ROUTES
 // ==========================================
 Route::middleware(['auth', 'institution'])
     ->prefix('institution')
     ->name('institution.subscription.')
     ->group(function () {
-        
-        // Main subscription management
-        Route::get('/', [App\Http\Controllers\Institution\SubscriptionController::class, 'index'])
-            ->name('index');
-        
-        Route::get('/history', [App\Http\Controllers\Institution\SubscriptionController::class, 'history'])
-            ->name('history');
-        
-        // Payment routes
-        Route::post('/initiate-payment', [App\Http\Controllers\Institution\SubscriptionController::class, 'initiatePayment'])
-            ->name('initiate-payment');
-        
-        Route::get('/payment-status/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'paymentStatus'])
-            ->name('payment-status');
-        
-        Route::get('/payment-instructions/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'paymentInstructions'])
-            ->name('payment-instructions');
-        
-        Route::post('/upload-payment-proof/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'uploadPaymentProof'])
-            ->name('upload-payment-proof');
-        
-        // Extension and cancellation (Super Admin only for manual)
-        Route::post('/extend', [App\Http\Controllers\Institution\SubscriptionController::class, 'extend'])
-            ->name('extend');
-        
-        Route::post('/cancel', [App\Http\Controllers\Institution\SubscriptionController::class, 'cancel'])
-            ->name('cancel');
+        Route::get('/', [App\Http\Controllers\Institution\SubscriptionController::class, 'index'])->name('index');
+        Route::get('/history', [App\Http\Controllers\Institution\SubscriptionController::class, 'history'])->name('history');
+        Route::post('/initiate-payment', [App\Http\Controllers\Institution\SubscriptionController::class, 'initiatePayment'])->name('initiate-payment');
+        Route::get('/payment-status/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'paymentStatus'])->name('payment-status');
+        Route::get('/payment-instructions/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'paymentInstructions'])->name('payment-instructions');
+        Route::post('/upload-payment-proof/{id}', [App\Http\Controllers\Institution\SubscriptionController::class, 'uploadPaymentProof'])->name('upload-payment-proof');
+        Route::post('/extend', [App\Http\Controllers\Institution\SubscriptionController::class, 'extend'])->name('extend');
+        Route::post('/cancel', [App\Http\Controllers\Institution\SubscriptionController::class, 'cancel'])->name('cancel');
         
         // Webhook callbacks
-        Route::post('/mpesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'mpesaCallback'])
-            ->name('mpesa-callback');
-        
-        Route::post('/tigopesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'tigopesaCallback'])
-            ->name('tigopesa-callback');
-        
-        Route::post('/halopesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'halopesaCallback'])
-            ->name('halopesa-callback');
-        
-        Route::get('/pesapal-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'pesapalCallback'])
-            ->name('pesapal-callback');
-        
-        Route::post('/stripe-webhook', [App\Http\Controllers\Institution\SubscriptionController::class, 'stripeWebhook'])
-            ->name('stripe-webhook');
+        Route::post('/mpesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'mpesaCallback'])->name('mpesa-callback');
+        Route::post('/tigopesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'tigopesaCallback'])->name('tigopesa-callback');
+        Route::post('/halopesa-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'halopesaCallback'])->name('halopesa-callback');
+        Route::get('/pesapal-callback', [App\Http\Controllers\Institution\SubscriptionController::class, 'pesapalCallback'])->name('pesapal-callback');
+        Route::post('/stripe-webhook', [App\Http\Controllers\Institution\SubscriptionController::class, 'stripeWebhook'])->name('stripe-webhook');
     });
 
 // ==========================================
@@ -405,18 +378,14 @@ Route::middleware(['auth', 'institution'])
     ->prefix('institution')
     ->name('institution.')
     ->group(function () {
-        
         Route::get('/dashboard', [App\Http\Controllers\Institution\DashboardController::class, 'index'])->name('dashboard');
-        
-         Route::resource('books', App\Http\Controllers\Institution\BookController::class);
+        Route::resource('books', App\Http\Controllers\Institution\BookController::class);
         Route::post('/books/{book}/approve', [App\Http\Controllers\Institution\BookController::class, 'approve'])->name('books.approve');
         Route::post('/books/{book}/toggle-stock', [App\Http\Controllers\Institution\BookController::class, 'toggleStock'])->name('books.toggle-stock');
         Route::post('/books/bulk-action', [App\Http\Controllers\Institution\BookController::class, 'bulkAction'])->name('books.bulk-action');
-
-        Route::post('/books/{book}/progress', [App\Http\Controllers\Institution\BookController::class, 'updateProgress'])
-            ->name('books.progress');
-        Route::resource('shelves', App\Http\Controllers\Institution\ShelfController::class);
+        Route::post('/books/{book}/progress', [App\Http\Controllers\Institution\BookController::class, 'updateProgress'])->name('books.progress');
         
+        Route::resource('shelves', App\Http\Controllers\Institution\ShelfController::class);
         Route::resource('members', App\Http\Controllers\Institution\MemberController::class);
         Route::post('/members/{member}/role', [App\Http\Controllers\Institution\MemberController::class, 'updateRole'])->name('members.update-role');
         Route::get('/members/export', [App\Http\Controllers\Institution\MemberController::class, 'export'])->name('members.export');
@@ -462,13 +431,10 @@ Route::middleware(['auth', \App\Http\Middleware\LibrarianMiddleware::class])
     ->prefix('librarian')
     ->name('librarian.')
     ->group(function () {
-        
         Route::get('/dashboard', [App\Http\Controllers\Librarian\DashboardController::class, 'index'])->name('dashboard');
-        
         Route::resource('books', App\Http\Controllers\Librarian\BookController::class);
         Route::post('/books/{book}/approve', [App\Http\Controllers\Librarian\BookController::class, 'approve'])->name('books.approve');
         Route::post('/books/{book}/reject', [App\Http\Controllers\Librarian\BookController::class, 'reject'])->name('books.reject');
-        
         Route::resource('shelves', App\Http\Controllers\Librarian\ShelfController::class);
         
         Route::get('/members', [App\Http\Controllers\Librarian\MemberController::class, 'index'])->name('members.index');
@@ -551,7 +517,6 @@ Route::middleware(['auth'])->prefix('instructor')->name('instructor.')->group(fu
 // SECTION 10: ADMIN ROUTES
 // ==========================================
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
     Route::get('/analytics/data', [AnalyticsController::class, 'getData'])->name('analytics.data');
@@ -606,244 +571,200 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 // ==========================================
 
 // Media Team + Super Admin routes (Content Management)
-Route::middleware(['auth', \App\Http\Middleware\MediaTeamMiddleware::class])->prefix('super-admin')->name('super-admin.')->group(function () {
-
-    // ==========================================
-    // CONTENT MANAGEMENT - Media Team & Super Admin
-    // ==========================================
-    
-    Route::resource('hero-slides', App\Http\Controllers\SuperAdmin\HeroSlideController::class);
-    Route::post('hero-slides/{heroSlide}/toggle-status', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'toggleStatus'])->name('hero-slides.toggle-status');
-    Route::post('hero-slides/reorder', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'reorder'])->name('hero-slides.reorder');
-    
-    // News Items
-    Route::resource('news-items', App\Http\Controllers\SuperAdmin\NewsItemController::class);
-    Route::post('news-items/{newsItem}/toggle-featured', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'toggleFeatured'])->name('news-items.toggle-featured');
-    Route::post('news-items/{newsItem}/toggle-status', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'toggleStatus'])->name('news-items.toggle-status');
-    Route::post('news-items/reorder', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'reorder'])->name('news-items.reorder');
-    
-    // Founders
-    Route::resource('founders', App\Http\Controllers\SuperAdmin\FounderController::class);
-    Route::post('founders/{founder}/toggle-status', [App\Http\Controllers\SuperAdmin\FounderController::class, 'toggleStatus'])->name('founders.toggle-status');
-    Route::post('founders/reorder', [App\Http\Controllers\SuperAdmin\FounderController::class, 'reorder'])->name('founders.reorder');
-    
-    // Site Settings
-    Route::get('site-settings', [App\Http\Controllers\SuperAdmin\SiteSettingController::class, 'index'])->name('site-settings.index');
-    Route::put('site-settings', [App\Http\Controllers\SuperAdmin\SiteSettingController::class, 'update'])->name('site-settings.update');
-});
-
-// ==========================================
-// MEDIA TEAM DASHBOARD ROUTE
-// ==========================================
-Route::middleware(['auth', \App\Http\Middleware\MediaTeamMiddleware::class])->prefix('super-admin')->name('super-admin.')->group(function () {
-    
-    // Media Dashboard
-    Route::get('/media-dashboard', function () {
-        $heroSlidesCount = \App\Models\HeroSlide::count();
-        $newsItemsCount = \App\Models\NewsItem::count();
-        $foundersCount = \App\Models\Founder::count();
-        $siteSettingsCount = \App\Models\SiteSetting::count();
+Route::middleware(['auth', \App\Http\Middleware\MediaTeamMiddleware::class])
+    ->prefix('super-admin')
+    ->name('super-admin.')
+    ->group(function () {
+        // Content Management
+        Route::resource('hero-slides', App\Http\Controllers\SuperAdmin\HeroSlideController::class);
+        Route::post('hero-slides/{heroSlide}/toggle-status', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'toggleStatus'])->name('hero-slides.toggle-status');
+        Route::post('hero-slides/reorder', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'reorder'])->name('hero-slides.reorder');
         
-        return view('super-admin.media-dashboard', compact(
-            'heroSlidesCount',
-            'newsItemsCount',
-            'foundersCount',
-            'siteSettingsCount'
-        ));
-    })->name('media.dashboard');
-    
-    // ==========================================
-    // CONTENT MANAGEMENT - Media Team & Super Admin
-    // ==========================================
-    
-    // Hero Slides
-    Route::resource('hero-slides', App\Http\Controllers\SuperAdmin\HeroSlideController::class);
-    Route::post('hero-slides/{heroSlide}/toggle-status', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'toggleStatus'])->name('hero-slides.toggle-status');
-    Route::post('hero-slides/reorder', [App\Http\Controllers\SuperAdmin\HeroSlideController::class, 'reorder'])->name('hero-slides.reorder');
-    
-    // News Items
-    Route::resource('news-items', App\Http\Controllers\SuperAdmin\NewsItemController::class);
-    Route::post('news-items/{newsItem}/toggle-featured', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'toggleFeatured'])->name('news-items.toggle-featured');
-    Route::post('news-items/{newsItem}/toggle-status', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'toggleStatus'])->name('news-items.toggle-status');
-    Route::post('news-items/reorder', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'reorder'])->name('news-items.reorder');
-    
-    // Founders
-    Route::resource('founders', App\Http\Controllers\SuperAdmin\FounderController::class);
-    Route::post('founders/{founder}/toggle-status', [App\Http\Controllers\SuperAdmin\FounderController::class, 'toggleStatus'])->name('founders.toggle-status');
-    Route::post('founders/reorder', [App\Http\Controllers\SuperAdmin\FounderController::class, 'reorder'])->name('founders.reorder');
-    
-    // Site Settings
-    Route::get('site-settings', [App\Http\Controllers\SuperAdmin\SiteSettingController::class, 'index'])->name('site-settings.index');
-    Route::put('site-settings', [App\Http\Controllers\SuperAdmin\SiteSettingController::class, 'update'])->name('site-settings.update');
-});
+        Route::resource('news-items', App\Http\Controllers\SuperAdmin\NewsItemController::class);
+        Route::post('news-items/{newsItem}/toggle-featured', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'toggleFeatured'])->name('news-items.toggle-featured');
+        Route::post('news-items/{newsItem}/toggle-status', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'toggleStatus'])->name('news-items.toggle-status');
+        Route::post('news-items/reorder', [App\Http\Controllers\SuperAdmin\NewsItemController::class, 'reorder'])->name('news-items.reorder');
+        
+        Route::resource('founders', App\Http\Controllers\SuperAdmin\FounderController::class);
+        Route::post('founders/{founder}/toggle-status', [App\Http\Controllers\SuperAdmin\FounderController::class, 'toggleStatus'])->name('founders.toggle-status');
+        Route::post('founders/reorder', [App\Http\Controllers\SuperAdmin\FounderController::class, 'reorder'])->name('founders.reorder');
+        
+        Route::get('site-settings', [App\Http\Controllers\SuperAdmin\SiteSettingController::class, 'index'])->name('site-settings.index');
+        Route::put('site-settings', [App\Http\Controllers\SuperAdmin\SiteSettingController::class, 'update'])->name('site-settings.update');
+        
+        // Media Dashboard
+        Route::get('/media-dashboard', function () {
+            return view('super-admin.media-dashboard', [
+                'heroSlidesCount' => \App\Models\HeroSlide::count(),
+                'newsItemsCount' => \App\Models\NewsItem::count(),
+                'foundersCount' => \App\Models\Founder::count(),
+                'siteSettingsCount' => \App\Models\SiteSetting::count(),
+            ]);
+        })->name('media.dashboard');
+    });
 
 // ==========================================
 // SUPER ADMIN ONLY ROUTES
 // ==========================================
-Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+Route::middleware(['auth', 'superadmin'])
+    ->prefix('super-admin')
+    ->name('super-admin.')
+    ->group(function () {
 
-    // ==========================================
-    // DASHBOARD
-    // ==========================================
-    Route::get('/dashboard', [App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
+        // Dashboard
+        Route::get('/dashboard', [App\Http\Controllers\SuperAdmin\DashboardController::class, 'index'])->name('dashboard');
 
-    // ==========================================
-    // ANALYTICS
-    // ==========================================
-    Route::get('/analytics', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'index'])->name('analytics.index');
-    Route::get('/analytics/data', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'getData'])->name('analytics.data');
-    Route::get('/analytics/export', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'export'])->name('analytics.export');
+        // Analytics
+        Route::get('/analytics', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'index'])->name('analytics.index');
+        Route::get('/analytics/data', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'getData'])->name('analytics.data');
+        Route::get('/analytics/export', [App\Http\Controllers\SuperAdmin\AnalyticsController::class, 'export'])->name('analytics.export');
 
-    // ==========================================
-    // BOOK MANAGEMENT
-    // ==========================================
-    Route::resource('books', App\Http\Controllers\SuperAdmin\BookController::class);
-    Route::post('/books/{book}/toggle-status', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleStatus'])->name('books.toggle-status');
-    Route::post('/books/{book}/toggle-featured', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleFeatured'])->name('books.toggle-featured');
-    Route::post('/books/{book}/toggle-trending', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleTrending'])->name('books.toggle-trending');
-    Route::post('/books/bulk-action', [App\Http\Controllers\SuperAdmin\BookController::class, 'bulkAction'])->name('books.bulk-action');
+        // Book Management
+        Route::resource('books', App\Http\Controllers\SuperAdmin\BookController::class);
+        Route::post('/books/{book}/toggle-status', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleStatus'])->name('books.toggle-status');
+        Route::post('/books/{book}/toggle-featured', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleFeatured'])->name('books.toggle-featured');
+        Route::post('/books/{book}/toggle-trending', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleTrending'])->name('books.toggle-trending');
+        Route::post('/books/bulk-action', [App\Http\Controllers\SuperAdmin\BookController::class, 'bulkAction'])->name('books.bulk-action');
 
+        // Platform Management
+        Route::resource('users', App\Http\Controllers\SuperAdmin\UserController::class);
+        
+        Route::resource('institutions', App\Http\Controllers\SuperAdmin\InstitutionController::class);
+        Route::post('/institutions/{institution}/approve', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'approve'])->name('institutions.approve');
+        Route::post('/institutions/{institution}/suspend', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'suspend'])->name('institutions.suspend');
+        Route::post('/institutions/{institution}/reject', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'reject'])->name('institutions.reject');
+        Route::post('/institutions/{institution}/activate-subscription', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'activateSubscription'])->name('institutions.activate-subscription');
+        Route::get('/institutions/{institution}/subscription-override', function ($institution) {
+            $institution = \App\Models\Institution::findOrFail($institution);
+            return view('super-admin.institutions.subscription-override', compact('institution'));
+        })->name('institutions.subscription-override');
+
+        // Institution Requests
+        Route::get('/institution-requests', [InstitutionRequestController::class, 'index'])->name('institution-requests.index');
+        Route::get('/institution-requests/{id}', [InstitutionRequestController::class, 'show'])->name('institution-requests.show');
+        Route::post('/institution-requests/{id}/approve', [InstitutionRequestController::class, 'approve'])->name('institution-requests.approve');
+        Route::post('/institution-requests/{id}/reject', [InstitutionRequestController::class, 'reject'])->name('institution-requests.reject');
+        Route::get('/institution-requests/{id}/download', [InstitutionRequestController::class, 'download'])->name('institution-requests.download');
+
+        // Institution Subscriptions
+        Route::prefix('institution-subscriptions')->name('institutions.subscriptions.')->group(function () {
+            Route::get('/', [SuperAdminInstitutionSubscriptionController::class, 'index'])->name('index');
+            Route::get('/{id}', [SuperAdminInstitutionSubscriptionController::class, 'show'])->name('show');
+            Route::post('/{id}/assign', [SuperAdminInstitutionSubscriptionController::class, 'assign'])->name('assign');
+            Route::post('/bulk', [SuperAdminInstitutionSubscriptionController::class, 'bulkAssign'])->name('bulk');
+            Route::post('/subscription/{id}/activate', [SuperAdminInstitutionSubscriptionController::class, 'activate'])->name('activate');
+            Route::post('/subscription/{id}/cancel', [SuperAdminInstitutionSubscriptionController::class, 'cancel'])->name('cancel');
+            Route::delete('/subscription/{id}', [SuperAdminInstitutionSubscriptionController::class, 'destroy'])->name('destroy');
+            Route::get('/export', [SuperAdminInstitutionSubscriptionController::class, 'export'])->name('export');
+        });
+
+        // Marketplace
+        Route::prefix('marketplace')->name('marketplace.')->group(function () {
+            Route::get('/', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'index'])->name('index');
+            Route::get('/{listing}', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'show'])->name('show');
+            Route::post('/{listing}/approve', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'approve'])->name('approve');
+            Route::post('/{listing}/reject', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'reject'])->name('reject');
+            Route::delete('/{listing}', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'destroy'])->name('destroy');
+        });
+
+        // Applications
+        Route::prefix('applications')->name('applications.')->group(function () {
+            Route::get('/', [SuperAdminApplicationController::class, 'index'])->name('index');
+            Route::get('/{application}', [SuperAdminApplicationController::class, 'show'])->name('show');
+            Route::post('/{application}/approve', [SuperAdminApplicationController::class, 'approve'])->name('approve');
+            Route::post('/{application}/reject', [SuperAdminApplicationController::class, 'reject'])->name('reject');
+            Route::get('/{application}/download/{document}', [SuperAdminApplicationController::class, 'download'])->name('download');
+            Route::delete('/{application}', [SuperAdminApplicationController::class, 'destroy'])->name('destroy');
+        });
+
+      // Payments
+Route::prefix('payments')->name('payments.')->group(function () {
+    Route::get('/', [SuperAdminPaymentController::class, 'index'])->name('index');
+    Route::get('/transactions', [SuperAdminPaymentController::class, 'transactions'])->name('transactions');
+    Route::get('/withdrawals', [SuperAdminPaymentController::class, 'withdrawals'])->name('withdrawals');
+    Route::get('/commissions', [SuperAdminPaymentController::class, 'commissions'])->name('commissions');
+    Route::get('/author-payouts', [SuperAdminPaymentController::class, 'authorPayouts'])->name('author-payouts');
+    Route::get('/audit-logs', [SuperAdminPaymentController::class, 'auditLogs'])->name('audit-logs');
+    Route::get('/export', [SuperAdminPaymentController::class, 'exportReport'])->name('export');
+    Route::get('/{payment}', [SuperAdminPaymentController::class, 'show'])->name('show');
+    
+    // User withdrawals
+    Route::post('/user-withdrawals/{id}/approve', [SuperAdminPaymentController::class, 'approveUserWithdrawal'])->name('approve-user-withdrawal');
+    Route::post('/user-withdrawals/{id}/reject', [SuperAdminPaymentController::class, 'rejectUserWithdrawal'])->name('reject-user-withdrawal');
+    
+    // Institution withdrawals
+    Route::post('/institution-withdrawals/{id}/approve', [SuperAdminPaymentController::class, 'approveInstitutionWithdrawal'])->name('approve-institution-withdrawal');
+    Route::post('/institution-withdrawals/{id}/complete', [SuperAdminPaymentController::class, 'completeInstitutionWithdrawal'])->name('complete-institution-withdrawal');
+    Route::post('/institution-withdrawals/{id}/reject', [SuperAdminPaymentController::class, 'rejectInstitutionWithdrawal'])->name('reject-institution-withdrawal');
+    
+    // Author payouts
+    Route::post('/author-payouts/{transactionId}/approve', [SuperAdminPaymentController::class, 'approveAuthorPayout'])->name('approve-author-payout');
+    Route::post('/author-payouts/{transactionId}/reject', [SuperAdminPaymentController::class, 'rejectAuthorPayout'])->name('reject-author-payout');
+    
     // ==========================================
-    // PLATFORM MANAGEMENT
+    // TRANSACTION MANAGEMENT - DELETE ROUTES
     // ==========================================
     
-    // Users
-    Route::resource('users', App\Http\Controllers\SuperAdmin\UserController::class);
+    // Single transaction delete (permanent)
+    Route::delete('/transactions/{id}', [SuperAdminPaymentController::class, 'deleteTransaction'])
+        ->name('delete-transaction');
     
-    // Institutions
-    Route::resource('institutions', App\Http\Controllers\SuperAdmin\InstitutionController::class);
-    Route::post('/institutions/{institution}/approve', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'approve'])->name('institutions.approve');
-    Route::post('/institutions/{institution}/suspend', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'suspend'])->name('institutions.suspend');
-    Route::post('/institutions/{institution}/reject', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'reject'])->name('institutions.reject');
-    Route::post('/institutions/{institution}/activate-subscription', [App\Http\Controllers\SuperAdmin\InstitutionController::class, 'activateSubscription'])->name('institutions.activate-subscription');
-    Route::get('/institutions/{institution}/subscription-override', function ($institution) {
-        $institution = \App\Models\Institution::findOrFail($institution);
-        return view('super-admin.institutions.subscription-override', compact('institution'));
-    })->name('institutions.subscription-override');
-
-    // Institution Requests
-    Route::get('/institution-requests', [InstitutionRequestController::class, 'index'])->name('institution-requests.index');
-    Route::get('/institution-requests/{id}', [InstitutionRequestController::class, 'show'])->name('institution-requests.show');
-    Route::post('/institution-requests/{id}/approve', [InstitutionRequestController::class, 'approve'])->name('institution-requests.approve');
-    Route::post('/institution-requests/{id}/reject', [InstitutionRequestController::class, 'reject'])->name('institution-requests.reject');
-    Route::get('/institution-requests/{id}/download', [InstitutionRequestController::class, 'download'])->name('institution-requests.download');
-
-    // Institution Subscriptions
-    Route::prefix('institution-subscriptions')->name('institutions.subscriptions.')->group(function () {
-        Route::get('/', [SuperAdminInstitutionSubscriptionController::class, 'index'])->name('index');
-        Route::get('/{id}', [SuperAdminInstitutionSubscriptionController::class, 'show'])->name('show');
-        Route::post('/{id}/assign', [SuperAdminInstitutionSubscriptionController::class, 'assign'])->name('assign');
-        Route::post('/bulk', [SuperAdminInstitutionSubscriptionController::class, 'bulkAssign'])->name('bulk');
-        Route::post('/subscription/{id}/activate', [SuperAdminInstitutionSubscriptionController::class, 'activate'])->name('activate');
-        Route::post('/subscription/{id}/cancel', [SuperAdminInstitutionSubscriptionController::class, 'cancel'])->name('cancel');
-        Route::delete('/subscription/{id}', [SuperAdminInstitutionSubscriptionController::class, 'destroy'])->name('destroy');
-        Route::get('/export', [SuperAdminInstitutionSubscriptionController::class, 'export'])->name('export');
-    });
-
-    // Marketplace
-    Route::prefix('marketplace')->name('marketplace.')->group(function () {
-        Route::get('/', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'index'])->name('index');
-        Route::get('/{listing}', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'show'])->name('show');
-        Route::post('/{listing}/approve', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'approve'])->name('approve');
-        Route::post('/{listing}/reject', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'reject'])->name('reject');
-        Route::delete('/{listing}', [App\Http\Controllers\SuperAdmin\MarketplaceController::class, 'destroy'])->name('destroy');
-    });
-
-    // Applications
-    Route::prefix('applications')->name('applications.')->group(function () {
-        Route::get('/', [SuperAdminApplicationController::class, 'index'])->name('index');
-        Route::get('/{application}', [SuperAdminApplicationController::class, 'show'])->name('show');
-        Route::post('/{application}/approve', [SuperAdminApplicationController::class, 'approve'])->name('approve');
-        Route::post('/{application}/reject', [SuperAdminApplicationController::class, 'reject'])->name('reject');
-        Route::get('/{application}/download/{document}', [SuperAdminApplicationController::class, 'download'])->name('download');
-        Route::delete('/{application}', [SuperAdminApplicationController::class, 'destroy'])->name('destroy');
-    });
-
-    // Payments
-    Route::prefix('payments')->name('payments.')->group(function () {
-        Route::get('/', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'index'])->name('index');
-        Route::get('/transactions', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'transactions'])->name('transactions');
-        Route::get('/withdrawals', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'withdrawals'])->name('withdrawals');
-        Route::get('/commissions', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'commissions'])->name('commissions');
-        Route::get('/author-payouts', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'authorPayouts'])->name('author-payouts');
-        Route::get('/audit-logs', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'auditLogs'])->name('audit-logs');
-        Route::get('/export', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'exportReport'])->name('export');
-        Route::get('/{payment}', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'show'])->name('show');
-        Route::post('/user-withdrawals/{id}/approve', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'approveUserWithdrawal'])->name('approve-user-withdrawal');
-        Route::post('/user-withdrawals/{id}/reject', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'rejectUserWithdrawal'])->name('reject-user-withdrawal');
-        Route::post('/institution-withdrawals/{id}/approve', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'approveInstitutionWithdrawal'])->name('approve-institution-withdrawal');
-        Route::post('/institution-withdrawals/{id}/complete', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'completeInstitutionWithdrawal'])->name('complete-institution-withdrawal');
-        Route::post('/institution-withdrawals/{id}/reject', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'rejectInstitutionWithdrawal'])->name('reject-institution-withdrawal');
-        Route::post('/author-payouts/{transactionId}/approve', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'approveAuthorPayout'])->name('approve-author-payout');
-        Route::post('/author-payouts/{transactionId}/reject', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'rejectAuthorPayout'])->name('reject-author-payout');
-    });
+    // Bulk delete transactions (permanent)
+    Route::post('/transactions/bulk-delete', [SuperAdminPaymentController::class, 'bulkDeleteTransactions'])
+        ->name('bulk-delete-transactions');
     
-    Route::get('/withdrawals/{withdrawal}', [App\Http\Controllers\SuperAdmin\PaymentController::class, 'withdrawalShow'])->name('withdrawals.show');
-
-    // Quotes
-    Route::get('/quotes', [App\Http\Controllers\QuoteController::class, 'index'])->name('quotes.index');
-    Route::get('/quotes/create', [App\Http\Controllers\QuoteController::class, 'create'])->name('quotes.create');
-    Route::post('/quotes', [App\Http\Controllers\QuoteController::class, 'store'])->name('quotes.store');
-    Route::get('/quotes/{quote}/edit', [App\Http\Controllers\QuoteController::class, 'edit'])->name('quotes.edit');
-    Route::put('/quotes/{quote}', [App\Http\Controllers\QuoteController::class, 'update'])->name('quotes.update');
-    Route::delete('/quotes/{quote}', [App\Http\Controllers\QuoteController::class, 'destroy'])->name('quotes.destroy');
-    Route::get('/quotes/{quote}/analytics', [App\Http\Controllers\QuoteController::class, 'analytics'])->name('quotes.analytics');
-
     // ==========================================
-    // SUBSCRIPTIONS (Super Admin Only)
+    // PAYMENT DELETE ROUTE - FIXED
     // ==========================================
-    Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
-        Route::get('/', [SuperAdminSubscriptionController::class, 'index'])->name('index');
-        Route::get('/{id}', [SuperAdminSubscriptionController::class, 'show'])->name('show');
-        Route::post('/{id}/override', [SuperAdminSubscriptionController::class, 'override'])->name('override');
-        Route::post('/{id}/activate', [SuperAdminSubscriptionController::class, 'activate'])->name('activate');
-        Route::post('/{id}/cancel', [SuperAdminSubscriptionController::class, 'cancel'])->name('cancel');
-        Route::post('/{id}/expire', [SuperAdminSubscriptionController::class, 'markExpired'])->name('expire');
-        Route::post('/bulk', [SuperAdminSubscriptionController::class, 'bulkAction'])->name('bulk');
-        Route::get('/export', [SuperAdminSubscriptionController::class, 'export'])->name('export');
-    });
+    
+    // Single payment delete (permanent) - CORRECTED
+    Route::delete('/{id}', [SuperAdminPaymentController::class, 'deletePayment'])
+        ->name('delete-payment');
 });
+
+        // Withdrawal show (outside payments prefix)
+        Route::get('/withdrawals/{withdrawal}', [SuperAdminPaymentController::class, 'withdrawalShow'])->name('withdrawals.show');
+
+        // Quotes
+        Route::get('/quotes', [App\Http\Controllers\QuoteController::class, 'index'])->name('quotes.index');
+        Route::get('/quotes/create', [App\Http\Controllers\QuoteController::class, 'create'])->name('quotes.create');
+        Route::post('/quotes', [App\Http\Controllers\QuoteController::class, 'store'])->name('quotes.store');
+        Route::get('/quotes/{quote}/edit', [App\Http\Controllers\QuoteController::class, 'edit'])->name('quotes.edit');
+        Route::put('/quotes/{quote}', [App\Http\Controllers\QuoteController::class, 'update'])->name('quotes.update');
+        Route::delete('/quotes/{quote}', [App\Http\Controllers\QuoteController::class, 'destroy'])->name('quotes.destroy');
+        Route::get('/quotes/{quote}/analytics', [App\Http\Controllers\QuoteController::class, 'analytics'])->name('quotes.analytics');
+
+        // Subscriptions
+        Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+            Route::get('/', [SuperAdminSubscriptionController::class, 'index'])->name('index');
+            Route::get('/{id}', [SuperAdminSubscriptionController::class, 'show'])->name('show');
+            Route::post('/{id}/override', [SuperAdminSubscriptionController::class, 'override'])->name('override');
+            Route::post('/{id}/activate', [SuperAdminSubscriptionController::class, 'activate'])->name('activate');
+            Route::post('/{id}/cancel', [SuperAdminSubscriptionController::class, 'cancel'])->name('cancel');
+            Route::post('/{id}/expire', [SuperAdminSubscriptionController::class, 'markExpired'])->name('expire');
+            Route::post('/bulk', [SuperAdminSubscriptionController::class, 'bulkAction'])->name('bulk');
+            Route::get('/export', [SuperAdminSubscriptionController::class, 'export'])->name('export');
+        });
+    });
 
 // ==========================================
 // SECTION 12: PAYMENT WEBHOOKS CALLBACKS
 // ==========================================
-Route::post('/webhooks/mpesa/callback', [InstitutionSubscriptionController::class, 'mpesaCallback'])
-    ->name('mpesa.callback');
-Route::post('/webhooks/tigopesa/callback', [InstitutionSubscriptionController::class, 'tigopesaCallback'])
-    ->name('tigopesa.callback');
-Route::post('/webhooks/halopesa/callback', [InstitutionSubscriptionController::class, 'halopesaCallback'])
-    ->name('halopesa.callback');
-Route::get('/webhooks/pesapal/callback', [InstitutionSubscriptionController::class, 'pesapalCallback'])
-    ->name('pesapal.callback');
+Route::post('/webhooks/mpesa/callback', [InstitutionSubscriptionController::class, 'mpesaCallback'])->name('mpesa.callback');
+Route::post('/webhooks/tigopesa/callback', [InstitutionSubscriptionController::class, 'tigopesaCallback'])->name('tigopesa.callback');
+Route::post('/webhooks/halopesa/callback', [InstitutionSubscriptionController::class, 'halopesaCallback'])->name('halopesa.callback');
+Route::get('/webhooks/pesapal/callback', [InstitutionSubscriptionController::class, 'pesapalCallback'])->name('pesapal.callback');
 
 // ==========================================
 // BOOK PURCHASE ROUTES
 // ==========================================
 Route::middleware(['auth'])->group(function () {
-    
-    // Show purchase page
-    Route::get('/book/purchase/{bookId}', [App\Http\Controllers\BookPurchaseController::class, 'purchase'])
-        ->name('book.purchase');
-    
-    // Process purchase with wallet (AJAX)
-    Route::post('/book/purchase/wallet/{bookId}', [App\Http\Controllers\BookPurchaseController::class, 'purchaseWithWallet'])
-        ->name('book.purchase.wallet');
-    
-    // Process purchase with external payment
-    Route::post('/book/purchase/process', [App\Http\Controllers\BookPurchaseController::class, 'processPurchase'])
-        ->name('book.purchase.process');
-    
-    // Purchase success page
-    Route::get('/book/purchase/success/{paymentId}', [App\Http\Controllers\BookPurchaseController::class, 'purchaseSuccess'])
-        ->name('book.purchase.success');
-    
-    // Purchase history
-    Route::get('/book/purchase/history', [App\Http\Controllers\BookPurchaseController::class, 'purchaseHistory'])
-        ->name('book.purchase.history');
-    
-    // Download purchased book
-    Route::get('/book/download/{bookId}', [App\Http\Controllers\BookPurchaseController::class, 'downloadBook'])
-        ->name('book.download');
+    Route::get('/book/purchase/{bookId}', [App\Http\Controllers\BookPurchaseController::class, 'purchase'])->name('book.purchase');
+    Route::post('/book/purchase/wallet/{bookId}', [App\Http\Controllers\BookPurchaseController::class, 'purchaseWithWallet'])->name('book.purchase.wallet');
+    Route::post('/book/purchase/process', [App\Http\Controllers\BookPurchaseController::class, 'processPurchase'])->name('book.purchase.process');
+    Route::get('/book/purchase/success/{paymentId}', [App\Http\Controllers\BookPurchaseController::class, 'purchaseSuccess'])->name('book.purchase.success');
+    Route::get('/book/purchase/history', [App\Http\Controllers\BookPurchaseController::class, 'purchaseHistory'])->name('book.purchase.history');
+    Route::get('/book/download/{bookId}', [App\Http\Controllers\BookPurchaseController::class, 'downloadBook'])->name('book.download');
 });
 
 // ==========================================
@@ -865,15 +786,11 @@ Route::middleware(['auth'])->group(function () {
 // PAYMENT INSTRUCTIONS ROUTE
 // ==========================================
 Route::middleware(['auth'])->group(function () {
-    Route::get('/payment/instructions/{paymentId}', [App\Http\Controllers\BookPurchaseController::class, 'showPaymentInstructions'])
-        ->name('payment.instructions');
-    
-    Route::post('/payment/confirm', [App\Http\Controllers\BookPurchaseController::class, 'confirmPayment'])
-        ->name('payment.confirm');
+    Route::get('/payment/instructions/{paymentId}', [App\Http\Controllers\BookPurchaseController::class, 'showPaymentInstructions'])->name('payment.instructions');
+    Route::post('/payment/confirm', [App\Http\Controllers\BookPurchaseController::class, 'confirmPayment'])->name('payment.confirm');
 });
 
-Route::post('/shelves/sync-counts', [App\Http\Controllers\Institution\ShelfController::class, 'syncCounts'])
-    ->name('institution.shelves.sync-counts');
+Route::post('/shelves/sync-counts', [App\Http\Controllers\Institution\ShelfController::class, 'syncCounts'])->name('institution.shelves.sync-counts');
 
 // ==========================================
 // SECTION 13: AUTHENTICATION ROUTES

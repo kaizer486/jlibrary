@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property int $id
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $book_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read Model|\Eloquent|null $payable
  * @property-read \App\Models\User|null $user
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction newModelQuery()
@@ -39,10 +41,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction withTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Transaction withoutTrashed()
  * @mixin \Eloquent
  */
 class Transaction extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'user_id',
         'type',
@@ -53,12 +60,23 @@ class Transaction extends Model
         'status',
         'method',
         'payable_type',
-        'payable_id'
+        'payable_id',
+        'order_id',
+        'currency',
+        'balance_before',
+        'notes',
+        'category',
+        'metadata',
+        'completed_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'balance_before' => 'decimal:2',
         'balance_after' => 'decimal:2',
+        'metadata' => 'array',
+        'completed_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -85,5 +103,61 @@ class Transaction extends Model
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isFailed(): bool
+    {
+        return $this->status === 'failed';
+    }
+
+    public function isProcessing(): bool
+    {
+        return $this->status === 'processing';
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
+    }
+
+    // Scopes
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeFailed($query)
+    {
+        return $query->where('status', 'failed');
+    }
+
+    public function scopeCredits($query)
+    {
+        return $query->where('type', 'credit');
+    }
+
+    public function scopeDebits($query)
+    {
+        return $query->where('type', 'debit');
+    }
+
+    public function scopeByUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    public function scopeDateRange($query, $from, $to)
+    {
+        return $query->whereBetween('created_at', [$from, $to]);
     }
 }

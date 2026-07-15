@@ -165,6 +165,15 @@
                             <a href="{{ route('invoices.payment', $payment->id) }}" class="text-green-600 hover:text-green-800" title="Download Invoice" target="_blank">
                                 <i class="ti ti-file-invoice"></i>
                             </a>
+                            <!-- Delete Payment -->
+                            <button type="button" 
+                                    class="text-red-600 hover:text-red-800 transition delete-payment-btn"
+                                    data-id="{{ $payment->id }}"
+                                    data-reference="{{ $payment->reference }}"
+                                    data-amount="{{ number_format($payment->amount, 2) }}"
+                                    title="Permanently Delete Payment">
+                                <i class="ti ti-trash"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -238,4 +247,85 @@
     }
 </script>
 @endif
+
+<!-- ========================================== -->
+<!-- DELETE PAYMENT CONFIRMATION MODAL -->
+<!-- ========================================== -->
+<div id="deletePaymentModal" class="fixed inset-0 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closePaymentModal()"></div>
+        <div class="relative bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl transform transition-all">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                    <svg class="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Delete Payment?</h3>
+                
+                <div class="bg-gray-50 rounded-lg p-3 mb-4 text-left text-sm">
+                    <p><span class="font-medium">Reference:</span> <span id="payment-modal-ref" class="font-mono"></span></p>
+                    <p><span class="font-medium">Amount:</span> <span id="payment-modal-amount" class="font-bold text-red-600"></span></p>
+                </div>
+                
+                <p class="text-red-600 font-medium text-sm mb-6"> This action cannot be undone!</p>
+                
+                <div class="flex gap-3 justify-center">
+                    <button onclick="closePaymentModal()" 
+                            class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition text-sm font-medium">
+                        Cancel
+                    </button>
+                    <form id="deletePaymentForm" method="POST" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" 
+                                class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition text-sm font-medium">
+                            Yes, Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delete Payment button - Open Modal
+        document.querySelectorAll('.delete-payment-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.dataset.id;
+                const reference = this.dataset.reference;
+                const amount = this.dataset.amount;
+                
+                document.getElementById('payment-modal-ref').textContent = reference;
+                document.getElementById('payment-modal-amount').textContent = 'TSh ' + amount;
+               document.getElementById('deletePaymentForm').action = '{{ route("super-admin.payments.delete-payment", ":id") }}'.replace(':id', id);
+                document.getElementById('deletePaymentModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+        });
+        
+        // Keep scroll position
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                localStorage.setItem('scrollPosition', window.scrollY);
+                localStorage.setItem('currentPage', window.location.href);
+            });
+        });
+    });
+    
+    function closePaymentModal() {
+        document.getElementById('deletePaymentModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closePaymentModal();
+    });
+</script>
+@endpush
 @endsection

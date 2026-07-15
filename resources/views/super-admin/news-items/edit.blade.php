@@ -50,11 +50,11 @@
                     <select name="category" id="category" 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
                         <option value="">Select Category</option>
-                        <option value="Books" {{ old('category', $newsItem->category) == 'Books' ? 'selected' : '' }}>📚 Books</option>
-                        <option value="Events" {{ old('category', $newsItem->category) == 'Events' ? 'selected' : '' }}>🎉 Events</option>
-                        <option value="Certificates" {{ old('category', $newsItem->category) == 'Certificates' ? 'selected' : '' }}>🏆 Certificates</option>
-                        <option value="Announcements" {{ old('category', $newsItem->category) == 'Announcements' ? 'selected' : '' }}>📢 Announcements</option>
-                        <option value="Authors" {{ old('category', $newsItem->category) == 'Authors' ? 'selected' : '' }}>👤 Authors</option>
+                        <option value="Books" {{ old('category', $newsItem->category) == 'Books' ? 'selected' : '' }}> Books</option>
+                        <option value="Events" {{ old('category', $newsItem->category) == 'Events' ? 'selected' : '' }}> Events</option>
+                        <option value="Certificates" {{ old('category', $newsItem->category) == 'Certificates' ? 'selected' : '' }}> Certificates</option>
+                        <option value="Announcements" {{ old('category', $newsItem->category) == 'Announcements' ? 'selected' : '' }}>Announcements</option>
+                        <option value="Authors" {{ old('category', $newsItem->category) == 'Authors' ? 'selected' : '' }}> Authors</option>
                     </select>
                     @error('category')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -101,7 +101,7 @@
                         <input type="checkbox" name="is_featured" value="1" 
                                {{ old('is_featured', $newsItem->is_featured) ? 'checked' : '' }}
                                class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
-                        <span class="text-sm text-gray-700">⭐ Featured</span>
+                        <span class="text-sm text-gray-700"> Featured</span>
                     </label>
                 </div>
                 <div class="flex items-center">

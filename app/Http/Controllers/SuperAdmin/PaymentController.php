@@ -66,11 +66,11 @@ class PaymentController extends Controller
         $totalWithdrawals = WithdrawalRequest::where('status', 'completed')->sum('amount');
         $pendingWithdrawals = WithdrawalRequest::where('status', 'pending')->sum('amount');
         
-        // ✅ NEW: Commission stats (80/20)
+        // Commission stats (80/20)
         $totalPlatformFees = $this->commissionService->getPlatformTotalFees();
         $totalAuthorEarnings = CommissionLog::where('status', 'completed')->sum('author_earnings');
         
-        // ✅ NEW: Author withdrawal stats
+        // Author withdrawal stats
         $pendingAuthorPayouts = Transaction::where('type', 'debit')
             ->where('method', 'author_withdrawal')
             ->where('status', 'pending')
@@ -81,14 +81,17 @@ class PaymentController extends Controller
             ->where('status', 'completed')
             ->sum('amount');
         
-        // ✅ NEW: Monthly revenue chart data
+        // ✅ FIXED: Define totalTransactions
+        $totalTransactions = CommissionLog::count();
+        
+        // Monthly revenue chart data
         $monthlyRevenue = $this->getMonthlyRevenue();
         
         return view('super-admin.payments.index', compact(
             'payments', 'totalRevenue', 'totalBookSales', 'totalDeposits',
             'pendingPayments', 'totalWithdrawals', 'pendingWithdrawals',
             'totalPlatformFees', 'totalAuthorEarnings', 'pendingAuthorPayouts',
-            'completedAuthorPayouts', 'monthlyRevenue'
+            'completedAuthorPayouts', 'monthlyRevenue', 'totalTransactions'
         ));
     }
     
@@ -116,322 +119,316 @@ class PaymentController extends Controller
     }
     
     /**
- * Approve a pending user withdrawal (SuperAdmin only)
- */
-public function approveUserWithdrawal($id)
-{
-    $transaction = Transaction::findOrFail($id);
-    
-    if ($transaction->status !== 'pending') {
-        return back()->with('error', 'This withdrawal has already been processed.');
-    }
-    
-    DB::beginTransaction();
-    
-    try {
-        $transaction->status = 'completed';
-        $transaction->save();
+     * Approve a pending user withdrawal (SuperAdmin only)
+     */
+    public function approveUserWithdrawal($id)
+    {
+        $transaction = Transaction::findOrFail($id);
         
-        // Log the action
-        PaymentAuditLog::create([
-            'admin_id' => auth()->id(),
-            'auditable_type' => Transaction::class,
-            'auditable_id' => $transaction->id,
-            'action' => 'approve_user_withdrawal',
-            'amount' => $transaction->amount,
-            'ip_address' => request()->ip(),
-        ]);
-        
-        DB::commit();
-        
-        return back()->with('success', 'User withdrawal approved successfully!');
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'Failed to approve withdrawal: ' . $e->getMessage());
-    }
-}
-
-/**
- * Reject a pending user withdrawal (SuperAdmin only)
- */
-public function rejectUserWithdrawal(Request $request, $id)
-{
-    $request->validate([
-        'rejection_reason' => 'required|string|min:10',
-    ]);
-    
-    $transaction = Transaction::findOrFail($id);
-    
-    if ($transaction->status !== 'pending') {
-        return back()->with('error', 'This withdrawal has already been processed.');
-    }
-    
-    DB::beginTransaction();
-    
-    try {
-        $transaction->status = 'failed';
-        $transaction->notes = $request->rejection_reason;
-        $transaction->save();
-        
-        // Refund the money back to user's wallet
-        $user = $transaction->user;
-        $user->wallet_balance = $user->wallet_balance + $transaction->amount;
-        $user->save();
-        
-        // Log the action
-        PaymentAuditLog::create([
-            'admin_id' => auth()->id(),
-            'auditable_type' => Transaction::class,
-            'auditable_id' => $transaction->id,
-            'action' => 'reject_user_withdrawal',
-            'reason' => $request->rejection_reason,
-            'amount' => $transaction->amount,
-            'ip_address' => request()->ip(),
-        ]);
-        
-        DB::commit();
-        
-        return back()->with('success', 'Withdrawal rejected and funds refunded to user wallet.');
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'Failed to reject withdrawal: ' . $e->getMessage());
-    }
-}
-
-/**
- * Approve institution withdrawal (SuperAdmin only)
- */
-public function approveInstitutionWithdrawal($id)
-{
-    $withdrawal = WithdrawalRequest::findOrFail($id);
-    
-    if ($withdrawal->status !== 'pending') {
-        return back()->with('error', 'This withdrawal has already been processed.');
-    }
-    
-    DB::beginTransaction();
-    
-    try {
-        $withdrawal->status = 'processing';
-        $withdrawal->processed_by = auth()->id();
-        $withdrawal->processed_at = now();
-        $withdrawal->save();
-        
-        // Log the action
-        PaymentAuditLog::create([
-            'admin_id' => auth()->id(),
-            'auditable_type' => WithdrawalRequest::class,
-            'auditable_id' => $withdrawal->id,
-            'action' => 'approve_institution_withdrawal',
-            'amount' => $withdrawal->amount,
-            'ip_address' => request()->ip(),
-        ]);
-        
-        DB::commit();
-        
-        return back()->with('success', 'Institution withdrawal marked as processing.');
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'Failed to process withdrawal: ' . $e->getMessage());
-    }
-}
-
-/**
- * Complete institution withdrawal (SuperAdmin only)
- */
-public function completeInstitutionWithdrawal($id)
-{
-    $withdrawal = WithdrawalRequest::findOrFail($id);
-    
-    if ($withdrawal->status !== 'processing') {
-        return back()->with('error', 'This withdrawal cannot be completed.');
-    }
-    
-    DB::beginTransaction();
-    
-    try {
-        $withdrawal->status = 'completed';
-        $withdrawal->save();
-        
-        // Update institution wallet
-        $wallet = $withdrawal->institution->wallet;
-        $wallet->pending_withdrawal -= $withdrawal->amount;
-        $wallet->total_withdrawn += $withdrawal->amount;
-        $wallet->save();
-        
-        // Update transaction record
-        Transaction::where('reference', 'WD-' . $withdrawal->id)
-            ->update(['status' => 'completed']);
-        
-        // Log the action
-        PaymentAuditLog::create([
-            'admin_id' => auth()->id(),
-            'auditable_type' => WithdrawalRequest::class,
-            'auditable_id' => $withdrawal->id,
-            'action' => 'complete_institution_withdrawal',
-            'amount' => $withdrawal->amount,
-            'ip_address' => request()->ip(),
-        ]);
-        
-        DB::commit();
-        
-        return back()->with('success', 'Institution withdrawal completed successfully!');
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'Failed to complete withdrawal: ' . $e->getMessage());
-    }
-}
-
-/**
- * Reject institution withdrawal (SuperAdmin only)
- */
-public function rejectInstitutionWithdrawal(Request $request, $id)
-{
-    $request->validate([
-        'rejection_reason' => 'required|string|min:10',
-    ]);
-    
-    $withdrawal = WithdrawalRequest::findOrFail($id);
-    
-    if ($withdrawal->status !== 'pending') {
-        return back()->with('error', 'This withdrawal cannot be rejected.');
-    }
-    
-    DB::beginTransaction();
-    
-    try {
-        $withdrawal->status = 'rejected';
-        $withdrawal->processed_by = auth()->id();
-        $withdrawal->processed_at = now();
-        $withdrawal->rejection_reason = $request->rejection_reason;
-        $withdrawal->save();
-        
-        // Return money to institution wallet
-        $wallet = $withdrawal->institution->wallet;
-        $wallet->balance += $withdrawal->amount;
-        $wallet->pending_withdrawal -= $withdrawal->amount;
-        $wallet->save();
-        
-        // Update transaction record
-        Transaction::where('reference', 'WD-' . $withdrawal->id)
-            ->update(['status' => 'failed']);
-        
-        // Log the action
-        PaymentAuditLog::create([
-            'admin_id' => auth()->id(),
-            'auditable_type' => WithdrawalRequest::class,
-            'auditable_id' => $withdrawal->id,
-            'action' => 'reject_institution_withdrawal',
-            'reason' => $request->rejection_reason,
-            'amount' => $withdrawal->amount,
-            'ip_address' => request()->ip(),
-        ]);
-        
-        DB::commit();
-        
-        return back()->with('success', 'Institution withdrawal rejected. Funds returned to wallet.');
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'Failed to reject withdrawal: ' . $e->getMessage());
-    }
-}
-
-/**
- * Approve author payout (SuperAdmin only)
- */
-public function approveAuthorPayout($transactionId)
-{
-    $transaction = Transaction::findOrFail($transactionId);
-    
-    if ($transaction->status !== 'pending') {
-        return back()->with('error', 'This payout has already been processed.');
-    }
-    
-    DB::beginTransaction();
-    
-    try {
-        $authorWallet = AuthorWallet::where('user_id', $transaction->user_id)->first();
-        
-        if ($authorWallet) {
-            $authorWallet->completeWithdrawal($transaction->amount);
+        if ($transaction->status !== 'pending') {
+            return back()->with('error', 'This withdrawal has already been processed.');
         }
         
-        $transaction->status = 'completed';
-        $transaction->save();
+        DB::beginTransaction();
         
-        // Log the action
-        PaymentAuditLog::create([
-            'admin_id' => auth()->id(),
-            'auditable_type' => Transaction::class,
-            'auditable_id' => $transaction->id,
-            'action' => 'approve_author_payout',
-            'amount' => $transaction->amount,
-            'ip_address' => request()->ip(),
+        try {
+            $transaction->status = 'completed';
+            $transaction->save();
+            
+            PaymentAuditLog::create([
+                'admin_id' => auth()->id(),
+                'auditable_type' => Transaction::class,
+                'auditable_id' => $transaction->id,
+                'action' => 'approve_user_withdrawal',
+                'amount' => $transaction->amount,
+                'ip_address' => request()->ip(),
+            ]);
+            
+            DB::commit();
+            
+            return back()->with('success', 'User withdrawal approved successfully!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to approve withdrawal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject a pending user withdrawal (SuperAdmin only)
+     */
+    public function rejectUserWithdrawal(Request $request, $id)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10',
         ]);
         
-        DB::commit();
+        $transaction = Transaction::findOrFail($id);
         
-        return back()->with('success', 'Author payout approved successfully!');
-        
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'Failed to approve payout: ' . $e->getMessage());
-    }
-}
-
-/**
- * Reject author payout (SuperAdmin only)
- */
-public function rejectAuthorPayout(Request $request, $transactionId)
-{
-    $request->validate([
-        'reason' => 'required|string|min:10',
-    ]);
-    
-    $transaction = Transaction::findOrFail($transactionId);
-    
-    if ($transaction->status !== 'pending') {
-        return back()->with('error', 'This payout has already been processed.');
-    }
-    
-    DB::beginTransaction();
-    
-    try {
-        $authorWallet = AuthorWallet::where('user_id', $transaction->user_id)->first();
-        
-        if ($authorWallet) {
-            $authorWallet->cancelWithdrawal($transaction->amount);
+        if ($transaction->status !== 'pending') {
+            return back()->with('error', 'This withdrawal has already been processed.');
         }
         
-        $transaction->status = 'failed';
-        $transaction->notes = $request->reason;
-        $transaction->save();
+        DB::beginTransaction();
         
-        // Log the action
-        PaymentAuditLog::create([
-            'admin_id' => auth()->id(),
-            'auditable_type' => Transaction::class,
-            'auditable_id' => $transaction->id,
-            'action' => 'reject_author_payout',
-            'reason' => $request->reason,
-            'amount' => $transaction->amount,
-            'ip_address' => request()->ip(),
+        try {
+            $transaction->status = 'failed';
+            $transaction->notes = $request->rejection_reason;
+            $transaction->save();
+            
+            // Refund the money back to user's wallet
+            $user = $transaction->user;
+            $user->wallet_balance = $user->wallet_balance + $transaction->amount;
+            $user->save();
+            
+            PaymentAuditLog::create([
+                'admin_id' => auth()->id(),
+                'auditable_type' => Transaction::class,
+                'auditable_id' => $transaction->id,
+                'action' => 'reject_user_withdrawal',
+                'reason' => $request->rejection_reason,
+                'amount' => $transaction->amount,
+                'ip_address' => request()->ip(),
+            ]);
+            
+            DB::commit();
+            
+            return back()->with('success', 'Withdrawal rejected and funds refunded to user wallet.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to reject withdrawal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Approve institution withdrawal (SuperAdmin only)
+     */
+    public function approveInstitutionWithdrawal($id)
+    {
+        $withdrawal = WithdrawalRequest::findOrFail($id);
+        
+        if ($withdrawal->status !== 'pending') {
+            return back()->with('error', 'This withdrawal has already been processed.');
+        }
+        
+        DB::beginTransaction();
+        
+        try {
+            $withdrawal->status = 'processing';
+            $withdrawal->processed_by = auth()->id();
+            $withdrawal->processed_at = now();
+            $withdrawal->save();
+            
+            PaymentAuditLog::create([
+                'admin_id' => auth()->id(),
+                'auditable_type' => WithdrawalRequest::class,
+                'auditable_id' => $withdrawal->id,
+                'action' => 'approve_institution_withdrawal',
+                'amount' => $withdrawal->amount,
+                'ip_address' => request()->ip(),
+            ]);
+            
+            DB::commit();
+            
+            return back()->with('success', 'Institution withdrawal marked as processing.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to process withdrawal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Complete institution withdrawal (SuperAdmin only)
+     */
+    public function completeInstitutionWithdrawal($id)
+    {
+        $withdrawal = WithdrawalRequest::findOrFail($id);
+        
+        if ($withdrawal->status !== 'processing') {
+            return back()->with('error', 'This withdrawal cannot be completed.');
+        }
+        
+        DB::beginTransaction();
+        
+        try {
+            $withdrawal->status = 'completed';
+            $withdrawal->save();
+            
+            // Update institution wallet
+            $wallet = $withdrawal->institution->wallet;
+            $wallet->pending_withdrawal -= $withdrawal->amount;
+            $wallet->total_withdrawn += $withdrawal->amount;
+            $wallet->save();
+            
+            // Update transaction record
+            Transaction::where('reference', 'WD-' . $withdrawal->id)
+                ->update(['status' => 'completed']);
+            
+            PaymentAuditLog::create([
+                'admin_id' => auth()->id(),
+                'auditable_type' => WithdrawalRequest::class,
+                'auditable_id' => $withdrawal->id,
+                'action' => 'complete_institution_withdrawal',
+                'amount' => $withdrawal->amount,
+                'ip_address' => request()->ip(),
+            ]);
+            
+            DB::commit();
+            
+            return back()->with('success', 'Institution withdrawal completed successfully!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to complete withdrawal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject institution withdrawal (SuperAdmin only)
+     */
+    public function rejectInstitutionWithdrawal(Request $request, $id)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10',
         ]);
         
-        DB::commit();
+        $withdrawal = WithdrawalRequest::findOrFail($id);
         
-        return back()->with('success', 'Author payout rejected. Funds returned to author wallet.');
+        if ($withdrawal->status !== 'pending') {
+            return back()->with('error', 'This withdrawal cannot be rejected.');
+        }
         
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'Failed to reject payout: ' . $e->getMessage());
+        DB::beginTransaction();
+        
+        try {
+            $withdrawal->status = 'rejected';
+            $withdrawal->processed_by = auth()->id();
+            $withdrawal->processed_at = now();
+            $withdrawal->rejection_reason = $request->rejection_reason;
+            $withdrawal->save();
+            
+            // Return money to institution wallet
+            $wallet = $withdrawal->institution->wallet;
+            $wallet->balance += $withdrawal->amount;
+            $wallet->pending_withdrawal -= $withdrawal->amount;
+            $wallet->save();
+            
+            // Update transaction record
+            Transaction::where('reference', 'WD-' . $withdrawal->id)
+                ->update(['status' => 'failed']);
+            
+            PaymentAuditLog::create([
+                'admin_id' => auth()->id(),
+                'auditable_type' => WithdrawalRequest::class,
+                'auditable_id' => $withdrawal->id,
+                'action' => 'reject_institution_withdrawal',
+                'reason' => $request->rejection_reason,
+                'amount' => $withdrawal->amount,
+                'ip_address' => request()->ip(),
+            ]);
+            
+            DB::commit();
+            
+            return back()->with('success', 'Institution withdrawal rejected. Funds returned to wallet.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to reject withdrawal: ' . $e->getMessage());
+        }
     }
-}
+
+    /**
+     * Approve author payout (SuperAdmin only)
+     */
+    public function approveAuthorPayout($transactionId)
+    {
+        $transaction = Transaction::findOrFail($transactionId);
+        
+        if ($transaction->status !== 'pending') {
+            return back()->with('error', 'This payout has already been processed.');
+        }
+        
+        DB::beginTransaction();
+        
+        try {
+            $authorWallet = AuthorWallet::where('user_id', $transaction->user_id)->first();
+            
+            if ($authorWallet) {
+                $authorWallet->completeWithdrawal($transaction->amount);
+            }
+            
+            $transaction->status = 'completed';
+            $transaction->save();
+            
+            PaymentAuditLog::create([
+                'admin_id' => auth()->id(),
+                'auditable_type' => Transaction::class,
+                'auditable_id' => $transaction->id,
+                'action' => 'approve_author_payout',
+                'amount' => $transaction->amount,
+                'ip_address' => request()->ip(),
+            ]);
+            
+            DB::commit();
+            
+            return back()->with('success', 'Author payout approved successfully!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to approve payout: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reject author payout (SuperAdmin only)
+     */
+    public function rejectAuthorPayout(Request $request, $transactionId)
+    {
+        $request->validate([
+            'reason' => 'required|string|min:10',
+        ]);
+        
+        $transaction = Transaction::findOrFail($transactionId);
+        
+        if ($transaction->status !== 'pending') {
+            return back()->with('error', 'This payout has already been processed.');
+        }
+        
+        DB::beginTransaction();
+        
+        try {
+            $authorWallet = AuthorWallet::where('user_id', $transaction->user_id)->first();
+            
+            if ($authorWallet) {
+                $authorWallet->cancelWithdrawal($transaction->amount);
+            }
+            
+            $transaction->status = 'failed';
+            $transaction->notes = $request->reason;
+            $transaction->save();
+            
+            PaymentAuditLog::create([
+                'admin_id' => auth()->id(),
+                'auditable_type' => Transaction::class,
+                'auditable_id' => $transaction->id,
+                'action' => 'reject_author_payout',
+                'reason' => $request->reason,
+                'amount' => $transaction->amount,
+                'ip_address' => request()->ip(),
+            ]);
+            
+            DB::commit();
+            
+            return back()->with('success', 'Author payout rejected. Funds returned to author wallet.');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to reject payout: ' . $e->getMessage());
+        }
+    }
+    
     /**
      * Show single payment details
      */
@@ -470,6 +467,11 @@ public function rejectAuthorPayout(Request $request, $transactionId)
             $query->where('type', $request->type);
         }
         
+        // Filter by status
+        if ($request->status && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+        
         // Filter by date range
         if ($request->from_date) {
             $query->whereDate('created_at', '>=', $request->from_date);
@@ -486,6 +488,97 @@ public function rejectAuthorPayout(Request $request, $transactionId)
         return view('super-admin.payments.transactions', compact('transactions', 'totalCredits', 'totalDebits'));
     }
     
+    /**
+     * Delete a transaction permanently (SuperAdmin only)
+     */
+    public function deleteTransaction($id)
+    {
+        $transaction = Transaction::findOrFail($id);
+        
+        DB::beginTransaction();
+        
+        try {
+            // Log the deletion
+            PaymentAuditLog::create([
+                'admin_id' => auth()->id(),
+                'auditable_type' => Transaction::class,
+                'auditable_id' => $transaction->id,
+                'action' => 'delete_transaction',
+                'amount' => $transaction->amount,
+                'ip_address' => request()->ip(),
+                'metadata' => json_encode([
+                    'transaction_data' => $transaction->toArray(),
+                    'deleted_by' => auth()->user()->email,
+                    'status_before_delete' => $transaction->status,
+                ]),
+            ]);
+            
+            // Hard delete the transaction
+            $transaction->forceDelete();
+            
+            DB::commit();
+            
+            return redirect()->back()->with('success', 'Transaction deleted successfully!');
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to delete transaction: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk delete transactions permanently
+     */
+    public function bulkDeleteTransactions(Request $request)
+    {
+        $request->validate([
+            'transaction_ids' => 'required|array',
+            'transaction_ids.*' => 'exists:transactions,id',
+        ]);
+        
+        $deletedCount = 0;
+        $failedCount = 0;
+        
+        DB::beginTransaction();
+        
+        try {
+            foreach ($request->transaction_ids as $transactionId) {
+                $transaction = Transaction::find($transactionId);
+                
+                if (!$transaction) {
+                    $failedCount++;
+                    continue;
+                }
+                
+                // Log each deletion
+                PaymentAuditLog::create([
+                    'admin_id' => auth()->id(),
+                    'auditable_type' => Transaction::class,
+                    'auditable_id' => $transaction->id,
+                    'action' => 'bulk_delete_transaction',
+                    'amount' => $transaction->amount,
+                    'ip_address' => request()->ip(),
+                    'metadata' => json_encode([
+                        'bulk_deletion' => true,
+                        'deleted_by' => auth()->user()->email,
+                        'status_before_delete' => $transaction->status,
+                    ]),
+                ]);
+                
+                $transaction->forceDelete();
+                $deletedCount++;
+            }
+            
+            DB::commit();
+            
+            return redirect()->back()->with('success', "Deleted {$deletedCount} transactions. Failed: {$failedCount}");
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Failed to delete transactions: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Withdrawals view (user + institution)
      */
@@ -520,7 +613,7 @@ public function rejectAuthorPayout(Request $request, $transactionId)
     }
     
     /**
-     * ✅ NEW: Commission Reports
+     * Commission Reports
      */
     public function commissions(Request $request)
     {
@@ -561,7 +654,7 @@ public function rejectAuthorPayout(Request $request, $transactionId)
     }
     
     /**
-     * ✅ NEW: Author Payouts Management
+     * Author Payouts Management
      */
     public function authorPayouts(Request $request)
     {
@@ -585,7 +678,7 @@ public function rejectAuthorPayout(Request $request, $transactionId)
     }
     
     /**
-     * ✅ NEW: Payment Audit Logs
+     * Payment Audit Logs
      */
     public function auditLogs(Request $request)
     {
@@ -601,7 +694,7 @@ public function rejectAuthorPayout(Request $request, $transactionId)
     }
     
     /**
-     * ✅ NEW: Export Financial Report
+     * Export Financial Report
      */
     public function exportReport(Request $request)
     {
@@ -636,4 +729,36 @@ public function rejectAuthorPayout(Request $request, $transactionId)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
+    public function deletePayment($id)
+{
+    $payment = Payment::findOrFail($id);
+
+    DB::beginTransaction();
+
+    try {
+        PaymentAuditLog::create([
+            'admin_id' => auth()->id(),
+            'auditable_type' => Payment::class,
+            'auditable_id' => $payment->id,
+            'action' => 'delete_payment',
+            'amount' => $payment->amount,
+            'ip_address' => request()->ip(),
+            'metadata' => json_encode([
+                'payment_data' => $payment->toArray(),
+                'deleted_by' => auth()->user()->email,
+                'status_before_delete' => $payment->status,
+            ]),
+        ]);
+
+        $payment->delete(); // or forceDelete() if Payment doesn't use SoftDeletes
+
+        DB::commit();
+
+        return redirect()->back()->with('success', 'Payment deleted successfully!');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Failed to delete payment: ' . $e->getMessage());
+    }
+}
 }

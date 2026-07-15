@@ -8,7 +8,9 @@ use App\Models\Institution;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class MemberController extends Controller
 {
@@ -17,14 +19,11 @@ class MemberController extends Controller
      */
     public function index(Request $request)
     {
-        $institution = auth()->user()->institution;
-        
-        if (!$institution) {
-            abort(403, 'You are not associated with any institution.');
-        }
+        $institution = $this->getAuthInstitution();
         
         $query = User::where('institution_id', $institution->id);
         
+        // Search filter
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -33,6 +32,7 @@ class MemberController extends Controller
             });
         }
         
+        // Role filter
         if ($request->filled('role') && $request->role !== 'all') {
             $query->whereHas('roles', function($q) use ($request) {
                 $q->where('name', $request->role);
@@ -66,11 +66,7 @@ class MemberController extends Controller
      */
     public function create()
     {
-        $institution = auth()->user()->institution;
-        
-        if (!$institution) {
-            abort(403, 'You are not associated with any institution.');
-        }
+        $institution = $this->getAuthInstitution();
         
         if (!auth()->user()->isInstitutionAdmin() && !auth()->user()->isSuperAdmin()) {
             abort(403, 'You do not have permission to add members.');
@@ -84,11 +80,7 @@ class MemberController extends Controller
      */
     public function store(Request $request)
     {
-        $institution = auth()->user()->institution;
-        
-        if (!$institution) {
-            abort(403, 'You are not associated with any institution.');
-        }
+        $institution = $this->getAuthInstitution();
         
         if (!auth()->user()->isInstitutionAdmin() && !auth()->user()->isSuperAdmin()) {
             abort(403, 'You do not have permission to add members.');
@@ -107,22 +99,18 @@ class MemberController extends Controller
         
         $password = Str::random(10);
         
-          $user = User::create([
-        'full_name' => $request->full_name,
-        'email' => $request->email,
-        'password' => Hash::make($password),
-        'role' => $request->role,
-        'institution_id' => $institution->id,  
-        'wallet_balance' => 0,
-        'referral_code' => User::generateReferralCode(),
-    ]);
-    
-    // Add to pivot table
-    $user->institutions()->attach($institution->id, [
-        'role' => $request->role,
-        'status' => 'active',
-        'joined_at' => now(),
-    ]);
+        $user = User::create([
+            'full_name' => $request->full_name,
+            'email' => $request->email,
+            'password' => Hash::make($password),
+            'role' => $request->role,
+            'institution_id' => $institution->id,
+            'wallet_balance' => 0,
+            'referral_code' => User::generateReferralCode(),
+        ]);
+        
+        // Add to pivot table
+        $this->addUserToInstitution($user, $institution, $request->role);
         
         $user->assignRole($request->role);
         
@@ -131,9 +119,7 @@ class MemberController extends Controller
             $user->save();
         }
         
-        // ✅ Add to pivot table
-        $this->addUserToInstitution($user, $institution, $request->role);
-        
+        // Send welcome email
         try {
             \Mail::to($user->email)->send(new \App\Mail\WelcomeMember($user, $password));
         } catch (\Exception $e) {
@@ -141,7 +127,7 @@ class MemberController extends Controller
         }
         
         return redirect()->route('institution.members.index')
-            ->with('success', 'Member added successfully! A welcome email with login credentials has been sent to them.');
+            ->with('success', 'Member added successfully! A welcome email with login credentials has been sent.');
     }
     
     /**
@@ -149,11 +135,7 @@ class MemberController extends Controller
      */
     public function show(User $member)
     {
-        $institution = auth()->user()->institution;
-        
-        if (!$institution) {
-            abort(403, 'You are not associated with any institution.');
-        }
+        $institution = $this->getAuthInstitution();
         
         if ($member->institution_id !== $institution->id) {
             abort(403, 'This member does not belong to your institution.');
@@ -171,7 +153,7 @@ class MemberController extends Controller
      */
     public function edit(User $member)
     {
-        $institution = auth()->user()->institution;
+        $institution = $this->getAuthInstitution();
         
         if ($member->institution_id !== $institution->id) {
             abort(403, 'This member does not belong to your institution.');
@@ -201,7 +183,7 @@ class MemberController extends Controller
      */
     public function update(Request $request, User $member)
     {
-        $institution = auth()->user()->institution;
+        $institution = $this->getAuthInstitution();
         
         if ($member->institution_id !== $institution->id) {
             abort(403, 'This member does not belong to your institution.');
@@ -218,8 +200,7 @@ class MemberController extends Controller
                     'message' => 'You cannot change your own role.'
                 ], 403);
             }
-            return redirect()->back()
-                ->with('error', 'You cannot change your own role.');
+            return redirect()->back()->with('error', 'You cannot change your own role.');
         }
         
         $request->validate([
@@ -235,11 +216,9 @@ class MemberController extends Controller
                     'message' => 'Cannot assign Admin or Super Admin role.'
                 ], 403);
             }
-            return redirect()->back()
-                ->with('error', 'Cannot assign Admin or Super Admin role.');
+            return redirect()->back()->with('error', 'Cannot assign Admin or Super Admin role.');
         }
         
-        // If changing institution (optional - if you have this field)
         $oldInstitutionId = $member->institution_id;
         
         $member->update([
@@ -252,11 +231,12 @@ class MemberController extends Controller
         $member->is_institution_admin = ($request->role === 'institution_admin');
         $member->save();
         
-        // If institution changed, update pivot
-        if (isset($request->institution_id) && $request->institution_id != $oldInstitutionId) {
-            $member->institutions()->detach($oldInstitutionId);
-            $this->addUserToInstitution($member, Institution::find($request->institution_id), $request->role);
-        }
+        // Update pivot role
+        $member->institutions()->syncWithoutDetaching([
+            $institution->id => [
+                'role' => $request->role,
+            ]
+        ]);
         
         if ($request->ajax()) {
             return response()->json([
@@ -274,11 +254,7 @@ class MemberController extends Controller
      */
     public function editJson($id)
     {
-        $institution = auth()->user()->institution;
-        
-        if (!$institution) {
-            return response()->json(['success' => false, 'message' => 'No institution found'], 403);
-        }
+        $institution = $this->getAuthInstitution();
         
         if (!auth()->user()->isInstitutionAdmin() && !auth()->user()->isSuperAdmin()) {
             return response()->json([
@@ -305,7 +281,7 @@ class MemberController extends Controller
      */
     public function destroy(User $member)
     {
-        $institution = auth()->user()->institution;
+        $institution = $this->getAuthInstitution();
         
         if ($member->institution_id !== $institution->id) {
             abort(403, 'This member does not belong to your institution.');
@@ -316,13 +292,12 @@ class MemberController extends Controller
         }
         
         if ($member->id === auth()->id()) {
-            return redirect()->back()
-                ->with('error', 'You cannot delete yourself.');
+            return redirect()->back()->with('error', 'You cannot delete yourself.');
         }
         
         $name = $member->full_name;
         
-        // ✅ Remove from pivot table
+        // Remove from pivot table
         $member->institutions()->detach($institution->id);
         
         $member->update([
@@ -342,11 +317,7 @@ class MemberController extends Controller
      */
     public function trashed(Request $request)
     {
-        $institution = auth()->user()->institution;
-        
-        if (!$institution) {
-            abort(403, 'You are not associated with any institution.');
-        }
+        $institution = $this->getAuthInstitution();
         
         if (!auth()->user()->isInstitutionAdmin() && !auth()->user()->isSuperAdmin()) {
             abort(403, 'You do not have permission to view trashed members.');
@@ -371,11 +342,7 @@ class MemberController extends Controller
      */
     public function restore($id)
     {
-        $institution = auth()->user()->institution;
-        
-        if (!$institution) {
-            abort(403, 'You are not associated with any institution.');
-        }
+        $institution = $this->getAuthInstitution();
         
         if (!auth()->user()->isInstitutionAdmin() && !auth()->user()->isSuperAdmin()) {
             abort(403, 'You do not have permission to restore members.');
@@ -387,7 +354,7 @@ class MemberController extends Controller
         
         $member->restore();
         
-        // ✅ Re-add to pivot when restoring
+        // Re-add to pivot when restoring
         $this->addUserToInstitution($member, $institution, $member->role ?? 'user');
         
         $role = $member->role ?? 'user';
@@ -402,11 +369,7 @@ class MemberController extends Controller
      */
     public function forceDelete($id)
     {
-        $institution = auth()->user()->institution;
-        
-        if (!$institution) {
-            abort(403, 'You are not associated with any institution.');
-        }
+        $institution = $this->getAuthInstitution();
         
         if (!auth()->user()->isInstitutionAdmin() && !auth()->user()->isSuperAdmin()) {
             abort(403, 'You do not have permission to permanently delete members.');
@@ -429,7 +392,7 @@ class MemberController extends Controller
      */
     public function updateRole(Request $request, User $member)
     {
-        $institution = auth()->user()->institution;
+        $institution = $this->getAuthInstitution();
         
         if ($member->institution_id !== $institution->id) {
             return response()->json([
@@ -468,7 +431,7 @@ class MemberController extends Controller
         $member->is_institution_admin = ($request->role === 'institution_admin');
         $member->save();
         
-        // ✅ Update pivot role
+        // Update pivot role
         $member->institutions()->syncWithoutDetaching([
             $institution->id => [
                 'role' => $request->role,
@@ -488,15 +451,14 @@ class MemberController extends Controller
      */
     public function directory()
     {
-        $institution = auth()->user()->institution;
+        $institution = $this->getAuthInstitution();
         
-        if (!$institution) {
-            abort(403, 'You are not associated with any institution.');
-        }
+        // Get all members of the institution
+        $allMembers = User::where('institution_id', $institution->id)
+            ->whereNull('deleted_at')
+            ->get();
         
-        $members = User::where('institution_id', $institution->id)->get();
-        
-        $groupedMembers = $members->groupBy(function($user) {
+        $groupedMembers = $allMembers->groupBy(function($user) {
             return $user->getRoleNames()->first() ?? 'user';
         });
         
@@ -530,6 +492,7 @@ class MemberController extends Controller
         
         return view('institution.members.directory', compact(
             'institution', 
+            'allMembers',
             'groupedMembers',
             'roleLabels',
             'roleColors',
@@ -550,7 +513,6 @@ class MemberController extends Controller
         }
 
         $format = $request->query('format', 'csv');
-
         $members = User::where('institution_id', $institution->id)->get();
 
         if ($format === 'csv') {
@@ -559,8 +521,7 @@ class MemberController extends Controller
             return $this->exportPdf($members, $institution);
         }
 
-        return redirect()->back()
-            ->with('error', 'Unsupported export format.');
+        return redirect()->back()->with('error', 'Unsupported export format.');
     }
 
     /**
@@ -597,7 +558,7 @@ class MemberController extends Controller
     private function exportPdf($members, $institution)
     {
         try {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('institution.members.export-pdf', [
+            $pdf = Pdf::loadView('institution.members.export-pdf', [
                 'members' => $members,
                 'institution' => $institution,
                 'date' => now()->format('Y-m-d H:i:s'),
@@ -608,15 +569,52 @@ class MemberController extends Controller
             return $pdf->download($filename);
         } catch (\Exception $e) {
             \Log::error('PDF Export Error: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Failed to generate PDF. Please try again.');
+            return redirect()->back()->with('error', 'Failed to generate PDF. Please try again.');
         }
+    }
+
+    /**
+     * Bulk action on members.
+     */
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'member_ids' => 'required|array',
+            'member_ids.*' => 'exists:users,id',
+            'action' => 'required|string|in:remove,activate,deactivate',
+        ]);
+        
+        $institution = $this->getAuthInstitution();
+        
+        if (!auth()->user()->isInstitutionAdmin() && !auth()->user()->isSuperAdmin()) {
+            abort(403, 'You do not have permission to perform bulk actions.');
+        }
+        
+        $members = User::where('institution_id', $institution->id)
+            ->whereIn('id', $request->member_ids)
+            ->get();
+        
+        foreach ($members as $member) {
+            if ($request->action === 'remove') {
+                $member->institutions()->detach($institution->id);
+                $member->institution_id = null;
+                $member->save();
+            } elseif ($request->action === 'activate') {
+                $member->email_verified_at = now();
+                $member->save();
+            } elseif ($request->action === 'deactivate') {
+                $member->email_verified_at = null;
+                $member->save();
+            }
+        }
+        
+        return redirect()->back()->with('success', 'Bulk action completed successfully!');
     }
 
     /**
      * Get the authenticated user's institution with authorization.
      */
-    private function getAuthInstitution(): \App\Models\Institution
+    private function getAuthInstitution(): Institution
     {
         $institution = auth()->user()->institution;
 
@@ -630,7 +628,7 @@ class MemberController extends Controller
     /**
      * Get role badge HTML.
      */
-    private function getRoleBadge($role)
+    private function getRoleBadge($role): string
     {
         $badges = [
             'librarian' => '<span class="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">📚 Librarian</span>',

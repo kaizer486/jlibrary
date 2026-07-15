@@ -246,7 +246,7 @@
 
     .founder-image-wrap {
         width: 100%;
-        height: 280px;
+        height: 350px;
         overflow: hidden;
         background: #f0f2f5;
         display: flex;
@@ -257,7 +257,7 @@
     .founder-image-wrap img {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit:fill;
         object-position: center top;
     }
 
@@ -419,23 +419,7 @@
 <!-- HERO SLIDER                                -->
 <!-- ========================================== -->
 <section class="hero-gradient relative overflow-hidden" id="hero-slider-container" style="padding-top: 0 !important; margin-top: 0 !important;">
-    <!-- Soft Blue Bubbles -->
-    <div class="absolute inset-0 pointer-events-none z-0">
-        
-        <div class="bubble bubble-blue-4 w-8 h-8 top-[30%] left-[75%]" style="animation-duration: 11s;"></div>
-        <div class="bubble bubble-blue-5 w-10 h-10 bottom-[40%] right-[40%]" style="animation-duration: 17s;"></div>
-        <div class="bubble bubble-blue-1 w-5 h-5 top-[15%] left-[50%]" style="animation-duration: 9s;"></div>
-        <div class="bubble bubble-blue-2 w-13 h-13 bottom-[5%] left-[35%]" style="animation-duration: 25s;"></div>
-        <div class="bubble bubble-blue-3 w-4 h-4 top-[45%] right-[25%]" style="animation-duration: 8s;"></div>
-        <div class="bubble bubble-blue-4 w-10 h-10 top-[80%] right-[10%]" style="animation-duration: 16s;"></div>
-        <div class="bubble bubble-blue-5 w-6 h-6 top-[60%] left-[10%]" style="animation-duration: 19s;"></div>
-        <div class="bubble bubble-blue-1 w-11 h-11 top-[25%] right-[45%]" style="animation-duration: 21s;"></div>
-        <div class="bubble bubble-blue-2 w-8 h-8 top-[40%] left-[20%]" style="animation-duration: 14s;"></div>
-        <div class="bubble bubble-blue-3 w-7 h-7 bottom-[30%] right-[55%]" style="animation-duration: 12s;"></div>
-        <div class="bubble bubble-blue-4 w-9 h-9 top-[10%] right-[30%]" style="animation-duration: 24s;"></div>
-        <div class="bubble bubble-blue-5 w-4 h-4 bottom-[20%] left-[25%]" style="animation-duration: 7s;"></div>
-        <div class="bubble bubble-blue-1 w-12 h-12 top-[55%] left-[55%]" style="animation-duration: 23s;"></div>
-    </div>
+   
 
     @php
         $slides = \App\Models\HeroSlide::active()->ordered()->get();
@@ -656,7 +640,7 @@
                                             {{ $item->category ?? 'General' }}
                                         </span>
                                         @if($item->is_featured)
-                                            <span class="text-xs">⭐</span>
+                                            <span class="text-xs"></span>
                                         @endif
                                     </div>
                                     @if($item->link)

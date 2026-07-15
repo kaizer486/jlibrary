@@ -20,12 +20,16 @@ class FounderController extends Controller
 
     /**
      * Show the form for creating a new founder.
-     */
-    public function create()
-    {
-        return view('super-admin.founders.create');
-    }
-
+     *//**
+ * Show the form for creating a new founder.
+ */
+public function create()
+{
+    // Get all founders ordered by their current order
+    $founders = Founder::orderBy('order')->get();
+    
+    return view('super-admin.founders.create', compact('founders'));
+}
     /**
      * Store a newly created founder.
      */
