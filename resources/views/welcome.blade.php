@@ -246,7 +246,7 @@
 
     .founder-image-wrap {
         width: 100%;
-        height: 350px;
+        height: 280px;
         overflow: hidden;
         background: #f0f2f5;
         display: flex;
@@ -257,7 +257,7 @@
     .founder-image-wrap img {
         width: 100%;
         height: 100%;
-        object-fit:fill;
+        object-fit: fill;
         object-position: center top;
     }
 
@@ -419,7 +419,7 @@
 <!-- HERO SLIDER                                -->
 <!-- ========================================== -->
 <section class="hero-gradient relative overflow-hidden" id="hero-slider-container" style="padding-top: 0 !important; margin-top: 0 !important;">
-   
+ 
 
     @php
         $slides = \App\Models\HeroSlide::active()->ordered()->get();
@@ -460,8 +460,7 @@
                         <!-- Image -->
                         <div class="hidden lg:block relative z-20">
                             <div class="dashboard-image">
-                                <img src="{{ asset('storage/' . $slide->image) }}" 
-                                     alt="{{ $slide->title }}">
+                           <img src="{{ url('media/' . $slide->image) }}" alt="{{ $slide->title }}">
                             </div>
                         </div>
                     </div>
@@ -640,7 +639,7 @@
                                             {{ $item->category ?? 'General' }}
                                         </span>
                                         @if($item->is_featured)
-                                            <span class="text-xs"></span>
+                                            <span class="text-xs">⭐</span>
                                         @endif
                                     </div>
                                     @if($item->link)
@@ -764,14 +763,14 @@
                         <div class="founder-card-gradient">
                             <div class="founder-card-inner">
                                 <div class="founder-image-wrap">
-                                    @if($founder->photo)
-                                        <img src="{{ asset('storage/' . $founder->photo) }}" 
-                                             alt="{{ $founder->name }}">
-                                    @else
-                                        <div class="placeholder">
-                                            {{ substr($founder->name, 0, 1) }}
-                                        </div>
-                                    @endif
+                                   @if($founder->photo)
+    <img src="{{ url('media/' . $founder->photo) }}" 
+         alt="{{ $founder->name }}">
+@else
+    <div class="placeholder">
+        {{ substr($founder->name, 0, 1) }}
+    </div>
+@endif
                                 </div>
 
                                 <div class="p-6 text-center">
