@@ -3,14 +3,16 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/jlibrary/public_html
 
-    # Copy application directories
-    - /bin/cp -R app $DEPLOYPATH
-    - /bin/cp -R bootstrap $DEPLOYPATH
-    - /bin/cp -R config $DEPLOYPATH
-    - /bin/cp -R database $DEPLOYPATH
-    - /bin/cp -R public/* $DEPLOYPATH
-    - /bin/cp -R resources $DEPLOYPATH
-    - /bin/cp -R routes $DEPLOYPATH
+    # Sync application directories
+    - /usr/bin/rsync -a --delete app/ $DEPLOYPATH/app/
+    - /usr/bin/rsync -a --delete bootstrap/ $DEPLOYPATH/bootstrap/
+    - /usr/bin/rsync -a --delete config/ $DEPLOYPATH/config/
+    - /usr/bin/rsync -a --delete database/ $DEPLOYPATH/database/
+    - /usr/bin/rsync -a --delete resources/ $DEPLOYPATH/resources/
+    - /usr/bin/rsync -a --delete routes/ $DEPLOYPATH/routes/
+
+    # Sync public assets
+    - /usr/bin/rsync -a public/ $DEPLOYPATH/
 
     # Copy root files
     - /bin/cp artisan $DEPLOYPATH
@@ -18,7 +20,4 @@ deployment:
     - /bin/cp composer.lock $DEPLOYPATH
 
     # Clear Laravel caches
-    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan config:clear
-    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan route:clear
-    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan view:clear
-    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan cache:clear
+    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan optimize:clear
