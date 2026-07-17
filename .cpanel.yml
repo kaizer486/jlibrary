@@ -1,23 +1,18 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/jlibrary/public_html
-
     # Sync application directories
-    - /usr/bin/rsync -a --delete app/ $DEPLOYPATH/app/
-    - /usr/bin/rsync -a --delete bootstrap/ $DEPLOYPATH/bootstrap/
-    - /usr/bin/rsync -a --delete config/ $DEPLOYPATH/config/
-    - /usr/bin/rsync -a --delete database/ $DEPLOYPATH/database/
-    - /usr/bin/rsync -a --delete resources/ $DEPLOYPATH/resources/
-    - /usr/bin/rsync -a --delete routes/ $DEPLOYPATH/routes/
-
+    - /usr/bin/rsync -a --delete app/ /home/jlibrary/public_html/app/
+    - /usr/bin/rsync -a --delete bootstrap/ /home/jlibrary/public_html/bootstrap/
+    - /usr/bin/rsync -a --delete config/ /home/jlibrary/public_html/config/
+    - /usr/bin/rsync -a --delete database/ /home/jlibrary/public_html/database/
+    - /usr/bin/rsync -a --delete resources/ /home/jlibrary/public_html/resources/
+    - /usr/bin/rsync -a --delete routes/ /home/jlibrary/public_html/routes/
     # Sync public assets
-    - /usr/bin/rsync -a public/ $DEPLOYPATH/
-
+    - /usr/bin/rsync -a public/ /home/jlibrary/public_html/
     # Copy root files
-    - /bin/cp artisan $DEPLOYPATH
-    - /bin/cp composer.json $DEPLOYPATH
-    - /bin/cp composer.lock $DEPLOYPATH
-
+    - /bin/cp artisan /home/jlibrary/public_html
+    - /bin/cp composer.json /home/jlibrary/public_html
+    - /bin/cp composer.lock /home/jlibrary/public_html
     # Clear Laravel caches
-    - /opt/cpanel/ea-php84/root/usr/bin/php $DEPLOYPATH/artisan optimize:clear
+    - /opt/cpanel/ea-php84/root/usr/bin/php /home/jlibrary/public_html/artisan optimize:clear
