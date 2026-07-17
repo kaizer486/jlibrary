@@ -62,17 +62,22 @@ class ProfileController extends Controller
     public function updateAvatar(Request $request)
     {
         $request->validate([
-            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
         $user = Auth::user();
 
-        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-            Storage::disk('public')->delete($user->avatar);
+        // Delete old avatar
+        if ($user->avatar && file_exists(public_path('media/' . $user->avatar))) {
+            unlink(public_path('media/' . $user->avatar));
         }
 
-        $path = $request->file('avatar')->store('avatars', 'public');
-        $user->avatar = $path;
+        // Store directly in public/media
+        $file = $request->file('avatar');
+        $filename = 'avatar_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('media'), $filename);
+
+        $user->avatar = $filename;
         $user->save();
 
         return redirect()->back()->with('success', 'Avatar updated successfully!');
@@ -81,17 +86,22 @@ class ProfileController extends Controller
     public function updateCover(Request $request)
     {
         $request->validate([
-            'cover_photo' => 'required|image|mimes:jpeg,png,jpg|max:5120'
+            'cover_photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120'
         ]);
 
         $user = Auth::user();
 
-        if ($user->cover_photo && Storage::disk('public')->exists($user->cover_photo)) {
-            Storage::disk('public')->delete($user->cover_photo);
+        // Delete old cover
+        if ($user->cover_photo && file_exists(public_path('media/' . $user->cover_photo))) {
+            unlink(public_path('media/' . $user->cover_photo));
         }
 
-        $path = $request->file('cover_photo')->store('covers', 'public');
-        $user->cover_photo = $path;
+        // Store directly in public/media
+        $file = $request->file('cover_photo');
+        $filename = 'cover_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('media'), $filename);
+
+        $user->cover_photo = $filename;
         $user->save();
 
         return redirect()->back()->with('success', 'Cover photo updated successfully!');
@@ -101,8 +111,8 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-            Storage::disk('public')->delete($user->avatar);
+        if ($user->avatar && file_exists(public_path('media/' . $user->avatar))) {
+            unlink(public_path('media/' . $user->avatar));
         }
         
         $user->avatar = null;
@@ -115,8 +125,8 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
         
-        if ($user->cover_photo && Storage::disk('public')->exists($user->cover_photo)) {
-            Storage::disk('public')->delete($user->cover_photo);
+        if ($user->cover_photo && file_exists(public_path('media/' . $user->cover_photo))) {
+            unlink(public_path('media/' . $user->cover_photo));
         }
         
         $user->cover_photo = null;

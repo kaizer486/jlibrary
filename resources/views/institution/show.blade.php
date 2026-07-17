@@ -12,7 +12,7 @@
             <div class="flex items-center gap-4">
                 <div style="width: 4rem; height: 4rem; background: rgba(255,255,255,0.15); border-radius: 1rem; display: flex; align-items: center; justify-content: center;">
                     @if($institution->logo)
-                        <img src="{{ asset('storage/' . $institution->logo) }}" alt="{{ $institution->name }}" style="width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; object-fit: cover;">
+                        <img src="{{ url('media/' . $institution->logo) }}" alt="{{ $institution->name }}" style="width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; object-fit: cover;">
                     @else
                         <i class="ti ti-building" style="font-size: 1.75rem;"></i>
                     @endif

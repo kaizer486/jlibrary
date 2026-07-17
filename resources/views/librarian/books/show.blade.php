@@ -32,7 +32,7 @@
                 <!-- Cover -->
                 <div class="md:col-span-1">
                     @if($book->cover_image)
-                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full rounded-lg">
+                        <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full rounded-lg">
                     @else
                         <div class="w-full aspect-[3/4] bg-slate-800 rounded-lg flex items-center justify-center">
                             <i class="ti ti-book text-6xl text-purple-400"></i>
@@ -111,7 +111,7 @@
                     <i class="ti ti-arrow-left"></i> Back
                 </a>
                 @if($book->file_path)
-                    <a href="{{ asset('storage/' . $book->file_path) }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition">
+                   <a href="{{ url('media/' . $book->file_path) }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition">
                         <i class="ti ti-file-pdf"></i> View PDF
                     </a>
                 @endif

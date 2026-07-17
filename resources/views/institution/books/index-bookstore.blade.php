@@ -58,7 +58,7 @@
                                 <td style="padding: 0.75rem 1rem;">
                                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                                         @if($book->cover_image)
-                                            <img src="{{ asset('storage/' . $book->cover_image) }}" 
+                                            <img src="{{ url('media/' . $book->cover_image) }}" 
                                                  alt="{{ $book->title }}" 
                                                  style="width: 3rem; height: 4rem; object-fit: cover; border-radius: 0.5rem; border: 1px solid #e2e0db;">
                                         @else

@@ -91,7 +91,7 @@
         <!-- Cover Image -->
         <div class="overflow-hidden rounded-2xl relative group" style="background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
             @if($book->cover_image)
-                <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-auto group-hover:scale-105 transition duration-700 ease-in-out">
+               <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-auto group-hover:scale-105 transition duration-700 ease-in-out">
             @else
                 <div class="w-full aspect-[2/3] flex items-center justify-center" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
                     <i class="ti ti-book text-8xl" style="color: rgba(219, 87, 10, 0.3);"></i>
@@ -175,7 +175,7 @@
                 @endphp
 
                 @if($canAccess)
-                    <a href="{{ asset('storage/' . $book->file_path) }}" target="_blank" 
+                    <a href="{{ url('media/' . $book->file_path) }}" target="_blank" 
                        class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02]" 
                        style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);">
                         <i class="ti ti-file-pdf text-xl"></i> Read / Download
@@ -599,7 +599,7 @@
                    style="background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
                     <div class="aspect-[2/3] rounded-xl overflow-hidden relative" style="background: rgba(124, 58, 237, 0.06);">
                         @if($related->cover_image)
-                            <img src="{{ asset('storage/' . $related->cover_image) }}" alt="{{ $related->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <img src="{{ url('media/' . $related->cover_image) }}" alt="{{ $related->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         @else
                             <div class="w-full h-full flex items-center justify-center">
                                 <i class="ti ti-book text-3xl" style="color: rgba(124, 58, 237, 0.15);"></i>
@@ -663,7 +663,7 @@
         <!-- Book Info -->
         <div class="flex gap-3 mb-4 p-3 rounded-xl" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
             @if($book->cover_image)
-                <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-16 h-20 object-cover rounded-lg">
+                <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-16 h-20 object-cover rounded-lg">
             @endif
             <div>
                 <p class="font-semibold" style="color: #1a1a2e;">{{ $book->title }}</p>

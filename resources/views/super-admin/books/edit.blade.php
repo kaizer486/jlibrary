@@ -27,7 +27,7 @@
                 <p class="text-sm font-semibold text-gray-700 mb-3">Current Cover</p>
                 <div class="flex items-center gap-4">
                     @if($book->cover_image)
-                        <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-24 h-32 object-cover rounded-lg shadow">
+                       <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-24 h-32 object-cover rounded-lg shadow">
                     @else
                         <div class="w-24 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
                             <i class="ti ti-book text-gray-400 text-3xl"></i>

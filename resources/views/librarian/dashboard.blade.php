@@ -135,7 +135,7 @@
                                         <td class="py-3 pr-4">
                                             <div class="flex items-center gap-2">
                                                 @if($book->cover_image)
-                                                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-8 h-10 object-cover rounded">
+                                                   <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-8 h-10 object-cover rounded">
                                                 @else
                                                     <div class="w-8 h-10 bg-orange-100 rounded flex items-center justify-center">
                                                         <i class="ti ti-book text-orange-400 text-xs"></i>

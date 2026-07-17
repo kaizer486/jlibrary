@@ -138,7 +138,7 @@
                             <a href="{{ route('institution.books.show', $book->id) }}" 
                                style="display: inline-block; text-decoration: none; transition: transform 0.2s ease; cursor: pointer;"
                                title="{{ $book->title }} - {{ $book->author }}">
-                                <div style="height: {{ rand(60, 100) }}px; width: {{ rand(18, 30) }}px; border-radius: 3px 3px 0 0; box-shadow: 2px 0 5px rgba(0,0,0,0.15); position: relative; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); background: {{ $book->cover_image ? 'url('.asset('storage/'.$book->cover_image).') center/cover' : 'linear-gradient(135deg, #7c3aed, #4f46e5)' }};">
+                                <div style="height: {{ rand(60, 100) }}px; width: {{ rand(18, 30) }}px; border-radius: 3px 3px 0 0; box-shadow: 2px 0 5px rgba(0,0,0,0.15); position: relative; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); background: {{ $book->cover_image ? 'url('.url('media/'.$book->cover_image).') center/cover' : 'linear-gradient(135deg, #7c3aed, #4f46e5)' }};">
                                     @if(!$book->cover_image)
                                         <span style="color: white; font-size: 0.5rem; font-weight: 700; writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 1px; text-shadow: 0 0 5px rgba(0,0,0,0.5); padding: 2px;">{{ strtoupper(substr($book->title, 0, 3)) }}</span>
                                     @endif

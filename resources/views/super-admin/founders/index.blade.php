@@ -43,7 +43,7 @@
                     <!-- Photo -->
                     <div class="flex justify-center mb-4">
                         @if($founder->photo)
-                            <img src="{{ asset('storage/' . $founder->photo) }}" 
+                            <img src="{{ url('media/' . $founder->photo) }}" 
                                  alt="{{ $founder->name }}" 
                                  class="w-24 h-24 rounded-full object-cover border-4 border-purple-100">
                         @else

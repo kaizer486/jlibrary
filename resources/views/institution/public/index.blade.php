@@ -126,7 +126,7 @@
                                     <a href="{{ route('institution.public.show', [$institution->id, $book->id]) }}"
                                        class="spine-book-cover" title="{{ $book->title }}">
                                         @if($book->cover_image)
-                                            <img src="{{ asset('storage/' . $book->cover_image) }}" 
+                                           <img src="{{ url('media/' . $book->cover_image) }}" 
                                                  alt="{{ $book->title }}"
                                                  class="spine-book-img">
                                         @else
@@ -208,7 +208,7 @@
                                 @endif
                             @endif
                             @if($book->cover_image)
-                                <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+                                <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}">
                             @else
                                 <div class="placeholder-icon">
                                     <i class="ti ti-book text-3xl text-white/60"></i>
@@ -250,7 +250,7 @@
                                 @endif
                             @endif
                             @if($book->cover_image)
-                                <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}">
+                                <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}">
                             @else
                                 <div class="placeholder-icon">
                                     <i class="ti ti-book text-3xl text-white/60"></i>
@@ -286,7 +286,7 @@
                    class="book-shelf-card p-3 hover:shadow-lg transition group">
                     <div class="aspect-[2/3] bg-purple-900/20 rounded-lg overflow-hidden relative">
                         @if($book->cover_image)
-                            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                         @else
                             <div class="w-full h-full flex items-center justify-center">
                                 <i class="ti ti-book text-4xl text-purple-400/40"></i>

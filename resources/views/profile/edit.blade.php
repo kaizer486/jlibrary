@@ -12,135 +12,117 @@
             </div>
             <p class="text-gray-600">Customize your public profile and personal information</p>
         </div>
-      <!-- Success Message -->
-@if(session('success'))
-    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-        <i class="ti ti-circle-check text-green-600 text-xl"></i>
-        <div>
-            <p class="text-green-700 font-medium">{{ session('success') }}</p>
-        </div>
-        <button onclick="this.parentElement.remove()" class="ml-auto text-green-500 hover:text-green-700">
-            <i class="ti ti-x text-sm"></i>
-        </button>
-    </div>
-@endif
 
-<!-- INSTITUTION INFO CARD - Only shows if user belongs to an institution -->
-@if(Auth::user()->institution_id && Auth::user()->institution)
-<div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-6 border border-indigo-100">
-    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
-            <i class="ti ti-building text-white text-lg"></i>
-        </div>
-        <div class="flex-1 min-w-0">
-            <p class="text-xs text-gray-500 uppercase tracking-wide">Your Institution</p>
-            <p class="font-semibold text-gray-800 institution-name-multiline" title="{{ Auth::user()->institution->name }}">
-                {{ Auth::user()->institution->name }}
-            </p>
-            <p class="text-xs text-gray-500">You are a member of this institution</p>
-        </div>
-        <a href="{{ route('institution.members.directory') }}" class="text-indigo-600 hover:text-indigo-700 text-sm flex items-center gap-1 whitespace-nowrap flex-shrink-0">
-            View Members <i class="ti ti-arrow-right"></i>
-        </a>
-    </div>
-</div>
-@endif
-
-<!-- Error Messages -->
-@if($errors->any())
-    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-        <div class="flex items-center gap-2 mb-2">
-            <i class="ti ti-alert-circle text-red-600 text-lg"></i>
-            <p class="text-red-700 font-medium">Please fix the following errors:</p>
-        </div>
-        <ul class="list-disc list-inside space-y-1">
-            @foreach($errors->all() as $error)
-                <li class="text-red-600 text-sm">{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-        <!-- Error Messages -->
-        @if($errors->any())
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <div class="flex items-center gap-2 mb-2">
-                    <i class="ti ti-alert-circle text-red-600 text-lg"></i>
-                    <p class="text-red-700 font-medium">Please fix the following errors:</p>
-                </div>
-                <ul class="list-disc list-inside space-y-1">
-                    @foreach($errors->all() as $error)
-                        <li class="text-red-600 text-sm">{{ $error }}</li>
-                    @endforeach
-                </ul>
+        <!-- Success Message -->
+        @if(session('success'))
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center gap-3">
+            <i class="ti ti-circle-check text-green-600 text-xl"></i>
+            <div>
+                <p class="text-green-700 font-medium">{{ session('success') }}</p>
             </div>
+            <button onclick="this.parentElement.remove()" class="ml-auto text-green-500 hover:text-green-700">
+                <i class="ti ti-x text-sm"></i>
+            </button>
+        </div>
         @endif
 
-        <!-- Cover Photo & Avatar Section -->
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
-            <!-- Cover Photo -->
-            <div class="relative h-48 bg-gradient-to-r from-purple-500 to-pink-500">
-                @if($user->cover_photo)
-                    <img src="{{ Storage::url($user->cover_photo) }}" class="w-full h-full object-cover">
-                @endif
-                <div class="absolute bottom-4 right-4 flex gap-2">
-                    <button onclick="document.getElementById('cover-input').click()" 
-                            class="bg-black/50 hover:bg-black/70 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 transition">
-                        <i class="ti ti-camera"></i>
-                        Change Cover
-                    </button>
-                    @if($user->cover_photo)
-                        <form method="POST" action="{{ route('profile.cover.delete') }}" class="inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="bg-red-500/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 transition" onclick="return confirm('Remove cover photo?')">
-                                <i class="ti ti-trash"></i>
-                                Remove
-                            </button>
-                        </form>
-                    @endif
+        <!-- Institution Info Card -->
+        @if(Auth::user()->institution_id && Auth::user()->institution)
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-6 border border-indigo-100">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="ti ti-building text-white text-lg"></i>
                 </div>
-                <form id="cover-form" method="POST" action="{{ route('profile.cover') }}" enctype="multipart/form-data">
-                    @csrf
-                    <input type="file" id="cover-input" name="cover_photo" accept="image/*" class="hidden" onchange="this.form.submit()">
-                </form>
-            </div>
-            
-            <!-- Avatar -->
-            <div class="relative px-6 pb-6">
-                <div class="flex justify-between items-end -mt-16">
-                    <div class="relative">
-                        <div class="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center overflow-hidden shadow-lg">
-                            @if($user->avatar)
-                                <img src="{{ Storage::url($user->avatar) }}" class="w-full h-full object-cover">
-                            @else
-                                <i class="ti ti-user text-white text-5xl"></i>
-                            @endif
-                        </div>
-                        <button onclick="document.getElementById('avatar-input').click()" 
-                                class="absolute bottom-1 right-1 bg-purple-600 text-white p-1.5 rounded-full hover:bg-purple-700 transition shadow-md">
-                            <i class="ti ti-camera text-sm"></i>
-                        </button>
-                        @if($user->avatar)
-                            <form method="POST" action="{{ route('profile.avatar.delete') }}" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition shadow-md" onclick="return confirm('Remove avatar?')">
-                                    <i class="ti ti-trash text-xs"></i>
-                                </button>
-                            </form>
-                        @endif
-                        <form id="avatar-form" method="POST" action="{{ route('profile.avatar') }}" enctype="multipart/form-data">
-                            @csrf
-                            <input type="file" id="avatar-input" name="avatar" accept="image/*" class="hidden" onchange="this.form.submit()">
-                        </form>
-                    </div>
-                    <a href="{{ route('profile.show', $user->id) }}" class="text-purple-600 text-sm hover:underline">
-                        View Public Profile →
-                    </a>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Your Institution</p>
+                    <p class="font-semibold text-gray-800">{{ Auth::user()->institution->name }}</p>
+                    <p class="text-xs text-gray-500">You are a member of this institution</p>
                 </div>
+                <a href="{{ route('institution.members.directory') }}" class="text-indigo-600 hover:text-indigo-700 text-sm flex items-center gap-1 whitespace-nowrap flex-shrink-0">
+                    View Members <i class="ti ti-arrow-right"></i>
+                </a>
             </div>
         </div>
+        @endif
 
+        <!-- Error Messages -->
+        @if($errors->any())
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="ti ti-alert-circle text-red-600 text-lg"></i>
+                <p class="text-red-700 font-medium">Please fix the following errors:</p>
+            </div>
+            <ul class="list-disc list-inside space-y-1">
+                @foreach($errors->all() as $error)
+                    <li class="text-red-600 text-sm">{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+       <!-- Cover Photo & Avatar Section -->
+<div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+    <!-- Cover Photo -->
+    <div class="relative h-48 bg-gradient-to-r from-purple-500 to-pink-500">
+        @if($user->cover_photo)
+            <img src="{{ url('media/' . $user->cover_photo) }}" class="w-full h-full object-cover" alt="Cover Photo">
+        @endif
+        <div class="absolute bottom-4 right-4 flex gap-2">
+            <label for="cover-input" class="bg-black/50 hover:bg-black/70 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 transition" style="cursor: pointer;">
+                <i class="ti ti-camera"></i>
+                Change Cover
+            </label>
+            @if($user->cover_photo)
+                <form method="POST" action="{{ route('profile.cover.delete') }}" class="inline">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="bg-red-500/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 transition" onclick="return confirm('Remove cover photo?')">
+                        <i class="ti ti-trash"></i>
+                        Remove
+                    </button>
+                </form>
+            @endif
+        </div>
+        <form id="cover-form" method="POST" action="{{ route('profile.cover') }}" enctype="multipart/form-data">
+            @csrf
+            <input type="file" id="cover-input" name="cover_photo" accept="image/*" class="hidden" onchange="this.form.submit()">
+        </form>
+    </div>
+    
+    <!-- Avatar -->
+    <div class="relative px-6 pb-6">
+        <div class="flex justify-between items-end -mt-16">
+            <div class="relative">
+                <div class="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center overflow-hidden shadow-lg">
+                    @if($user->avatar)
+                        <img src="{{ url('media/' . $user->avatar) }}" class="w-full h-full object-cover" alt="Avatar">
+                    @else
+                        <i class="ti ti-user text-white text-5xl"></i>
+                    @endif
+                </div>
+                <label for="avatar-input" class="absolute bottom-1 right-1 bg-purple-600 text-white p-1.5 rounded-full hover:bg-purple-700 transition shadow-md" style="cursor: pointer;">
+                    <i class="ti ti-camera text-sm"></i>
+                </label>
+                @if($user->avatar)
+                    <form method="POST" action="{{ route('profile.avatar.delete') }}" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition shadow-md" onclick="return confirm('Remove avatar?')">
+                            <i class="ti ti-trash text-xs"></i>
+                        </button>
+                    </form>
+                @endif
+                <form id="avatar-form" method="POST" action="{{ route('profile.avatar') }}" enctype="multipart/form-data">
+                    @csrf
+                    <input type="file" id="avatar-input" name="avatar" accept="image/*" class="hidden" onchange="this.form.submit()">
+                </form>
+            </div>
+            <a href="{{ route('profile.show', $user->id) }}" class="text-purple-600 text-sm hover:underline">
+                View Public Profile →
+            </a>
+        </div>
+    </div>
+</div>
         <!-- Profile Edit Form -->
         <form method="POST" action="{{ route('profile.update') }}" class="space-y-6">
             @csrf
@@ -328,4 +310,30 @@
         
     </div>
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cover photo upload - using label approach which is more reliable
+        const coverInput = document.getElementById('cover-input');
+        if (coverInput) {
+            coverInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    document.getElementById('cover-form').submit();
+                }
+            });
+        }
+
+        // Avatar upload
+        const avatarInput = document.getElementById('avatar-input');
+        if (avatarInput) {
+            avatarInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    document.getElementById('avatar-form').submit();
+                }
+            });
+        }
+    });
+</script>
+@endpush
 @endsection

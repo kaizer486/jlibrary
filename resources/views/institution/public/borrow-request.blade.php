@@ -69,7 +69,7 @@
             <div style="background: rgba(91, 33, 182, 0.04); border: 1px solid rgba(91, 33, 182, 0.06); border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
                 <div style="width: 4rem; height: 5rem; background: rgba(91, 33, 182, 0.06); border-radius: 0.5rem; overflow: hidden; flex-shrink: 0;">
                     @if($book->cover_image)
-                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" style="width: 100%; height: 100%; object-fit: cover;">
                     @else
                         <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
                             <i class="ti ti-book" style="font-size: 1.5rem; color: rgba(91, 33, 182, 0.2);"></i>

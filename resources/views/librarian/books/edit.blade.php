@@ -172,8 +172,8 @@
                             <label class="block text-sm font-semibold text-slate-300 mb-2">Cover Image</label>
                             @if($book->cover_image)
                                 <div class="mb-2">
-                                    <img src="{{ asset('storage/' . $book->cover_image) }}" alt="Current cover" class="w-20 h-28 object-cover rounded-lg">
-                                    <p class="text-xs text-slate-500 mt-1">Current cover</p>
+                                   <img src="{{ url('media/' . $book->cover_image) }}" alt="Current cover" class="w-20 h-28 object-cover rounded-lg">
+<p class="text-xs text-slate-500 mt-1">Current cover</p>
                                 </div>
                             @endif
                             <input type="file" name="cover_image" accept="image/*"

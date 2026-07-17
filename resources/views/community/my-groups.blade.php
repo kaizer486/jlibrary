@@ -18,7 +18,7 @@
                 <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
                     <div class="h-32 bg-gradient-to-r from-jlibrary-500 to-jlibrary-700 relative">
                         @if($group->cover_image)
-                            <img src="{{ Storage::url($group->cover_image) }}" class="w-full h-full object-cover">
+                           <img src="{{ url('media/' . $group->cover_image) }}" class="w-full h-full object-cover">
                         @else
                             <div class="w-full h-full flex items-center justify-center">
                                 <i class="ti ti-users text-5xl text-white/50"></i>

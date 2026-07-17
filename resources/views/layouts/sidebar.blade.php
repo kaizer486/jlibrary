@@ -12,51 +12,53 @@
     </div>
 
     <!-- User Info -->
-    <div class="p-4 border-b border-white/10">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+<div class="p-4 border-b border-white/10">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+            @if(Auth::user()->avatar)
+                <img src="{{ url('media/' . Auth::user()->avatar) }}" class="w-full h-full object-cover" alt="Avatar">
+            @else
                 <i class="ti ti-user text-white text-lg"></i>
-            </div>
-            <div class="flex-1">
-                <p class="font-semibold text-sm text-white">{{ Auth::user()->full_name }}</p>
-                <p class="text-xs text-gray-400">
-                    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-                        👑 Super Administrator
-                        @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
-                        🎨 Media Team
-                    @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-                        🛡️ Administrator
-                    @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
-                        🏢 Institution Admin
-                    @elseif(auth()->user()->role === 'school_admin' || auth()->user()->hasRole('school_admin'))
-                        🏫 School Admin
-                    @elseif(auth()->user()->role === 'college_admin' || auth()->user()->hasRole('college_admin'))
-                        🎓 College Admin
-                    @elseif(auth()->user()->role === 'university_admin' || auth()->user()->hasRole('university_admin'))
-                        🏛️ University Admin
-                    @elseif(auth()->user()->role === 'library_admin' || auth()->user()->hasRole('library_admin'))
-                        📚 Library Admin
-                    @elseif(auth()->user()->role === 'bookstore_admin' || auth()->user()->hasRole('bookstore_admin'))
-                        📖 Bookstore Admin
-                    @elseif(auth()->user()->role === 'publisher_admin' || auth()->user()->hasRole('publisher_admin'))
-                        📰 Publisher Admin
-                    @elseif(auth()->user()->role === 'researcher' || auth()->user()->hasRole('researcher'))
-                        🔬 Researcher
-                    @elseif(auth()->user()->role === 'author' || auth()->user()->hasRole('author'))
-                        ✍️ Author
-                    @elseif(auth()->user()->role === 'librarian' || auth()->user()->hasRole('librarian'))
-                        📚 Librarian
-                    @elseif(auth()->user()->role === 'instructor' || auth()->user()->hasRole('instructor'))
-                        👨‍🏫 Instructor
-                    @else
-                        👤 Member
-                    @endif
-                </p>
-            </div>
+            @endif
+        </div>
+        <div class="flex-1">
+            <p class="font-semibold text-sm text-white">{{ Auth::user()->full_name }}</p>
+            <p class="text-xs text-gray-400">
+                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                    👑 Super Administrator
+                @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+                    🎨 Media Team
+                @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                    🛡️ Administrator
+                @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                    🏢 Institution Admin
+                @elseif(auth()->user()->role === 'school_admin' || auth()->user()->hasRole('school_admin'))
+                    🏫 School Admin
+                @elseif(auth()->user()->role === 'college_admin' || auth()->user()->hasRole('college_admin'))
+                    🎓 College Admin
+                @elseif(auth()->user()->role === 'university_admin' || auth()->user()->hasRole('university_admin'))
+                    🏛️ University Admin
+                @elseif(auth()->user()->role === 'library_admin' || auth()->user()->hasRole('library_admin'))
+                    📚 Library Admin
+                @elseif(auth()->user()->role === 'bookstore_admin' || auth()->user()->hasRole('bookstore_admin'))
+                    📖 Bookstore Admin
+                @elseif(auth()->user()->role === 'publisher_admin' || auth()->user()->hasRole('publisher_admin'))
+                    📰 Publisher Admin
+                @elseif(auth()->user()->role === 'researcher' || auth()->user()->hasRole('researcher'))
+                    🔬 Researcher
+                @elseif(auth()->user()->role === 'author' || auth()->user()->hasRole('author'))
+                    ✍️ Author
+                @elseif(auth()->user()->role === 'librarian' || auth()->user()->hasRole('librarian'))
+                    📚 Librarian
+                @elseif(auth()->user()->role === 'instructor' || auth()->user()->hasRole('instructor'))
+                    👨‍🏫 Instructor
+                @else
+                    👤 Member
+                @endif
+            </p>
         </div>
     </div>
-
-   
+</div>   
  <!-- Navigation -->
     <nav class="flex-1 py-4">
         <div class="px-3 mb-2">

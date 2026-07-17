@@ -22,7 +22,7 @@
                 </div>
                 <div class="p-6 flex justify-center">
                     @if($book->cover_image)
-                        <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full max-w-[250px] rounded-xl shadow-lg">
+                       <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full max-w-[250px] rounded-xl shadow-lg">
                     @else
                         <div class="w-full max-w-[250px] h-64 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl flex items-center justify-center">
                             <i class="ti ti-books text-6xl text-gray-500"></i>
@@ -100,9 +100,9 @@
                         <div class="flex justify-between py-2">
                             <span class="text-gray-500">File Size</span>
                             <span class="text-sm text-gray-600">
-                                @if(Storage::disk('public')->exists($book->file_path))
-                                    {{ number_format(Storage::disk('public')->size($book->file_path) / 1024, 2) }} KB
-                                @else
+                               @if(file_exists(public_path('media/' . $book->file_path)))
+    {{ number_format(filesize(public_path('media/' . $book->file_path)) / 1024, 2) }} KB
+@else
                                     N/A
                                 @endif
                             </span>

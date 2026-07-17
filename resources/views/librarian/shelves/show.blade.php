@@ -124,7 +124,7 @@
                     <div class="px-6 py-3 flex items-center justify-between hover:bg-slate-800/50 transition">
                         <div class="flex items-center gap-3">
                             @if($book->cover_image)
-                                <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-10 h-14 object-cover rounded">
+                                <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-10 h-14 object-cover rounded">
                             @else
                                 <div class="w-10 h-14 bg-slate-800 rounded flex items-center justify-center">
                                     <i class="ti ti-book text-purple-400"></i>

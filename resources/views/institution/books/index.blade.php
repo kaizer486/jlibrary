@@ -93,7 +93,7 @@
                                 <td style="padding: 0.75rem 1rem;">
                                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                                         @if($book->cover_image)
-                                            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" style="width: 2.5rem; height: 3.5rem; object-fit: cover; border-radius: 0.5rem; border: 1px solid #e2e0db;">
+                                           <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" style="width: 2.5rem; height: 3.5rem; object-fit: cover; border-radius: 0.5rem; border: 1px solid #e2e0db;">
                                         @else
                                             <div style="width: 2.5rem; height: 3.5rem; background: #faf8f5; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; border: 1px solid #e2e0db;">
                                                 <i class="ti ti-book" style="color: #5b21b6;"></i>

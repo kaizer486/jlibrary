@@ -25,7 +25,7 @@
                style="background: linear-gradient(135deg, #db570a, #e87a2a); color: white;">
                 <i class="ti ti-library"></i> Go to Library
             </a>
-           @if(isset($book->file_path) && file_exists(storage_path('app/public/' . $book->file_path)))
+           @if(isset($book->file_path) && file_exists(public_path('media/' . $book->file_path)))
     <a href="{{ route('book.download', $book->id) }}" 
        class="flex-1 py-3 rounded-xl font-semibold text-center transition-all duration-300 hover:scale-[1.02]"
        style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;">

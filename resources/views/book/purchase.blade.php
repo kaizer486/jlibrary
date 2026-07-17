@@ -9,7 +9,7 @@
         
         <div class="flex gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
             @if($book->cover_image)
-                <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-24 h-32 object-cover rounded-lg">
+               <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-24 h-32 object-cover rounded-lg">
             @else
                 <div class="w-24 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
                     <i class="ti ti-book text-3xl text-gray-400"></i>

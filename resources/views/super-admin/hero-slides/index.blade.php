@@ -46,7 +46,7 @@
                         </td>
                         <td class="px-6 py-4">
                             @if($slide->image)
-                                <img src="{{ asset('storage/' . $slide->image) }}" alt="{{ $slide->title }}" class="w-20 h-14 object-cover rounded-lg">
+                                <img src="{{ url('media/' . $slide->image) }}" alt="{{ $slide->title }}" class="w-20 h-14 object-cover rounded-lg">
                             @else
                                 <div class="w-20 h-14 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">No image</div>
                             @endif

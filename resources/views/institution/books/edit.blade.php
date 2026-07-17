@@ -137,7 +137,7 @@
                     <div style="padding: 1.25rem;">
                         @if($book->cover_image)
                             <div style="margin-bottom: 0.75rem;">
-                                <img src="{{ asset('storage/' . $book->cover_image) }}" 
+                               <img src="{{ url('media/' . $book->cover_image) }}"
                                      alt="{{ $book->title }}" 
                                      style="width: 8rem; height: 10rem; object-fit: cover; border-radius: 0.5rem; border: 1px solid #e2e0db;">
                                 <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">Current cover</p>

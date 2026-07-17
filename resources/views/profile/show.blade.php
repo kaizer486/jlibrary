@@ -11,7 +11,7 @@
             <!-- Cover Photo -->
             <div class="relative h-48 bg-gradient-to-r from-purple-500 to-pink-500">
                 @if($user->cover_photo)
-                    <img src="{{ Storage::url($user->cover_photo) }}" class="w-full h-full object-cover">
+                   <img src="{{ url('media/' . $user->cover_photo) }}" class="w-full h-full object-cover">
                 @endif
             </div>
             
@@ -21,7 +21,7 @@
                     <div class="flex items-end gap-4">
                         <div class="w-32 h-32 rounded-full border-4 border-white bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center overflow-hidden">
                             @if($user->avatar)
-                                <img src="{{ Storage::url($user->avatar) }}" class="w-full h-full object-cover">
+                                <img src="{{ url('media/' . $user->avatar) }}" class="w-full h-full object-cover">
                             @else
                                 <i class="ti ti-user text-white text-5xl"></i>
                             @endif

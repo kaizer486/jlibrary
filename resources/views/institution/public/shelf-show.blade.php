@@ -109,7 +109,7 @@
                     <a href="{{ route('institution.public.show', [$institution->id, $book->id]) }}" 
                        style="display: inline-block; text-decoration: none; transition: all 0.3s ease; cursor: pointer;"
                        title="{{ $book->title }} - {{ $book->author }}">
-                        <div style="height: {{ rand(65, 95) }}px; width: {{ rand(20, 28) }}px; border-radius: 3px 3px 2px 2px; box-shadow: 2px 0 8px rgba(0,0,0,0.2), inset -1px 0 0 rgba(255,255,255,0.05); position: relative; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.08); background: {{ $book->cover_image ? 'url('.asset('storage/'.$book->cover_image).') center/cover' : $randomColor }};"
+                        <div style="height: {{ rand(65, 95) }}px; width: {{ rand(20, 28) }}px; border-radius: 3px 3px 2px 2px; box-shadow: 2px 0 8px rgba(0,0,0,0.2), inset -1px 0 0 rgba(255,255,255,0.05); position: relative; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.08); background: {{ $book->cover_image ? 'url('.url('media/'.$book->cover_image).') center/cover' : $randomColor }};"></div>
                              onmouseover="this.style.transform='translateY(-6px) scale(1.05)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.3)'"
                              onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='2px 0 8px rgba(0,0,0,0.2)'">
                             @if(!$book->cover_image)
@@ -170,7 +170,7 @@
                style="background: rgba(255,255,255,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,0.06); border-radius: 0.5rem; padding: 0.5rem; transition: all 0.3s ease; text-decoration: none; display: block;">
                 <div style="aspect-ratio: 2/3; background: rgba(91,33,182,0.04); border-radius: 0.4rem; overflow: hidden; position: relative;">
                     @if($book->cover_image)
-                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" 
+                        <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}"
                              style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;">
                     @else
                         <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">

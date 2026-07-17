@@ -50,7 +50,7 @@
                     @if($heroSlide->image)
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Current Image</label>
-                            <img src="{{ asset('storage/' . $heroSlide->image) }}" alt="{{ $heroSlide->title }}" class="max-h-48 rounded-lg border">
+                            <img src="{{ url('media/' . $heroSlide->image) }}" alt="{{ $heroSlide->title }}" class="max-h-48 rounded-lg border">
                         </div>
                     @endif
 

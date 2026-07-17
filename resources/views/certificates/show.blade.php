@@ -18,11 +18,11 @@
             <div class="p-4 bg-gray-100">
                 <div class="relative" style="background: #f8f9fa;">
                     @php
-                        $filePath = storage_path('app/public/' . $certificate->file_path);
+                        $filePath = public_path('media/' . $certificate->file_path);
                     @endphp
                     
                     @if(file_exists($filePath))
-                        <embed src="{{ asset('storage/' . $certificate->file_path) }}" 
+                        <embed src="{{ url('media/' . $certificate->file_path) }}" 
                                type="application/pdf"
                                class="w-full rounded-lg shadow-lg"
                                style="min-height: 500px; height: 70vh;">

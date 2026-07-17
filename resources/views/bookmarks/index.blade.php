@@ -21,7 +21,7 @@
                         <!-- Book Cover -->
                         <div class="relative h-40 bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
                             @if($book->cover_image)
-                                <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
+                               <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
                             @else
                                 <i class="ti ti-book text-5xl text-white/50"></i>
                             @endif

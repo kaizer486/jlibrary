@@ -159,7 +159,7 @@
                         <div class="flex items-center justify-between py-3 border-b last:border-0">
                             <div class="flex items-center gap-3">
                                 @if($book->cover_image)
-                                    <img src="{{ Storage::url($book->cover_image) }}" class="w-8 h-10 rounded object-cover">
+                                    <img src="{{ url('media/' . $book->cover_image) }}" class="w-8 h-10 rounded object-cover">
                                 @else
                                     <div class="w-8 h-10 bg-gray-200 rounded flex items-center justify-center">
                                         <i class="ti ti-book text-gray-400"></i>

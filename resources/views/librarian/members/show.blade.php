@@ -145,7 +145,7 @@
                             <a href="{{ route('librarian.books.show', $book) }}" class="bg-slate-800 border border-slate-700 rounded-xl p-3 text-center hover:bg-slate-700 transition">
                                 <div class="w-full h-20 bg-slate-700 rounded-lg flex items-center justify-center mb-2">
                                     @if($book->cover_image)
-                                        <img src="{{ asset('storage/' . $book->cover_image) }}" alt="{{ $book->title }}" class="h-full w-full object-cover rounded-lg">
+                                       <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="h-full w-full object-cover rounded-lg">
                                     @else
                                         <i class="ti ti-book text-2xl text-purple-400"></i>
                                     @endif

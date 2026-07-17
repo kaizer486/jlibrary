@@ -31,7 +31,7 @@
                     </div>
                     <div class="p-6 flex justify-center">
                         @if($book->cover_image)
-                            <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full max-w-[250px] rounded-xl shadow-lg">
+                           <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full max-w-[250px] rounded-xl shadow-lg">
                         @else
                             <div class="w-full max-w-[250px] h-64 bg-gradient-to-br from-slate-200 to-slate-300 rounded-xl flex items-center justify-center">
                                 <i class="ti ti-books text-6xl text-slate-500"></i>
@@ -123,7 +123,7 @@
                 <!-- Quick Actions -->
                 <div class="grid md:grid-cols-3 gap-4">
                     @if($book->file_path)
-                        <a href="{{ Storage::url($book->file_path) }}" target="_blank" 
+                        <a href="{{ url('media/' . $book->file_path) }}" target="_blank" 
                            class="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl text-center transition flex items-center justify-center gap-2">
                             <i class="ti ti-file-pdf"></i> View PDF
                         </a>

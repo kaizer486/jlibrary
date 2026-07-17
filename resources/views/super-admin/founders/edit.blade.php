@@ -58,7 +58,7 @@
             @if($founder->photo)
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Current Photo</label>
-                    <img src="{{ asset('storage/' . $founder->photo) }}" alt="{{ $founder->name }}" class="w-24 h-24 rounded-full object-cover border-4 border-purple-100">
+                    <img src="{{ url('media/' . $founder->photo) }}" alt="{{ $founder->name }}" class="w-24 h-24 rounded-full object-cover border-4 border-purple-100">
                 </div>
             @endif
 

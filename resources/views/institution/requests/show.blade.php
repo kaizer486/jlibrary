@@ -90,7 +90,7 @@
                 @if($request->document_path)
                     <div class="mt-4 bg-gray-50 rounded-lg p-4">
                         <p class="text-xs text-gray-400 uppercase font-semibold">Supporting Document</p>
-                        <a href="{{ asset('storage/' . $request->document_path) }}" target="_blank" class="text-blue-600 hover:underline flex items-center gap-2">
+                        <a href="{{ url('media/' . $request->document_path) }}" target="_blank" class="text-blue-600 hover:underline flex items-center gap-2">
                             <i class="ti ti-file"></i> Download Document
                         </a>
                     </div>

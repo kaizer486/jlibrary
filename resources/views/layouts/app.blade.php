@@ -376,11 +376,14 @@
                                     <i class="ti ti-wallet text-green-600 text-xs"></i>
                                     <span class="text-xs font-semibold text-green-700">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</span>
                                 </div>
-                                
-                                <!-- Avatar -->
-                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                                    <i class="ti ti-user text-white text-xs sm:text-sm"></i>
-                                </div>
+                              <!-- Avatar -->
+<div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
+    @if(Auth::user()->avatar)
+        <img src="{{ url('media/' . Auth::user()->avatar) }}" class="w-full h-full object-cover" alt="Avatar">
+    @else
+        <i class="ti ti-user text-white text-xs sm:text-sm"></i>
+    @endif
+</div>
                                 <span class="hidden md:inline text-sm text-gray-700">{{ Auth::user()->full_name }}</span>
                                 <i id="dropdown-chevron" class="ti ti-chevron-down text-gray-400 text-xs transition-transform duration-200 hidden sm:inline"></i>
                             </button>

@@ -40,7 +40,7 @@
                 <!-- Cover Image -->
                 <div class="relative h-48 bg-orange-50/60">
                     @if($book->cover_image)
-                        <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
+                       <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
                     @else
                         <div class="w-full h-full flex items-center justify-center">
                             <i class="ti ti-book text-6xl text-orange-400/40"></i>
