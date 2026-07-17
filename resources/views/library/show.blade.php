@@ -18,7 +18,7 @@
             <div class="bg-white rounded-xl shadow-sm overflow-hidden sticky top-24">
                 <div class="h-64 bg-gradient-to-br from-jlibrary-500 to-jlibrary-700 flex items-center justify-center relative">
                     @if($book->cover_image)
-                        <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
+    <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
                     @else
                         <i class="ti ti-book text-8xl text-white/50"></i>
                     @endif

@@ -46,12 +46,13 @@
     
     <!-- PDF Viewer / Book Content -->
     <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-        @if($book->file_path && file_exists(storage_path('app/public/' . $book->file_path)))
+     @if($book->file_path && file_exists(public_path('media/' . $book->file_path)))
             <div class="p-4 bg-gray-50 border-b">
                 <p class="text-sm text-gray-600 text-center">
                     <i class="ti ti-file-pdf text-red-500"></i> 
                     PDF Document - {{ $book->total_pages }} pages
                 </p>
+            </div>
             </div>
             
             <!-- Embedded PDF Viewer -->

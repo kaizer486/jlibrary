@@ -40,6 +40,7 @@ use App\Http\Controllers\SuperAdmin\ApplicationController as SuperAdminApplicati
 use App\Http\Controllers\SuperAdmin\SubscriptionController as SuperAdminSubscriptionController;
 use App\Http\Controllers\SuperAdmin\InstitutionSubscriptionController as SuperAdminInstitutionSubscriptionController;
 use App\Http\Controllers\Institution\SubscriptionController as InstitutionSubscriptionController;
+use App\Http\Controllers\SuperAdmin\PaymentController as SuperAdminPaymentController;
 use App\Http\Controllers\BorrowRequestController;
 use Illuminate\Support\Facades\File;
 
@@ -705,12 +706,60 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
     // ==========================================
     // PLATFORM MANAGEMENT
     // ==========================================
+
+// Payments
+Route::prefix('payments')->name('payments.')->group(function () {
+    Route::get('/', [SuperAdminPaymentController::class, 'index'])->name('index');
+    Route::get('/transactions', [SuperAdminPaymentController::class, 'transactions'])->name('transactions');
+    Route::get('/withdrawals', [SuperAdminPaymentController::class, 'withdrawals'])->name('withdrawals');
+    Route::get('/commissions', [SuperAdminPaymentController::class, 'commissions'])->name('commissions');
+    Route::get('/author-payouts', [SuperAdminPaymentController::class, 'authorPayouts'])->name('author-payouts');
+    Route::get('/audit-logs', [SuperAdminPaymentController::class, 'auditLogs'])->name('audit-logs');
+    Route::get('/export', [SuperAdminPaymentController::class, 'exportReport'])->name('export');
+    Route::get('/{payment}', [SuperAdminPaymentController::class, 'show'])->name('show');
     
-    // Books
-    Route::resource('books', App\Http\Controllers\SuperAdmin\BookController::class);
-    Route::post('/books/{book}/toggle-status', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleStatus'])->name('books.toggle-status');
-    Route::post('/books/bulk-action', [App\Http\Controllers\SuperAdmin\BookController::class, 'bulkAction'])->name('books.bulk-action');
+    // User withdrawals
+    Route::post('/user-withdrawals/{id}/approve', [SuperAdminPaymentController::class, 'approveUserWithdrawal'])->name('approve-user-withdrawal');
+    Route::post('/user-withdrawals/{id}/reject', [SuperAdminPaymentController::class, 'rejectUserWithdrawal'])->name('reject-user-withdrawal');
     
+    // Institution withdrawals
+    Route::post('/institution-withdrawals/{id}/approve', [SuperAdminPaymentController::class, 'approveInstitutionWithdrawal'])->name('approve-institution-withdrawal');
+    Route::post('/institution-withdrawals/{id}/complete', [SuperAdminPaymentController::class, 'completeInstitutionWithdrawal'])->name('complete-institution-withdrawal');
+    Route::post('/institution-withdrawals/{id}/reject', [SuperAdminPaymentController::class, 'rejectInstitutionWithdrawal'])->name('reject-institution-withdrawal');
+    
+    // Author payouts
+    Route::post('/author-payouts/{transactionId}/approve', [SuperAdminPaymentController::class, 'approveAuthorPayout'])->name('approve-author-payout');
+    Route::post('/author-payouts/{transactionId}/reject', [SuperAdminPaymentController::class, 'rejectAuthorPayout'])->name('reject-author-payout');
+    
+    // ==========================================
+    // TRANSACTION MANAGEMENT - DELETE ROUTES
+    // ==========================================
+    
+    // Single transaction delete (permanent)
+    Route::delete('/transactions/{id}', [SuperAdminPaymentController::class, 'deleteTransaction'])
+        ->name('delete-transaction');
+    
+    // Bulk delete transactions (permanent)
+    Route::post('/transactions/bulk-delete', [SuperAdminPaymentController::class, 'bulkDeleteTransactions'])
+        ->name('bulk-delete-transactions');
+    
+    // ==========================================
+    // PAYMENT DELETE ROUTE - ✅ THIS MUST EXIST
+    // ==========================================
+    
+    // Single payment delete (permanent)
+    Route::delete('/{id}', [SuperAdminPaymentController::class, 'deletePayment'])
+        ->name('delete-payment');
+});
+
+    
+    
+  // Book Management
+Route::resource('books', App\Http\Controllers\SuperAdmin\BookController::class);
+Route::post('/books/{book}/toggle-status', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleStatus'])->name('books.toggle-status');
+Route::post('/books/{book}/toggle-featured', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleFeatured'])->name('books.toggle-featured');  // ✅ ADD THIS
+Route::post('/books/{book}/toggle-trending', [App\Http\Controllers\SuperAdmin\BookController::class, 'toggleTrending'])->name('books.toggle-trending');  // ✅ ADD THIS
+Route::post('/books/bulk-action', [App\Http\Controllers\SuperAdmin\BookController::class, 'bulkAction'])->name('books.bulk-action');
     // Users
     Route::resource('users', App\Http\Controllers\SuperAdmin\UserController::class);
     

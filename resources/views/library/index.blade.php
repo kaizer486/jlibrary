@@ -143,11 +143,11 @@
 
 <a href="{{ $bookUrl }}" class="block">
     <div class="relative h-56 bg-gradient-to-br from-jlibrary-500 to-jlibrary-700 flex items-center justify-center">
-        @if($book->cover_image)
-            <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
-        @else
-            <i class="ti ti-book text-6xl text-white/50"></i>
-        @endif
+       @if($book->cover_image)
+    <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
+@else
+    <i class="ti ti-book text-6xl text-white/50"></i>
+@endif
         
         <!-- Institution Badge - Only show if institution exists -->
         @if($book->institution_id && $book->institution)

@@ -22,11 +22,11 @@
                 @foreach($purchases as $purchase)
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition">
                         <div class="h-40 bg-gradient-to-r from-indigo-100 to-purple-100 flex items-center justify-center">
-                            @if($purchase->book->cover_image)
-                                <img src="{{ asset('storage/' . $purchase->book->cover_image) }}" alt="{{ $purchase->book->title }}" class="h-full w-full object-cover">
-                            @else
-                                <i class="ti ti-book text-6xl text-purple-400"></i>
-                            @endif
+                           @if($purchase->book->cover_image)
+    <img src="{{ url('media/' . $purchase->book->cover_image) }}" alt="{{ $purchase->book->title }}" class="h-full w-full object-cover">
+@else
+    <i class="ti ti-book text-6xl text-purple-400"></i>
+@endif
                         </div>
                         <div class="p-4">
                             <h3 class="font-bold text-gray-800">{{ Str::limit($purchase->book->title, 40) }}</h3>

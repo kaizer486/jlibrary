@@ -18,10 +18,10 @@
             <div class="bg-white rounded-xl shadow-sm overflow-hidden sticky top-24">
                 <div class="h-64 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center relative">
                     @if($book->cover_image)
-                        <img src="{{ Storage::url($book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
-                    @else
-                        <i class="ti ti-book text-8xl text-white/50"></i>
-                    @endif
+    <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
+@else
+    <i class="ti ti-book text-6xl text-white/50"></i>
+@endif
                     
                     <!-- Global Badge -->
                     <div class="absolute bottom-2 left-2 bg-purple-600/90 text-white px-3 py-1 rounded-lg text-xs">
