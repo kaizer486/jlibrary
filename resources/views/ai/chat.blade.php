@@ -374,7 +374,7 @@
             
             <!-- Welcome Message -->
             <h1 class="welcome-title text-2xl font-bold text-white mb-1">
-                Hello, {{ Auth::user()->full_name }} 👋
+                Hello, {{ Auth::user()->full_name }} 
             </h1>
             <p class="welcome-subtitle text-purple-200 text-sm mb-6">
                 What would you like to do today?
