@@ -96,19 +96,77 @@
         .ai-message {
             line-height: 1.6;
         }
-        .ai-message p {
-            margin-bottom: 12px;
-        }
-        .ai-message p:last-child {
-            margin-bottom: 0;
-        }
-        .ai-message br {
-            display: none;
-        }
-        .ai-message strong {
-            color: #c084fc;
-            font-weight: 600;
-        }
+       
+     
+      .ai-message br {
+    display: block;
+    content: "";
+    margin-top: 6px;
+}
+
+
+.ai-message p {
+    margin-bottom: 12px;
+    line-height: 1.8;
+}
+
+.ai-message p:last-child {
+    margin-bottom: 0;
+}
+
+.ai-message ol {
+    list-style: decimal;
+    padding-left: 1.5em;
+    margin: 8px 0 14px 0;
+}
+
+.ai-message ol li {
+    margin-bottom: 6px;
+    line-height: 1.6;
+}
+
+.ai-message ul {
+    list-style: disc;
+    padding-left: 1.5em;
+    margin: 8px 0 14px 0;
+}
+
+.ai-message ol > li,
+.ai-message ul > li {
+    margin-bottom: 10px;
+    padding-left: 4px;
+}
+
+
+.ai-message ol ol,
+.ai-message ul ul,
+.ai-message ol ul,
+.ai-message ul ol {
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.ai-message ul li {
+    margin-bottom: 4px;
+    line-height: 1.6;
+}
+
+.ai-message strong {
+    color: #c084fc;
+    font-weight: 600;
+}
+
+
+.ai-message li::marker {
+    color: #a78bfa;
+    font-weight: 600;
+}
+
+.ai-message li strong:first-child {
+    color: #e9d5ff;
+}
+
+        
 
         /* Mobile Sidebar Overlay */
         .sidebar-overlay {
@@ -480,10 +538,10 @@ function addMessage(role, content) {
                 <p class="text-sm">${escapeHtml(content)}</p>
             </div>`;
     } else {
-        div.innerHTML = `
-            <div class="chat-message inline-block bg-white/10 text-white rounded-xl px-5 py-3 max-w-[92%] md:max-w-[85%] ai-message" style="text-align:left">
-                ${renderAI(content)}
-            </div>`;
+       div.innerHTML = `
+    <div class="chat-message inline-block bg-white/10 text-white rounded-xl px-5 py-3 max-w-[92%] md:max-w-[85%] ai-message text-sm" style="text-align:left">
+        ${renderAI(content)}
+    </div>`;
     }
 
     chatMessages.appendChild(div);

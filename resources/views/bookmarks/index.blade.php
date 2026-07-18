@@ -17,57 +17,79 @@
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($bookmarks as $bookmark)
                     @php $book = $bookmark->bookmarkable; @endphp
-                    <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition group relative">
-                        <!-- Book Cover -->
-                        <div class="relative h-40 bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-                            @if($book->cover_image)
-                               <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
-                            @else
-                                <i class="ti ti-book text-5xl text-white/50"></i>
-                            @endif
-                            
-                            <!-- Remove Bookmark Button -->
-                            <div class="absolute top-2 right-2">
-                                <form action="{{ route('bookmark.destroy', $bookmark->id) }}" method="POST" onsubmit="return confirm('Remove from bookmarks?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition text-white">
-                                        <i class="ti ti-trash text-sm"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                        
-                        <!-- Book Info -->
-                        <div class="p-4">
-                            <h3 class="font-semibold text-lg text-gray-900 mb-1 line-clamp-1">{{ $book->title }}</h3>
-                            <p class="text-gray-500 text-sm mb-2">{{ $book->author }}</p>
-                            
-                            <!-- Price Badge -->
-                            <div class="mb-3">
-                                @if($book->is_paid)
-                                    <span class="inline-block bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-lg">
-                                        ${{ number_format($book->price, 2) }}
-                                    </span>
+                    @if($book)
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition group relative">
+                            <!-- Book Cover -->
+                            <div class="relative h-40 bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                                @if($book->cover_image)
+                                    <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
                                 @else
-                                    <span class="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-lg">
-                                        Free
-                                    </span>
+                                    <i class="ti ti-book text-5xl text-white/50"></i>
                                 @endif
+                                
+                                <!-- Remove Bookmark Button -->
+                                <div class="absolute top-2 right-2">
+                                    <form action="{{ route('bookmark.destroy', $bookmark->id) }}" method="POST" onsubmit="return confirm('Remove from bookmarks?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition text-white">
+                                            <i class="ti ti-trash text-sm"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                             
-                            <div class="flex items-center justify-between mt-3">
-                                <div class="flex items-center text-sm text-gray-500">
-                                    <i class="ti ti-calendar mr-1"></i>
-                                    <span>Saved {{ $bookmark->created_at->diffForHumans() }}</span>
+                            <!-- Book Info -->
+                            <div class="p-4">
+                                <h3 class="font-semibold text-lg text-gray-900 mb-1 line-clamp-1">{{ $book->title }}</h3>
+                                <p class="text-gray-500 text-sm mb-2">{{ $book->author ?? 'Unknown Author' }}</p>
+                                
+                                <!-- Price Badge -->
+                                <div class="mb-3">
+                                    @if(isset($book->is_paid) && $book->is_paid)
+                                        <span class="inline-block bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-lg">
+                                            ${{ number_format($book->price ?? 0, 2) }}
+                                        </span>
+                                    @else
+                                        <span class="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-lg">
+                                            Free
+                                        </span>
+                                    @endif
                                 </div>
-                                <a href="{{ route('library.show', $book) }}" 
-                                   class="bg-purple-600 text-white px-3 py-1 rounded-lg hover:bg-purple-700 transition text-sm">
-                                    View Details
-                                </a>
+                                
+                                <div class="flex items-center justify-between mt-3">
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <i class="ti ti-calendar mr-1"></i>
+                                        <span>Saved {{ $bookmark->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <a href="{{ route('library.show', $book) }}" 
+                                       class="bg-purple-600 text-white px-3 py-1 rounded-lg hover:bg-purple-700 transition text-sm">
+                                        View Details
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @else
+                        <!-- Orphaned Bookmark -->
+                        <div class="bg-white rounded-xl shadow-md overflow-hidden border-2 border-red-200">
+                            <div class="relative h-40 bg-gray-200 flex items-center justify-center">
+                                <i class="ti ti-book-off text-4xl text-gray-400"></i>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-semibold text-red-600">Book Not Found</h3>
+                                <p class="text-sm text-gray-500">This book may have been deleted.</p>
+                                <div class="mt-3 flex items-center justify-between">
+                                    <form action="{{ route('bookmark.destroy', $bookmark->id) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-500 hover:text-red-700 text-sm font-medium" onclick="return confirm('Remove this bookmark?')">
+                                            Remove Bookmark
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 @endforeach
             </div>
             

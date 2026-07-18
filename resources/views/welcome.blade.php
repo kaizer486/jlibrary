@@ -257,7 +257,7 @@
     .founder-image-wrap img {
         width: 100%;
         height: 100%;
-        object-fit: fill;
+        object-fit: ;
         object-position: center top;
     }
 
@@ -733,16 +733,16 @@
     </div>
 </section>
 <!-- ========================================== -->
-<!-- FOUNDER SECTION - Orange Border            -->
+<!-- FOUNDER SECTION - Centered with Flex Wrap  -->
 <!-- ========================================== -->
 <section id="founders" class="py-16 light-body-bg">
     <div class="container mx-auto px-4 md:px-8">
         <div class="text-center mb-10">
             <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-3">
-                Meet Our <span class="gradient-text">Founder</span>
+                Meet Our <span class="gradient-text">Founders</span>
             </h2>
             <p class="text-lg text-gray-500 max-w-xl mx-auto">
-                The visionary behind JLIBRARY, dedicated to transforming digital education
+                The visionary team behind JLIBRARY, dedicated to transforming digital education
             </p>
         </div>
 
@@ -751,92 +751,78 @@
         @endphp
 
         @if($founders->count() > 0)
-            <div class="flex justify-center">
-                <div class="w-full max-w-sm">
-                    @foreach($founders as $founder)
-                        @php
-                            $socialLinks = is_string($founder->social_links) ? json_decode($founder->social_links, true) : ($founder->social_links ?? []);
-                            $socialLinks = is_array($socialLinks) ? $socialLinks : [];
-                            $hasLinks = count($socialLinks) > 0;
-                        @endphp
+            <div class="flex flex-wrap justify-center gap-6">
+                @foreach($founders as $founder)
+                    @php
+                        $socialLinks = is_string($founder->social_links) ? json_decode($founder->social_links, true) : ($founder->social_links ?? []);
+                        $socialLinks = is_array($socialLinks) ? $socialLinks : [];
+                        $hasLinks = count($socialLinks) > 0;
+                    @endphp
 
-                        <div class="founder-card-gradient">
-                            <div class="founder-card-inner">
-                                <div class="founder-image-wrap">
-                                   @if($founder->photo)
-    <img src="{{ url('media/' . $founder->photo) }}" 
-         alt="{{ $founder->name }}">
-@else
-    <div class="placeholder">
-        {{ substr($founder->name, 0, 1) }}
-    </div>
-@endif
-                                </div>
+                    <div class="founder-card-gradient w-full sm:w-[300px] md:w-[300px] lg:w-[310px] flex-shrink-0">
+                        <div class="founder-card-inner h-full flex flex-col">
+                            <div class="founder-image-wrap" style="height: 280px; width: 100%; overflow: hidden; background: #f0f2f5;">
+                                @if($founder->photo)
+                                    <img src="{{ url('media/' . $founder->photo) }}" 
+                                         alt="{{ $founder->name }}"
+                                         style="width: 100%; height: 100%; object-fit: fill; object-position: center top;">
+                                @else
+                                    <div class="placeholder" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 80px; font-weight: 700; color: #3B82F6; background: linear-gradient(135deg, #e0e7ff, #dbeafe);">
+                                        {{ substr($founder->name, 0, 1) }}
+                                    </div>
+                                @endif
+                            </div>
 
-                                <div class="p-6 text-center">
-                                    <h3 class="text-xl font-bold text-gray-800">{{ $founder->name }}</h3>
-                                    @if($founder->title)
-                                        <p class="text-sm text-orange-500 font-semibold mt-1">{{ $founder->title }}</p>
-                                    @endif
+                            <div class="p-5 text-center flex-1 flex flex-col">
+                                <h3 class="text-lg font-bold text-gray-800">{{ $founder->name }}</h3>
+                                @if($founder->title)
+                                    <p class="text-sm text-orange-500 font-semibold mt-1">{{ $founder->title }}</p>
+                                @endif
 
-                                    @if($founder->bio)
-                                        <div class="mt-3 text-gray-600 text-sm leading-relaxed line-clamp-4">
-                                            {{ Str::limit($founder->bio, 120) }}
-                                        </div>
-                                    @endif
+                                @if($founder->bio)
+                                    <div class="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-3 flex-1">
+                                        {{ Str::limit($founder->bio, 100) }}
+                                    </div>
+                                @endif
 
-                                    @if($hasLinks)
-                                        <div class="mt-4 flex justify-center gap-2 flex-wrap">
-                                            @if(isset($socialLinks['twitter']) && $socialLinks['twitter'])
-                                                <a href="{{ $socialLinks['twitter'] }}" target="_blank" 
-                                                   class="w-9 h-9 rounded-full bg-gray-100 hover:bg-blue-50 text-gray-600 hover:text-blue-500 flex items-center justify-center transition-all hover:scale-110">
-                                                    <i class="ti ti-brand-twitter"></i>
-                                                </a>
-                                            @endif
-                                            @if(isset($socialLinks['instagram']) && $socialLinks['instagram'])
-                                                <a href="{{ $socialLinks['instagram'] }}" target="_blank" 
-                                                   class="w-9 h-9 rounded-full bg-gray-100 hover:bg-pink-50 text-gray-600 hover:text-pink-500 flex items-center justify-center transition-all hover:scale-110">
-                                                    <i class="ti ti-brand-instagram"></i>
-                                                </a>
-                                            @endif
-                                            @if(isset($socialLinks['facebook']) && $socialLinks['facebook'])
-                                                <a href="{{ $socialLinks['facebook'] }}" target="_blank" 
-                                                   class="w-9 h-9 rounded-full bg-gray-100 hover:bg-blue-50 text-gray-600 hover:text-blue-600 flex items-center justify-center transition-all hover:scale-110">
-                                                    <i class="ti ti-brand-facebook"></i>
-                                                </a>
-                                            @endif
-                                            @if(isset($socialLinks['tiktok']) && $socialLinks['tiktok'])
-                                                <a href="{{ $socialLinks['tiktok'] }}" target="_blank" 
-                                                   class="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-black flex items-center justify-center transition-all hover:scale-110">
-                                                    <i class="ti ti-brand-tiktok"></i>
-                                                </a>
-                                            @endif
-                                            @if(isset($socialLinks['youtube']) && $socialLinks['youtube'])
-                                                <a href="{{ $socialLinks['youtube'] }}" target="_blank" 
-                                                   class="w-9 h-9 rounded-full bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 flex items-center justify-center transition-all hover:scale-110">
-                                                    <i class="ti ti-brand-youtube"></i>
-                                                </a>
-                                            @endif
-                                        </div>
-                                    @endif
-
-                                    <div class="mt-3 pt-3 border-t border-gray-100 flex justify-center gap-4 text-xs text-gray-500">
-                                        @if($founder->email)
-                                            <a href="mailto:{{ $founder->email }}" class="hover:text-orange-500 transition flex items-center gap-1">
-                                                <i class="ti ti-mail"></i> Email
+                                @if($hasLinks)
+                                    <div class="mt-3 flex justify-center gap-2 flex-wrap">
+                                        @if(isset($socialLinks['twitter']) && $socialLinks['twitter'])
+                                            <a href="{{ $socialLinks['twitter'] }}" target="_blank" 
+                                               class="w-8 h-8 rounded-full bg-gray-100 hover:bg-blue-50 text-gray-600 hover:text-blue-500 flex items-center justify-center transition-all hover:scale-110">
+                                                <i class="ti ti-brand-twitter text-sm"></i>
                                             </a>
                                         @endif
-                                        @if($founder->phone)
-                                            <a href="tel:{{ $founder->phone }}" class="hover:text-orange-500 transition flex items-center gap-1">
-                                                <i class="ti ti-phone"></i> Call
+                                        @if(isset($socialLinks['instagram']) && $socialLinks['instagram'])
+                                            <a href="{{ $socialLinks['instagram'] }}" target="_blank" 
+                                               class="w-8 h-8 rounded-full bg-gray-100 hover:bg-pink-50 text-gray-600 hover:text-pink-500 flex items-center justify-center transition-all hover:scale-110">
+                                                <i class="ti ti-brand-instagram text-sm"></i>
+                                            </a>
+                                        @endif
+                                        @if(isset($socialLinks['facebook']) && $socialLinks['facebook'])
+                                            <a href="{{ $socialLinks['facebook'] }}" target="_blank" 
+                                               class="w-8 h-8 rounded-full bg-gray-100 hover:bg-blue-50 text-gray-600 hover:text-blue-600 flex items-center justify-center transition-all hover:scale-110">
+                                                <i class="ti ti-brand-facebook text-sm"></i>
+                                            </a>
+                                        @endif
+                                        @if(isset($socialLinks['tiktok']) && $socialLinks['tiktok'])
+                                            <a href="{{ $socialLinks['tiktok'] }}" target="_blank" 
+                                               class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-black flex items-center justify-center transition-all hover:scale-110">
+                                                <i class="ti ti-brand-tiktok text-sm"></i>
+                                            </a>
+                                        @endif
+                                        @if(isset($socialLinks['youtube']) && $socialLinks['youtube'])
+                                            <a href="{{ $socialLinks['youtube'] }}" target="_blank" 
+                                               class="w-8 h-8 rounded-full bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 flex items-center justify-center transition-all hover:scale-110">
+                                                <i class="ti ti-brand-youtube text-sm"></i>
                                             </a>
                                         @endif
                                     </div>
-                                </div>
+                                @endif
                             </div>
                         </div>
-                    @endforeach
-                </div>
+                    </div>
+                @endforeach
             </div>
         @else
             <div class="text-center py-10 glass-card max-w-md mx-auto">
@@ -846,7 +832,6 @@
         @endif
     </div>
 </section>
-
 <!-- ========================================== -->
 <!-- FOOTER                                    -->
 <!-- ========================================== -->

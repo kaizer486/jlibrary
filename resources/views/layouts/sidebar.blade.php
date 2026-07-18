@@ -154,12 +154,7 @@
             <span>Wallet</span>
         </a>
 
-        @if(auth()->user()->institution_id)
-        <a href="{{ route('institution.members.directory') }}" class="nav-item {{ request()->routeIs('institution.members.directory') ? 'active' : '' }}">
-            <i class="ti ti-users text-cyan-400 text-xl"></i>
-            <span>Members Directory</span>
-        </a>
-        @endif
+    
 
         <a href="{{ route('referrals.index') }}" class="nav-item {{ request()->routeIs('referrals.*') ? 'active' : '' }}">
             <i class="ti ti-gift text-pink-400 text-xl"></i>
