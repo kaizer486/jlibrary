@@ -123,56 +123,62 @@ class InstitutionController extends Controller
      * Free join an institution (no approval needed).
      * For: Library, Bookstore, Publisher, Research Center, Other
      */
-    public function freeJoin($id): \Illuminate\Http\RedirectResponse
-    {
-        $user = auth()->user();
-        $institution = Institution::findOrFail($id);
-        
-        // ✅ Check if institution allows free join
-        if ($institution->requiresApproval()) {
-            return redirect()->back()
-                ->with('error', 'This institution requires approval. Please use "Request to Join".');
-        }
-        
-        // Check if already a member
-        if ($user->institutions()->where('institution_id', $id)->exists()) {
-            return redirect()->back()
-                ->with('error', 'You are already a member of this institution.');
-        }
-        
-        // Check if institution can accept new members
-        if (!$institution->canAddUser()) {
-            return redirect()->back()
-                ->with('error', 'This institution has reached its maximum member limit.');
-        }
-        
-        // ✅ Add to pivot table
-        $user->institutions()->attach($id, [
-            'role' => 'member',
-            'status' => 'active',
-            'joined_at' => now(),
-        ]);
-        
-        // ✅ Update legacy field if no primary
-        if (!$user->institution_id) {
-            $user->update([
-                'institution_id' => $id,
-            ]);
-        }
-        
-        // ✅ Send welcome notification
-        NotificationHelper::send(
-            $user->id,
-            'institution_joined',
-            '🏛️ Welcome to ' . $institution->name,
-            "You have successfully joined {$institution->name}!",
-            ['institution_id' => $id, 'type' => 'institution_joined']
-        );
-        
-        return redirect()->route('institution.public.index', $id)
-            ->with('success', "You have successfully joined {$institution->name}!");
+   public function freeJoin(Request $request, $id): \Illuminate\Http\RedirectResponse
+{
+    // Handle accidental GET visits
+    if ($request->isMethod('get')) {
+        return redirect()
+            ->route('discover.institutions')
+            ->with('info', 'Please click the Join button to join an institution.');
     }
     
+    $user = auth()->user();
+    $institution = Institution::findOrFail($id);
+    
+    // Check if institution allows free join
+    if ($institution->requiresApproval()) {
+        return redirect()->back()
+            ->with('error', 'This institution requires approval. Please use "Request to Join".');
+    }
+    
+    // Check if already a member
+    if ($user->institutions()->where('institution_id', $id)->exists()) {
+        return redirect()->back()
+            ->with('error', 'You are already a member of this institution.');
+    }
+    
+    // Check if institution can accept new members
+    if (!$institution->canAddUser()) {
+        return redirect()->back()
+            ->with('error', 'This institution has reached its maximum member limit.');
+    }
+    
+    // Add to pivot table
+    $user->institutions()->attach($id, [
+        'role' => 'member',
+        'status' => 'active',
+        'joined_at' => now(),
+    ]);
+    
+    // Update legacy field if no primary
+    if (!$user->institution_id) {
+        $user->update([
+            'institution_id' => $id,
+        ]);
+    }
+    
+    // Send welcome notification
+    NotificationHelper::send(
+        $user->id,
+        'institution_joined',
+        '🏛️ Welcome to ' . $institution->name,
+        "You have successfully joined {$institution->name}!",
+        ['institution_id' => $id, 'type' => 'institution_joined']
+    );
+    
+    return redirect()->route('institution.public.index', $id)
+        ->with('success', "You have successfully joined {$institution->name}!");
+}    
     /**
      * Leave an institution.
      */

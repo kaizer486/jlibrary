@@ -200,7 +200,7 @@
                                         @csrf
                                         <button type="submit" 
                                                 class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium flex items-center justify-center gap-2">
-                                            <i class="ti ti-check"></i> Join Now 
+                                            <i class="ti ti-check"></i> Join Now (free)
                                         </button>
                                     </form>
                                     @if($institution->description)

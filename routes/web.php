@@ -179,11 +179,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/institution/leave/{institutionId?}', [App\Http\Controllers\InstitutionController::class, 'leave'])
         ->name('institution.leave')->middleware('auth');
 
-    Route::post('/institution/join/free/{id}', [App\Http\Controllers\InstitutionController::class, 'freeJoin'])
-        ->name('institution.join.free');
-        Route::get('/institution/join/free/{id}', function ($id) {
-    return redirect()->route('discover.institutions');
-});
+    Route::match(['get', 'post'], '/institution/join/free/{id}', [App\Http\Controllers\InstitutionController::class, 'freeJoin'])
+    ->name('institution.join.free');
 
     Route::get('/institution/create-request', [App\Http\Controllers\InstitutionCreationController::class, 'create'])
         ->name('institution.create-request');
