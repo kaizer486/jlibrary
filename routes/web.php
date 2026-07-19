@@ -181,6 +181,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/institution/join/free/{id}', [App\Http\Controllers\InstitutionController::class, 'freeJoin'])
         ->name('institution.join.free');
+        Route::get('/institution/join/free/{id}', function ($id) {
+    return redirect()->route('discover.institutions');
+});
 
     Route::get('/institution/create-request', [App\Http\Controllers\InstitutionCreationController::class, 'create'])
         ->name('institution.create-request');

@@ -80,6 +80,7 @@ return [
         'callback_url' => env('HALOPESA_CALLBACK_URL'),
         'environment' => env('HALOPESA_ENVIRONMENT', 'sandbox'),
     ],
+    
 
 ];
 
