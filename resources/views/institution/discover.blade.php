@@ -196,11 +196,11 @@
                                     @endif
                                 @else
                                     <!-- Free Join (No approval needed) -->
-                                    <form method="POST" action="{{ route('institution.join.free', $institution->id) }}" class="w-full">
+                                    <form method="POST" action="{{ route('institution.join.free', $institution->id) }}" class="w-full"  x-ignore>
                                         @csrf
                                         <button type="submit" 
                                                 class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium flex items-center justify-center gap-2">
-                                            <i class="ti ti-check"></i> Join Now (Free)
+                                            <i class="ti ti-check"></i> Join Now 
                                         </button>
                                     </form>
                                     @if($institution->description)
