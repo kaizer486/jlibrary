@@ -194,19 +194,15 @@
                                             <i class="ti ti-user-plus"></i> Request to Join
                                         </button>
                                     @endif
-                                @else
-                                    <!-- Free Join (No approval needed) -->
-                                    <form method="POST" action="{{ route('institution.join.free', $institution->id) }}" class="w-full"  x-ignore>
-                                        @csrf
-                                        <button type="submit" 
-                                                class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium flex items-center justify-center gap-2">
-                                            <i class="ti ti-check"></i> Join Now 
-                                        </button>
-                                    </form>
-                                    @if($institution->description)
-                                        <p class="text-xs text-slate-500 mt-2 text-center">Join now</p>
-                                    @endif
-                                @endif
+                              @else
+    <!-- FREE JOIN - RAW HTML TEST -->
+    <form action="/institution/join/free/{{ $institution->id }}" method="POST" style="margin:0;padding:0;">
+        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+        <button type="submit" style="background:#f97316;color:white;padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;width:100%;">
+            JOIN NOW (RAW TEST)
+        </button>
+    </form>
+@endif
                             </div>
                         </div>
                     </div>
