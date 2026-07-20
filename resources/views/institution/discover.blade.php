@@ -166,48 +166,31 @@
                                 </div>
                             </div>
 
-                            <!-- Action Buttons -->
-                            <div class="mt-5 pt-4 border-t border-slate-200/60">
-                                @php
-                                    $requiresApproval = in_array($institution->type, ['school', 'college', 'university']);
-                                @endphp
-                                
-                                @if($isMember)
-                                    <a href="{{ route('institution.public.index', $institution->id) }}" 
-                                       class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium text-center flex items-center justify-center gap-2">
-                                        <i class="ti ti-arrow-right"></i> Enter Institution
-                                    </a>
-                                @elseif($requiresApproval)
-                                    @if($hasPendingRequest && $pendingRequest)
-                                        <div class="flex gap-2 w-full">
-                                            <div class="flex-1 bg-yellow-500/20 text-yellow-700 px-4 py-2.5 rounded-xl text-sm font-medium text-center border border-yellow-500/20 flex items-center justify-center gap-2">
-                                                <i class="ti ti-clock"></i> Request Pending Approval
-                                            </div>
-                                            <button @click="openCancelModal({{ $pendingRequest->id }}, '{{ $institution->name }}')" 
-                                                    class="bg-red-500/10 hover:bg-red-500/20 text-red-600 hover:text-red-700 px-4 py-2.5 rounded-xl transition text-sm font-medium border border-red-200/60 hover:border-red-300/70 flex items-center gap-2">
-                                                <i class="ti ti-x"></i> Cancel
-                                            </button>
-                                        </div>
-                                    @else
-                                        <button @click="openJoinModal({{ $institution->id }}, '{{ $institution->name }}')" 
-                                                class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium flex items-center justify-center gap-2">
-                                            <i class="ti ti-user-plus"></i> Request to Join
-                                        </button>
-                                    @endif
-                                @else
-                                    <!-- Free Join (No approval needed) -->
-                                    <form method="POST" action="{{ route('institution.join.free', $institution->id) }}" class="w-full"  x-ignore>
-                                        @csrf
-                                        <button type="submit" 
-                                                class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium flex items-center justify-center gap-2">
-                                            <i class="ti ti-check"></i> Join Now (free)
-                                        </button>
-                                    </form>
-                                    @if($institution->description)
-                                        <p class="text-xs text-slate-500 mt-2 text-center">Join now</p>
-                                    @endif
-                                @endif
-                            </div>
+                         <!-- Action Buttons -->
+<div class="mt-5 pt-4 border-t border-slate-200/60">
+    @if($isMember)
+        <a href="{{ route('institution.public.index', $institution->id) }}" 
+           class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium text-center flex items-center justify-center gap-2">
+            <i class="ti ti-arrow-right"></i> Enter Institution
+        </a>
+    @elseif($hasPendingRequest && $pendingRequest)
+        <div class="flex gap-2 w-full">
+            <div class="flex-1 bg-yellow-500/20 text-yellow-700 px-4 py-2.5 rounded-xl text-sm font-medium text-center border border-yellow-500/20 flex items-center justify-center gap-2">
+                <i class="ti ti-clock"></i> Request Pending Approval
+            </div>
+            <button @click="openCancelModal({{ $pendingRequest->id }}, '{{ $institution->name }}')" 
+                    class="bg-red-500/10 hover:bg-red-500/20 text-red-600 hover:text-red-700 px-4 py-2.5 rounded-xl transition text-sm font-medium border border-red-200/60 hover:border-red-300/70 flex items-center gap-2">
+                <i class="ti ti-x"></i> Cancel
+            </button>
+        </div>
+    @else
+        <!-- ✅ NO FORM - Just a link -->
+        <a href="{{ route('institution.join.free', $institution->id) }}" 
+           class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium text-center flex items-center justify-center gap-2">
+            <i class="ti ti-check"></i> Join Now
+        </a>
+    @endif
+</div>
                         </div>
                     </div>
                 @endforeach

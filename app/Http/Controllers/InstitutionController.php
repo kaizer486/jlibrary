@@ -123,7 +123,7 @@ class InstitutionController extends Controller
      * Free join an institution (no approval needed).
      * For: Library, Bookstore, Publisher, Research Center, Other
      */
-   public function freeJoin(Request $request, $id): \Illuminate\Http\RedirectResponse
+  public function freeJoin(Request $request, $id): \Illuminate\Http\RedirectResponse
 {
     // Handle accidental GET visits
     if ($request->isMethod('get')) {
@@ -135,11 +135,7 @@ class InstitutionController extends Controller
     $user = auth()->user();
     $institution = Institution::findOrFail($id);
     
-    // Check if institution allows free join
-    if ($institution->requiresApproval()) {
-        return redirect()->back()
-            ->with('error', 'This institution requires approval. Please use "Request to Join".');
-    }
+    // ✅ REMOVED: No more approval check - all institutions are free join
     
     // Check if already a member
     if ($user->institutions()->where('institution_id', $id)->exists()) {
@@ -178,7 +174,8 @@ class InstitutionController extends Controller
     
     return redirect()->route('institution.public.index', $id)
         ->with('success', "You have successfully joined {$institution->name}!");
-}    
+}
+  
     /**
      * Leave an institution.
      */
