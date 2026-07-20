@@ -179,9 +179,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/institution/leave/{institutionId?}', [App\Http\Controllers\InstitutionController::class, 'leave'])
         ->name('institution.leave')->middleware('auth');
 
-   
-Route::get('/institution/join/free/{id}', [App\Http\Controllers\InstitutionController::class, 'freeJoin'])
+   Route::post('/institution/join/free/{id}', [App\Http\Controllers\InstitutionController::class, 'freeJoin'])
     ->name('institution.join.free');
+
+
+
+Route::delete('/join-requests/{joinRequest}', [App\Http\Controllers\JoinRequestController::class, 'cancel'])
+    ->name('join-requests.cancel');
 
     Route::get('/institution/create-request', [App\Http\Controllers\InstitutionCreationController::class, 'create'])
         ->name('institution.create-request');

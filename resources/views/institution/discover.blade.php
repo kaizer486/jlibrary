@@ -10,9 +10,55 @@
 <!-- ========================================== -->
 <div style="position: fixed; inset: 0; background: #e9e8e6; z-index: -10;"></div>
 
-<div x-data="discoverModals()" x-init="init()" class="relative z-10 min-h-screen py-8">
+<div
+    x-data="{
+        joinModal: false,
+        cancelModal: false,
+        joinInstitutionId: null,
+        joinInstitutionName: '',
+        cancelRequestId: null,
+        cancelInstitutionName: '',
+
+        init() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.joinModal = false;
+                    this.cancelModal = false;
+                    document.body.style.overflow = '';
+                }
+            });
+        },
+
+        openJoinModal(id, name) {
+            this.joinInstitutionId = id;
+            this.joinInstitutionName = name;
+            this.joinModal = true;
+            document.body.style.overflow = 'hidden';
+        },
+
+        closeJoinModal() {
+            this.joinModal = false;
+            document.body.style.overflow = '';
+            document.getElementById('joinRequestForm')?.reset();
+        },
+
+        openCancelModal(id, name) {
+            this.cancelRequestId = id;
+            this.cancelInstitutionName = name;
+            this.cancelModal = true;
+            document.body.style.overflow = 'hidden';
+        },
+
+        closeCancelModal() {
+            this.cancelModal = false;
+            document.body.style.overflow = '';
+        }
+    }"
+    x-init="init()"
+    class="relative z-10 min-h-screen py-8"
+>
     <div class="container mx-auto px-4 max-w-7xl">
-        
+
         <!-- Header -->
         <div class="mb-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -28,7 +74,7 @@
                         Find and join institutions that match your interests
                     </p>
                 </div>
-                <a href="{{ route('institution.create-request') }}" 
+                <a href="{{ route('institution.create-request') }}"
                    class="bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-5 py-2.5 rounded-xl transition flex items-center gap-2 text-sm font-medium">
                     <i class="ti ti-plus"></i> Create Institution
                 </a>
@@ -54,7 +100,7 @@
         <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-4 mb-8 border border-white/60 shadow-sm">
             <form method="GET" class="flex flex-wrap gap-3">
                 <div class="flex-1 min-w-[200px]">
-                    <input type="text" name="search" placeholder="Search by name, type, or location..." 
+                    <input type="text" name="search" placeholder="Search by name, type, or location..."
                            value="{{ request('search') }}"
                            class="w-full bg-white/80 border border-slate-200/60 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition">
                 </div>
@@ -84,8 +130,8 @@
             <!-- Results Count -->
             <div class="flex items-center justify-between mb-6">
                 <p class="text-sm text-slate-600">
-                    Showing <span class="text-slate-800 font-semibold">{{ $institutions->firstItem() ?? 0 }}</span> - 
-                    <span class="text-slate-800 font-semibold">{{ $institutions->lastItem() ?? 0 }}</span> 
+                    Showing <span class="text-slate-800 font-semibold">{{ $institutions->firstItem() ?? 0 }}</span> -
+                    <span class="text-slate-800 font-semibold">{{ $institutions->lastItem() ?? 0 }}</span>
                     of <span class="text-slate-800 font-semibold">{{ $institutions->total() }}</span> institutions
                 </p>
                 <div class="flex items-center gap-2 text-sm text-slate-600">
@@ -101,10 +147,9 @@
                         $isMember = auth()->user()->isMemberOf($institution->id);
                         $hasPendingRequest = isset($userRequests[$institution->id]) && $userRequests[$institution->id]->status === 'pending';
                         $pendingRequest = $hasPendingRequest ? $userRequests[$institution->id] : null;
+                        $requiresApproval = in_array($institution->type, ['school', 'college', 'university']);
                     @endphp
                     <div class="group bg-white/80 backdrop-blur-sm rounded-2xl border border-white/80 hover:border-orange-300/60 transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/10 overflow-hidden">
-                        <!-- Top gradient bar removed -->
-                        
                         <div class="p-6">
                             <!-- Institution Header -->
                             <div class="flex items-start gap-4">
@@ -166,31 +211,43 @@
                                 </div>
                             </div>
 
-                         <!-- Action Buttons -->
-<div class="mt-5 pt-4 border-t border-slate-200/60">
-    @if($isMember)
-        <a href="{{ route('institution.public.index', $institution->id) }}" 
-           class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium text-center flex items-center justify-center gap-2">
-            <i class="ti ti-arrow-right"></i> Enter Institution
-        </a>
-    @elseif($hasPendingRequest && $pendingRequest)
-        <div class="flex gap-2 w-full">
-            <div class="flex-1 bg-yellow-500/20 text-yellow-700 px-4 py-2.5 rounded-xl text-sm font-medium text-center border border-yellow-500/20 flex items-center justify-center gap-2">
-                <i class="ti ti-clock"></i> Request Pending Approval
-            </div>
-            <button @click="openCancelModal({{ $pendingRequest->id }}, '{{ $institution->name }}')" 
-                    class="bg-red-500/10 hover:bg-red-500/20 text-red-600 hover:text-red-700 px-4 py-2.5 rounded-xl transition text-sm font-medium border border-red-200/60 hover:border-red-300/70 flex items-center gap-2">
-                <i class="ti ti-x"></i> Cancel
-            </button>
-        </div>
-    @else
-        <!-- ✅ NO FORM - Just a link -->
-        <a href="{{ route('institution.join.free', $institution->id) }}" 
-           class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium text-center flex items-center justify-center gap-2">
-            <i class="ti ti-check"></i> Join Now
-        </a>
-    @endif
-</div>
+                            <!-- Action Buttons -->
+                            <div class="mt-5 pt-4 border-t border-slate-200/60">
+                                @if($isMember)
+                                    <a href="{{ route('institution.public.index', $institution->id) }}"
+                                       class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium text-center flex items-center justify-center gap-2">
+                                        <i class="ti ti-arrow-right"></i> Enter Institution
+                                    </a>
+                                @elseif($requiresApproval)
+                                    @if($hasPendingRequest && $pendingRequest)
+                                        <div class="flex gap-2 w-full">
+                                            <div class="flex-1 bg-yellow-500/20 text-yellow-700 px-4 py-2.5 rounded-xl text-sm font-medium text-center border border-yellow-500/20 flex items-center justify-center gap-2">
+                                                <i class="ti ti-clock"></i> Request Pending Approval
+                                            </div>
+                                            <button @click="openCancelModal({{ $pendingRequest->id }}, '{{ $institution->name }}')"
+                                                    type="button"
+                                                    class="bg-red-500/10 hover:bg-red-500/20 text-red-600 hover:text-red-700 px-4 py-2.5 rounded-xl transition text-sm font-medium border border-red-200/60 hover:border-red-300/70 flex items-center gap-2">
+                                                <i class="ti ti-x"></i> Cancel
+                                            </button>
+                                        </div>
+                                    @else
+                                        <button @click="openJoinModal({{ $institution->id }}, '{{ $institution->name }}')"
+                                                type="button"
+                                                class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium flex items-center justify-center gap-2">
+                                            <i class="ti ti-user-plus"></i> Request to Join
+                                        </button>
+                                    @endif
+                                @else
+                                    <!-- Free Join (No approval needed) - real POST form -->
+                                    <form method="POST" action="{{ route('institution.join.free', $institution->id) }}" class="w-full">
+                                        @csrf
+                                        <button type="submit"
+                                                class="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-4 py-2.5 rounded-xl transition text-sm font-medium flex items-center justify-center gap-2">
+                                            <i class="ti ti-check"></i> Join Now (Free)
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -217,12 +274,12 @@
                 </p>
                 <div class="flex flex-wrap gap-4 justify-center">
                     @if(request()->has('search') || request()->has('type'))
-                        <a href="{{ route('discover.institutions') }}" 
+                        <a href="{{ route('discover.institutions') }}"
                            class="bg-white/60 hover:bg-white/80 text-slate-700 px-8 py-3 rounded-xl transition font-semibold flex items-center gap-2 border border-slate-200/60">
                             <i class="ti ti-x"></i> Clear Filters
                         </a>
                     @endif
-                    <a href="{{ route('institution.create-request') }}" 
+                    <a href="{{ route('institution.create-request') }}"
                        class="bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-8 py-3 rounded-xl transition font-semibold flex items-center gap-2">
                         <i class="ti ti-plus"></i> Create Your Own
                     </a>
@@ -234,11 +291,11 @@
     <!-- ========================================== -->
     <!-- JOIN REQUEST MODAL                         -->
     <!-- ========================================== -->
-    <div x-show="joinModal" 
+    <div x-show="joinModal"
          x-cloak
          class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50"
          @click.away="closeJoinModal()">
-        
+
         <div class="bg-white/95 backdrop-blur-md border border-white/60 rounded-2xl max-w-md w-full mx-4 overflow-hidden shadow-2xl" @click.stop>
             <div class="px-6 py-4 border-b border-slate-200/50 bg-orange-50/80">
                 <div class="flex justify-between items-center">
@@ -246,26 +303,26 @@
                         <i class="ti ti-user-plus text-orange-600"></i>
                         Request to Join <span x-text="joinInstitutionName" class="text-orange-600"></span>
                     </h3>
-                    <button @click="closeJoinModal()" class="text-slate-400 hover:text-slate-600 transition">
+                    <button @click="closeJoinModal()" type="button" class="text-slate-400 hover:text-slate-600 transition">
                         <i class="ti ti-x text-2xl"></i>
                     </button>
                 </div>
             </div>
-            
+
             <form id="joinRequestForm" method="POST" action="{{ route('join-requests.store') }}" class="p-6">
                 @csrf
                 <input type="hidden" name="institution_id" x-model="joinInstitutionId">
-                
+
                 <div class="mb-4">
                     <label class="block text-sm font-semibold text-slate-700 mb-2">
                         Message (Optional)
                     </label>
-                    <textarea name="message" rows="4" 
+                    <textarea name="message" rows="4"
                               class="w-full bg-white/80 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition resize-none"
                               placeholder="Why do you want to join this institution? (Optional)"></textarea>
                     <p class="text-xs text-slate-400 mt-1">This message will be sent to the institution admins.</p>
                 </div>
-                
+
                 <div class="flex gap-3">
                     <button type="submit" class="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 hover:shadow-lg hover:shadow-orange-600/25 text-white px-6 py-2.5 rounded-xl transition font-medium flex items-center justify-center gap-2">
                         <i class="ti ti-send"></i> Send Request
@@ -281,11 +338,11 @@
     <!-- ========================================== -->
     <!-- CANCEL REQUEST MODAL                       -->
     <!-- ========================================== -->
-    <div x-show="cancelModal" 
+    <div x-show="cancelModal"
          x-cloak
          class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50"
          @click.away="closeCancelModal()">
-        
+
         <div class="bg-white/95 backdrop-blur-md border border-white/60 rounded-2xl max-w-md w-full mx-4 overflow-hidden shadow-2xl" @click.stop>
             <div class="px-6 py-4 border-b border-slate-200/50 bg-red-50/80">
                 <div class="flex justify-between items-center">
@@ -293,12 +350,12 @@
                         <i class="ti ti-alert-triangle text-red-600"></i>
                         Cancel Request
                     </h3>
-                    <button @click="closeCancelModal()" class="text-slate-400 hover:text-slate-600 transition">
+                    <button @click="closeCancelModal()" type="button" class="text-slate-400 hover:text-slate-600 transition">
                         <i class="ti ti-x text-2xl"></i>
                     </button>
                 </div>
             </div>
-            
+
             <div class="p-6">
                 <div class="text-center mb-6">
                     <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -311,7 +368,7 @@
                         This action cannot be undone. You can always send a new request later.
                     </p>
                 </div>
-                
+
                 <form id="cancelRequestForm" method="POST" :action="'/join-requests/' + cancelRequestId">
                     @csrf
                     @method('DELETE')
@@ -329,69 +386,9 @@
     </div>
 </div>
 
-<script>
-function discoverModals() {
-    return {
-        joinModal: false,
-        cancelModal: false,
-        joinInstitutionId: null,
-        joinInstitutionName: '',
-        cancelRequestId: null,
-        cancelInstitutionName: '',
-        isSubmitting: false,
-        
-        init() {
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    this.joinModal = false;
-                    this.cancelModal = false;
-                    document.body.style.overflow = '';
-                }
-            });
-        },
-        
-        openJoinModal(id, name) {
-            this.joinInstitutionId = id;
-            this.joinInstitutionName = name;
-            this.joinModal = true;
-            document.body.style.overflow = 'hidden';
-        },
-        
-        closeJoinModal() {
-            this.joinModal = false;
-            document.body.style.overflow = '';
-            document.getElementById('joinRequestForm')?.reset();
-        },
-        
-        openCancelModal(id, name) {
-            this.cancelRequestId = id;
-            this.cancelInstitutionName = name;
-            this.cancelModal = true;
-            document.body.style.overflow = 'hidden';
-        },
-        
-        closeCancelModal() {
-            this.cancelModal = false;
-            document.body.style.overflow = '';
-        }
-    }
-}
-</script>
-
 <style>
     [x-cloak] { display: none !important; }
-    
-    /* Modal transitions */
-    .modal-enter-active,
-    .modal-leave-active {
-        transition: opacity 0.3s ease;
-    }
-    .modal-enter-from,
-    .modal-leave-to {
-        opacity: 0;
-    }
-    
-    /* Search input placeholder color */
+
     input::placeholder {
         color: #9ca3af;
     }

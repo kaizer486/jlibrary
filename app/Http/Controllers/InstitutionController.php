@@ -123,55 +123,33 @@ class InstitutionController extends Controller
      * Free join an institution (no approval needed).
      * For: Library, Bookstore, Publisher, Research Center, Other
      */
- public function freeJoin(Request $request, $id): \Illuminate\Http\RedirectResponse
+ public function freeJoin($id): \Illuminate\Http\RedirectResponse
 {
-    \Log::info('freeJoin called', [
-        'user_id' => auth()->id(),
-        'institution_id' => $id,
-        'method' => $request->method(),
-        'url' => $request->url(),
-    ]);
-    
     $user = auth()->user();
     $institution = Institution::findOrFail($id);
-    
-    // Check if already a member
-    $isMember = $user->institutions()->where('institution_id', $id)->exists();
-    \Log::info('Membership check', ['is_member' => $isMember]);
-    
-    if ($isMember) {
-        \Log::info('Already member - redirecting back');
-        return redirect()->back()
-            ->with('error', 'You are already a member of this institution.');
+
+    if ($institution->requiresApproval()) {
+        return redirect()->back()->with('error', 'This institution requires approval. Please use "Request to Join".');
     }
-    
-    // Check if institution can accept new members
-    $canAdd = $institution->canAddUser();
-    \Log::info('Can add user check', ['can_add' => $canAdd]);
-    
-    if (!$canAdd) {
-        \Log::info('Cannot add user - redirecting back');
-        return redirect()->back()
-            ->with('error', 'This institution has reached its maximum member limit.');
+
+    if ($user->institutions()->where('institution_id', $id)->exists()) {
+        return redirect()->back()->with('error', 'You are already a member of this institution.');
     }
-    
-    \Log::info('Proceeding with join');
-    
-    // Add to pivot table
+
+    if (!$institution->canAddUser()) {
+        return redirect()->back()->with('error', 'This institution has reached its maximum member limit.');
+    }
+
     $user->institutions()->attach($id, [
         'role' => 'member',
         'status' => 'active',
         'joined_at' => now(),
     ]);
-    
-    // Update legacy field if no primary
+
     if (!$user->institution_id) {
-        $user->update([
-            'institution_id' => $id,
-        ]);
+        $user->update(['institution_id' => $id]);
     }
-    
-    // Send welcome notification
+
     NotificationHelper::send(
         $user->id,
         'institution_joined',
@@ -179,9 +157,7 @@ class InstitutionController extends Controller
         "You have successfully joined {$institution->name}!",
         ['institution_id' => $id, 'type' => 'institution_joined']
     );
-    
-    \Log::info('Join successful, redirecting to institution');
-    
+
     return redirect()->route('institution.public.index', $id)
         ->with('success', "You have successfully joined {$institution->name}!");
 }
