@@ -123,31 +123,39 @@ class InstitutionController extends Controller
      * Free join an institution (no approval needed).
      * For: Library, Bookstore, Publisher, Research Center, Other
      */
-  public function freeJoin(Request $request, $id): \Illuminate\Http\RedirectResponse
+ public function freeJoin(Request $request, $id): \Illuminate\Http\RedirectResponse
 {
-    // Handle accidental GET visits
-    if ($request->isMethod('get')) {
-        return redirect()
-            ->route('discover.institutions')
-            ->with('info', 'Please click the Join button to join an institution.');
-    }
+    \Log::info('freeJoin called', [
+        'user_id' => auth()->id(),
+        'institution_id' => $id,
+        'method' => $request->method(),
+        'url' => $request->url(),
+    ]);
     
     $user = auth()->user();
     $institution = Institution::findOrFail($id);
     
-    // ✅ REMOVED: No more approval check - all institutions are free join
-    
     // Check if already a member
-    if ($user->institutions()->where('institution_id', $id)->exists()) {
+    $isMember = $user->institutions()->where('institution_id', $id)->exists();
+    \Log::info('Membership check', ['is_member' => $isMember]);
+    
+    if ($isMember) {
+        \Log::info('Already member - redirecting back');
         return redirect()->back()
             ->with('error', 'You are already a member of this institution.');
     }
     
     // Check if institution can accept new members
-    if (!$institution->canAddUser()) {
+    $canAdd = $institution->canAddUser();
+    \Log::info('Can add user check', ['can_add' => $canAdd]);
+    
+    if (!$canAdd) {
+        \Log::info('Cannot add user - redirecting back');
         return redirect()->back()
             ->with('error', 'This institution has reached its maximum member limit.');
     }
+    
+    \Log::info('Proceeding with join');
     
     // Add to pivot table
     $user->institutions()->attach($id, [
@@ -171,6 +179,8 @@ class InstitutionController extends Controller
         "You have successfully joined {$institution->name}!",
         ['institution_id' => $id, 'type' => 'institution_joined']
     );
+    
+    \Log::info('Join successful, redirecting to institution');
     
     return redirect()->route('institution.public.index', $id)
         ->with('success', "You have successfully joined {$institution->name}!");

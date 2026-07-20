@@ -179,7 +179,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/institution/leave/{institutionId?}', [App\Http\Controllers\InstitutionController::class, 'leave'])
         ->name('institution.leave')->middleware('auth');
 
-   @
+   
 Route::get('/institution/join/free/{id}', [App\Http\Controllers\InstitutionController::class, 'freeJoin'])
     ->name('institution.join.free');
 
