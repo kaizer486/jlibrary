@@ -157,6 +157,37 @@ Route::post('/webhooks/stripe', [App\Http\Controllers\PaymentWebhookController::
 Route::post('/webhooks/pesapal', [App\Http\Controllers\PaymentWebhookController::class, 'handlePesapalCallback']);
 Route::get('/payment/pesapal/callback', [App\Http\Controllers\MultiPaymentController::class, 'pesapalCallback'])->name('payment.pesapal.callback');
 
+
+// ==========================================
+// ADMIN COMMUNITY MANAGEMENT ROUTES
+// ==========================================
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/communities', [App\Http\Controllers\Admin\CommunityController::class, 'index'])
+        ->name('communities.index');
+    Route::get('/communities/{group}', [App\Http\Controllers\Admin\CommunityController::class, 'show'])
+        ->name('communities.show');
+    Route::delete('/communities/{group}', [App\Http\Controllers\Admin\CommunityController::class, 'destroy'])
+        ->name('communities.destroy');
+    Route::post('/communities/{group}/toggle-status', [App\Http\Controllers\Admin\CommunityController::class, 'toggleStatus'])
+        ->name('communities.toggle-status');
+});
+
+// ==========================================
+// SUPER ADMIN COMMUNITY MANAGEMENT ROUTES
+// ==========================================
+Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+    Route::get('/communities', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'index'])
+        ->name('communities.index');
+    Route::get('/communities/{group}', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'show'])
+        ->name('communities.show');
+    Route::delete('/communities/{group}', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'destroy'])
+        ->name('communities.destroy');
+    Route::post('/communities/{group}/toggle-status', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'toggleStatus'])
+        ->name('communities.toggle-status');
+    Route::post('/communities/{group}/feature', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'toggleFeature'])
+        ->name('communities.toggle-feature');
+});
+
 // ==========================================
 // SECTION 2: AUTHENTICATED ROUTES
 // ==========================================

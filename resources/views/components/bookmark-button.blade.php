@@ -4,12 +4,14 @@
     $isBookmarked = method_exists($item, 'isBookmarkedByUser') ? $item->isBookmarkedByUser() : false;
     
     $sizeClasses = [
+        'xs' => 'w-5 h-5 text-[8px]',
         'sm' => 'w-8 h-8 text-sm',
         'md' => 'w-10 h-10 text-base',
         'lg' => 'w-12 h-12 text-lg'
     ];
     
     $iconSizes = [
+        'xs' => 'text-[8px]',
         'sm' => 'text-sm',
         'md' => 'text-base',
         'lg' => 'text-xl'
@@ -50,16 +52,15 @@ function toggleBookmark(btn, id, type) {
         if (data.bookmarked) {
             btn.classList.remove('bg-gray-100', 'text-gray-500', 'hover:bg-gray-200');
             btn.classList.add('bg-purple-500', 'text-white');
-            btn.innerHTML = '<i class="ti ti-bookmark-filled"></i>';
+            btn.innerHTML = '<i class="ti ti-bookmark-filled {{ $iconSizes[$size] }}"></i>';
             
-            // Show success message (optional)
             if (typeof showToast === 'function') {
                 showToast('Added to bookmarks', 'success');
             }
         } else {
             btn.classList.remove('bg-purple-500', 'text-white');
             btn.classList.add('bg-gray-100', 'text-gray-500', 'hover:bg-gray-200');
-            btn.innerHTML = '<i class="ti ti-bookmark"></i>';
+            btn.innerHTML = '<i class="ti ti-bookmark {{ $iconSizes[$size] }}"></i>';
             
             if (typeof showToast === 'function') {
                 showToast('Removed from bookmarks', 'info');

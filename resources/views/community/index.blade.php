@@ -39,7 +39,7 @@
     @if($groups->count() > 0)
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($groups as $group)
-                <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+                <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100">
                     <!-- Group Cover -->
                     <div class="h-32 bg-gradient-to-r from-jlibrary-500 to-jlibrary-700 relative">
                         @if($group->cover_image)
@@ -50,16 +50,59 @@
                             </div>
                         @endif
                         
+                        <!-- Featured Badge -->
+                        @if($group->is_featured)
+                            <div class="absolute top-2 left-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                                ⭐ Featured
+                            </div>
+                        @endif
+                        
                         <!-- Member Count Badge -->
                         <div class="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                            <i class="ti ti-users"></i> {{ $group->member_count ?? 0 }} members
+                            <i class="ti ti-users"></i> {{ $group->members_count ?? 0 }} members
                         </div>
+                        
+                        <!-- Super Admin Controls -->
+                        @auth
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                <div class="absolute top-2 right-2 flex gap-1">
+                                    <a href="{{ route('super-admin.communities.show', $group) }}" 
+                                       class="bg-white/90 text-blue-600 p-1 rounded-md hover:bg-white transition text-xs" 
+                                       title="Manage Group">
+                                        <i class="ti ti-settings"></i>
+                                    </a>
+                                    <form method="POST" action="{{ route('super-admin.communities.destroy', $group) }}" 
+                                          class="inline" 
+                                          onsubmit="return confirm('Delete this group permanently? All posts and messages will be lost.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="bg-white/90 text-red-600 p-1 rounded-md hover:bg-red-600 hover:text-white transition text-xs"
+                                                title="Delete Group">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        @endauth
                     </div>
                     
                     <!-- Group Info -->
                     <div class="p-4">
-                        <h3 class="font-semibold text-lg text-gray-900 mb-1">{{ $group->name }}</h3>
-                        <p class="text-gray-500 text-sm mb-3 line-clamp-2">{{ Str::limit($group->description, 80) }}</p>
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-lg text-gray-900 mb-1">{{ $group->name }}</h3>
+                                <p class="text-gray-500 text-sm mb-3 line-clamp-2">{{ Str::limit($group->description, 80) }}</p>
+                            </div>
+                            <!-- Super Admin Badge -->
+                            @auth
+                                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                    <span class="ml-2 px-2 py-1 text-[8px] font-semibold bg-red-100 text-red-600 rounded-full whitespace-nowrap">
+                                        👑 Admin
+                                    </span>
+                                @endif
+                            @endauth
+                        </div>
                         
                         <div class="flex items-center justify-between">
                             <div class="text-xs text-gray-400">

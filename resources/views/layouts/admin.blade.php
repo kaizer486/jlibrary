@@ -341,7 +341,23 @@
                     <span>Institutions</span>
                 </a>
 
-              
+    <!-- Communities -->
+<a href="{{ route('super-admin.communities.index') }}" 
+   class="nav-item {{ request()->routeIs('super-admin.communities.*') ? 'active' : '' }}"
+   id="communities-link"
+   onclick="hideCommunityBadge()">
+    <i class="ti ti-users text-teal-400 text-xl"></i>
+    <span>Communities</span>
+    @php
+        $communityCount = \App\Models\CommunityGroup::count();
+        $badgeHidden = session()->get('super_admin_communities_badge_hidden', false);
+    @endphp
+    @if($communityCount > 0 && !$badgeHidden)
+        <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full" id="super-admin-community-badge">
+            {{ $communityCount }}
+        </span>
+    @endif
+</a>
 
                 <!-- Applications -->
                 <a href="{{ route('admin.applications.index') }}" class="nav-item {{ request()->routeIs('admin.applications.*') ? 'active' : '' }}">
@@ -554,6 +570,40 @@
 
     <!-- ========== JAVASCRIPT ========== -->
     <script>
+ // Super Admin - Hide community badge when clicked
+    function hideCommunityBadge() {
+        const badge = document.getElementById('super-admin-community-badge');
+        if (badge) {
+            badge.style.display = 'none';
+            // Store in session via AJAX
+            fetch('{{ route("super-admin.hide-community-badge") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                }
+            }).catch(error => console.error('Error hiding badge:', error));
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const badge = document.getElementById('super-admin-community-badge');
+        
+        // If badge was hidden in session, hide it
+        @if(session()->get('super_admin_communities_badge_hidden', false))
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        @endif
+        
+        // If on communities page, always hide the badge
+        @if(request()->routeIs('super-admin.communities.*'))
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        @endif
+    });
+
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('admin-sidebar');
             const overlay = document.getElementById('sidebar-overlay');

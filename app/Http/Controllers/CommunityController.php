@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Group;
-use App\Models\GroupMember;
-use App\Models\GroupMessage;
+use App\Models\CommunityGroup;
+use App\Models\CommunityMember;
+use App\Models\CommunityMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -14,7 +14,7 @@ class CommunityController extends Controller
     // Display all groups
     public function index(Request $request)
     {
-        $query = Group::withCount('members');
+        $query = CommunityGroup::withCount('members');
         
         // Search functionality
         if ($request->has('search')) {
@@ -27,37 +27,37 @@ class CommunityController extends Controller
         // Get user's groups if logged in
         $myGroups = [];
         if (Auth::check()) {
-            $myGroups = Auth::user()->groups()->pluck('groups.id')->toArray();
+            $myGroups = CommunityMember::where('user_id', Auth::id())->pluck('group_id')->toArray();
         }
         
         return view('community.index', compact('groups', 'myGroups'));
     }
     
     // Show single group with chat
-    public function show(Group $group)
+    public function show(CommunityGroup $group)
     {
         // Check if user is a member
         $isMember = false;
         $userRole = null;
         
         if (Auth::check()) {
-            $membership = GroupMember::where('group_id', $group->id)
-                                     ->where('user_id', Auth::id())
-                                     ->first();
+            $membership = CommunityMember::where('group_id', $group->id)
+                                         ->where('user_id', Auth::id())
+                                         ->first();
             $isMember = $membership !== null;
             $userRole = $membership->role ?? null;
         }
         
         // Get messages with user info
-        $messages = GroupMessage::where('group_id', $group->id)
-                                ->with('user')
-                                ->latest()
-                                ->limit(50)
-                                ->get()
-                                ->reverse();
+        $messages = CommunityMessage::where('group_id', $group->id)
+                                    ->with('user')
+                                    ->latest()
+                                    ->limit(50)
+                                    ->get()
+                                    ->reverse();
         
         // Get members count
-        $memberCount = GroupMember::where('group_id', $group->id)->count();
+        $memberCount = CommunityMember::where('group_id', $group->id)->count();
         
         return view('community.show', compact('group', 'isMember', 'messages', 'memberCount', 'userRole'));
     }
@@ -72,30 +72,32 @@ class CommunityController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:100|unique:groups',
+            'name' => 'required|string|max:100|unique:community_groups,name',
             'description' => 'required|string|max:500',
             'cover_image' => 'nullable|image|max:2048'
         ]);
         
-        $group = Group::create([
+        $group = CommunityGroup::create([
             'name' => $request->name,
-            'slug' => Str::slug($request->name),
             'description' => $request->description,
             'created_by' => Auth::id(),
-            'member_count' => 1
+            'is_active' => true,
+            'is_featured' => false,
         ]);
         
         // Add creator as admin member
-        GroupMember::create([
+        CommunityMember::create([
             'group_id' => $group->id,
             'user_id' => Auth::id(),
-            'role' => 'admin'
+            'role' => 'admin',
+            'joined_at' => now(),
         ]);
         
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
-            $path = $request->file('cover_image')->store('group-covers', 'public');
-            $group->update(['cover_image' => $path]);
+            $path = $request->file('cover_image')->store('community-covers', 'public');
+            $group->cover_image = $path;
+            $group->save();
         }
         
         return redirect()->route('community.show', $group)
@@ -103,22 +105,20 @@ class CommunityController extends Controller
     }
     
     // Join a group
-    public function join(Group $group)
+    public function join(CommunityGroup $group)
     {
         // Check if already a member
-        $exists = GroupMember::where('group_id', $group->id)
-                             ->where('user_id', Auth::id())
-                             ->exists();
+        $exists = CommunityMember::where('group_id', $group->id)
+                                 ->where('user_id', Auth::id())
+                                 ->exists();
         
         if (!$exists) {
-            GroupMember::create([
+            CommunityMember::create([
                 'group_id' => $group->id,
                 'user_id' => Auth::id(),
-                'role' => 'member'
+                'role' => 'member',
+                'joined_at' => now(),
             ]);
-            
-            // Increment member count
-            $group->increment('member_count');
             
             return redirect()->back()->with('success', 'You joined the group!');
         }
@@ -127,36 +127,33 @@ class CommunityController extends Controller
     }
     
     // Leave a group
-    public function leave(Group $group)
+    public function leave(CommunityGroup $group)
     {
-        GroupMember::where('group_id', $group->id)
-                   ->where('user_id', Auth::id())
-                   ->delete();
-        
-        // Decrement member count
-        $group->decrement('member_count');
+        CommunityMember::where('group_id', $group->id)
+                       ->where('user_id', Auth::id())
+                       ->delete();
         
         return redirect()->route('community.index')
                          ->with('success', 'You left the group.');
     }
     
     // Send message to group
-    public function sendMessage(Request $request, Group $group)
+    public function sendMessage(Request $request, CommunityGroup $group)
     {
         $request->validate([
             'message' => 'required|string|max:1000'
         ]);
         
         // Check if user is a member
-        $isMember = GroupMember::where('group_id', $group->id)
-                               ->where('user_id', Auth::id())
-                               ->exists();
+        $isMember = CommunityMember::where('group_id', $group->id)
+                                   ->where('user_id', Auth::id())
+                                   ->exists();
         
         if (!$isMember) {
             return redirect()->back()->with('error', 'You must join the group to send messages.');
         }
         
-        GroupMessage::create([
+        CommunityMessage::create([
             'group_id' => $group->id,
             'user_id' => Auth::id(),
             'message' => $request->message
@@ -166,13 +163,13 @@ class CommunityController extends Controller
     }
     
     // Delete a message (only for admins/moderators)
-    public function deleteMessage(Group $group, GroupMessage $message)
+    public function deleteMessage(CommunityGroup $group, CommunityMessage $message)
     {
         // Check if user is admin of the group
-        $isAdmin = GroupMember::where('group_id', $group->id)
-                              ->where('user_id', Auth::id())
-                              ->whereIn('role', ['admin', 'moderator'])
-                              ->exists();
+        $isAdmin = CommunityMember::where('group_id', $group->id)
+                                  ->where('user_id', Auth::id())
+                                  ->whereIn('role', ['admin', 'moderator'])
+                                  ->exists();
         
         // Or check if user owns the message
         $isOwner = $message->user_id === Auth::id();
@@ -186,9 +183,9 @@ class CommunityController extends Controller
     }
     
     // Get messages via AJAX (for real-time feel)
-    public function getMessages(Group $group, $lastId = null)
+    public function getMessages(CommunityGroup $group, $lastId = null)
     {
-        $query = GroupMessage::where('group_id', $group->id)->with('user');
+        $query = CommunityMessage::where('group_id', $group->id)->with('user');
         
         if ($lastId) {
             $query->where('id', '>', $lastId);
@@ -202,7 +199,9 @@ class CommunityController extends Controller
     // My groups page
     public function myGroups()
     {
-        $myGroups = Auth::user()->groups()->withCount('members')->get();
+        $myGroups = CommunityGroup::whereHas('members', function($query) {
+            $query->where('user_id', Auth::id());
+        })->withCount('members')->get();
         
         return view('community.my-groups', compact('myGroups'));
     }
