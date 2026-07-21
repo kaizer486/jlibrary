@@ -12,7 +12,17 @@ class BookPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasInstitution();
+        // ADMINS & SUPER ADMINS - Can see ALL books from ANY institution
+        if ($user->hasRole(['admin', 'super_admin'])) {
+            return true;
+        }
+        
+        // Institution admins - can see their institution's books
+        if ($user->isInstitutionAdmin() && $user->hasInstitution()) {
+            return true;
+        }
+        
+        return false;
     }
 
     /**
@@ -20,12 +30,23 @@ class BookPolicy
      */
     public function view(User $user, Book $book): bool
     {
-        // Can view if they are in the same institution
-        if ($user->institution_id === $book->institution_id) {
+        // ADMINS & SUPER ADMINS - Can see ALL books from ANY institution
+        if ($user->hasRole(['admin', 'super_admin'])) {
             return true;
         }
-
-        return false;
+        
+        // INSTITUTION ADMINS - Can see their institution's books AND global books
+        if ($user->isInstitutionAdmin() && $user->hasInstitution()) {
+            return $user->institution_id === $book->institution_id || $book->institution_id === null;
+        }
+        
+        // REGULAR USERS - Can see their institution's books AND global books
+        if ($user->hasInstitution()) {
+            return $user->institution_id === $book->institution_id || $book->institution_id === null;
+        }
+        
+        // Users with no institution can only see global books
+        return $book->institution_id === null;
     }
 
     /**
@@ -34,8 +55,6 @@ class BookPolicy
      */
     public function viewCover(User $user, Book $book): bool
     {
-        // Allow public access to cover images
-        // No login or institution check required
         return true;
     }
 
@@ -44,6 +63,12 @@ class BookPolicy
      */
     public function create(User $user): bool
     {
+        // Admins and Super Admins can create books for any institution
+        if ($user->hasRole(['admin', 'super_admin'])) {
+            return true;
+        }
+        
+        // Institution admins can create books for their institution
         return $user->hasInstitution() && $user->isInstitutionAdmin();
     }
 
@@ -52,7 +77,12 @@ class BookPolicy
      */
     public function update(User $user, Book $book): bool
     {
-        // Can update if they are in the same institution and are an admin
+        // Admins and Super Admins can update ANY book
+        if ($user->hasRole(['admin', 'super_admin'])) {
+            return true;
+        }
+        
+        // Institution admins can update their institution's books
         if ($user->institution_id === $book->institution_id && $user->isInstitutionAdmin()) {
             return true;
         }
@@ -65,7 +95,12 @@ class BookPolicy
      */
     public function delete(User $user, Book $book): bool
     {
-        // Can delete if they are in the same institution and are an admin
+        // Admins and Super Admins can delete ANY book
+        if ($user->hasRole(['admin', 'super_admin'])) {
+            return true;
+        }
+        
+        // Institution admins can delete their institution's books
         if ($user->institution_id === $book->institution_id && $user->isInstitutionAdmin()) {
             return true;
         }
@@ -78,6 +113,11 @@ class BookPolicy
      */
     public function export(User $user): bool
     {
+        // Admins and Super Admins can export ALL books
+        if ($user->hasRole(['admin', 'super_admin'])) {
+            return true;
+        }
+        
         return $user->hasInstitution() && $user->isInstitutionAdmin();
     }
 
@@ -86,7 +126,12 @@ class BookPolicy
      */
     public function approve(User $user, Book $book): bool
     {
-        // Can approve if they are in the same institution and are an admin
+        // Admins and Super Admins can approve ANY book
+        if ($user->hasRole(['admin', 'super_admin'])) {
+            return true;
+        }
+        
+        // Institution admins can approve their institution's books
         if ($user->institution_id === $book->institution_id && $user->isInstitutionAdmin()) {
             return true;
         }

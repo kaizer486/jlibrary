@@ -572,6 +572,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     Route::resource('books', AdminBookController::class);
     Route::post('/books/{book}/toggle-status', [AdminBookController::class, 'toggleStatus'])->name('books.toggle-status');
+    Route::post('/books/{book}/toggle-featured', [AdminBookController::class, 'toggleFeatured'])->name('books.toggle-featured');
+    Route::post('/books/{book}/toggle-trending', [AdminBookController::class, 'toggleTrending'])->name('books.toggle-trending');
     Route::post('/books/bulk-action', [AdminBookController::class, 'bulkAction'])->name('books.bulk-action');
     
     Route::resource('users', AdminUserController::class);

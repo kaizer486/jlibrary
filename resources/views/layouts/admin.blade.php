@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Admin Panel - JLIBRARY</title>
+    <title>@yield('title', 'Admin Panel') - JLIBRARY</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
@@ -18,21 +18,27 @@
             min-height: 100vh;
         }
         
-        /* Sidebar - Mobile responsive */
+        /* Sidebar - Fixed position on desktop */
         #admin-sidebar {
-            transition: transform 0.3s ease;
-            transform: translateX(0);
-            z-index: 100;
             width: 280px;
+            flex-shrink: 0;
+            height: 100vh;
+            overflow-y: auto;
+            background: #111827;
+            color: white;
+            transition: transform 0.3s ease;
+            z-index: 100;
+            position: sticky;
+            top: 0;
         }
         
         @media (max-width: 1024px) {
             #admin-sidebar {
-                transform: translateX(-100%);
                 position: fixed;
                 height: 100vh;
                 top: 0;
                 left: 0;
+                transform: translateX(-100%);
                 overflow-y: auto;
             }
             
@@ -54,43 +60,90 @@
             display: block;
         }
         
-        .sidebar-item:hover { 
-            background-color: #7c3aed; 
-            color: white; 
-        }
-        .sidebar-item.active { 
-            background-color: #7c3aed; 
-            color: white; 
+        /* Main content wrapper */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            height: 100vh;
+            overflow: hidden;
         }
         
-        /* Search results */
-        .search-results {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            width: 320px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-            z-index: 50;
-            max-height: 400px;
+        /* Scrollable content area */
+        .scrollable-content {
+            flex: 1;
             overflow-y: auto;
-            margin-top: 8px;
+            padding: 1rem;
         }
         
-        @media (max-width: 640px) {
-            .search-results {
-                width: calc(100vw - 2rem);
-                right: 1rem;
-                left: 1rem;
+        @media (min-width: 640px) {
+            .scrollable-content {
+                padding: 1.25rem;
             }
         }
         
-        .search-results a:hover { 
-            background-color: #f3f4f6; 
+        @media (min-width: 768px) {
+            .scrollable-content {
+                padding: 1.5rem;
+            }
         }
         
-        /* Mobile top bar improvements */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.625rem 0.75rem;
+            margin: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            color: #9ca3af;
+            text-decoration: none;
+        }
+        .nav-item:hover {
+            background-color: #374151;
+            color: white;
+        }
+        .nav-item:hover i { color: white !important; }
+        .nav-item.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+        .nav-item.active i { color: white !important; }
+        
+        /* Submenu items */
+        .nav-sub-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            margin: 0.1rem 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            color: #9ca3af;
+            font-size: 0.875rem;
+            text-decoration: none;
+        }
+        .nav-sub-item:hover {
+            background-color: #374151;
+            color: white;
+        }
+        .nav-sub-item.active {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+        .nav-sub-item.active i { color: #818cf8 !important; }
+        
+        .nav-section-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #6b7280;
+            padding: 0.75rem 0.75rem 0.25rem;
+            font-weight: 600;
+        }
+        
+        /* Mobile improvements */
         @media (max-width: 640px) {
             .top-bar-mobile {
                 flex-wrap: wrap;
@@ -100,16 +153,74 @@
             .admin-info-mobile {
                 display: none !important;
             }
-            
-            .search-bar-mobile {
-                display: none !important;
-            }
-            
-            #admin-profile-dropdown {
-                width: calc(100vw - 2rem);
-                right: 1rem;
-                left: 1rem;
-            }
+        }
+
+        /* Badge styles */
+        .badge-orange {
+            background: #ea580c;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        .badge-yellow {
+            background: #ca8a04;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        .badge-red {
+            background: #dc2626;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        .badge-green {
+            background: #16a34a;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        .badge-purple {
+            background: #7c3aed;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            margin-left: auto;
+        }
+        
+        /* Role badge in top bar */
+        .role-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .role-badge.super-admin {
+            background: #dc2626;
+            color: white;
+        }
+        .role-badge.admin {
+            background: #7c3aed;
+            color: white;
+        }
+        .role-badge.institution-admin {
+            background: #2563eb;
+            color: white;
         }
     </style>
 </head>
@@ -118,254 +229,327 @@
     <div id="sidebar-overlay" onclick="closeSidebar()"></div>
     
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
-        <aside id="admin-sidebar" class="bg-gray-900 text-white flex-shrink-0 overflow-y-auto">
-            <div class="p-4 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <i class="ti ti-book text-2xl"></i>
-                        <span class="text-xl font-bold">JLIBRARY</span>
-                    </div>
-                    <!-- Close button for mobile -->
-                    <button id="close-sidebar-mobile" class="lg:hidden text-gray-400 hover:text-white">
-                        <i class="ti ti-x text-2xl"></i>
-                    </button>
+        <!-- ========================================== -->
+        <!-- ADMIN SIDEBAR                              -->
+        <!-- ========================================== -->
+        <aside id="admin-sidebar">
+
+        <!-- Brand -->
+        <div class="p-4 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                        <i class="ti ti-crown text-red-400 text-2xl"></i>
+                        <span class="text-xl font-bold text-red-400">SUPER ADMIN</span>
+                    @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                        <i class="ti ti-shield text-indigo-400 text-2xl"></i>
+                        <span class="text-xl font-bold text-indigo-400">ADMIN</span>
+                    @elseif(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                        <i class="ti ti-building text-blue-400 text-2xl"></i>
+                        <span class="text-xl font-bold text-blue-400">INSTITUTION</span>
+                    @else
+                        <i class="ti ti-user text-gray-400 text-2xl"></i>
+                        <span class="text-xl font-bold text-gray-400">DASHBOARD</span>
+                    @endif
                 </div>
-                <p class="text-xs text-gray-400 mt-1">Admin Panel</p>
-                @if(auth()->user()?->hasRole('super_admin'))
-                    <div class="mt-2 inline-block bg-red-600/20 text-red-400 text-xs px-2 py-0.5 rounded-full">
-                        👑 Super Admin Access
-                    </div>
-                @endif
+                <!-- Close button for mobile -->
+                <button id="close-sidebar-mobile" class="lg:hidden text-gray-400 hover:text-white">
+                    <i class="ti ti-x text-2xl"></i>
+                </button>
             </div>
-            
-            <nav class="p-4 space-y-1">
-                <!-- ========================================== -->
-                <!-- SUPER ADMIN MENU -->
-                <!-- ========================================== -->
-                @hasrole('super_admin')
-                    <div class="px-3 mt-4 mb-2">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider">Super Admin</p>
-                    </div>
-                    <a href="{{ route('super-admin.dashboard') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('super-admin.dashboard') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-crown"></i> Super Dashboard
-                    </a>
-                    <a href="{{ route('admin.books.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.books.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-books"></i> Books
-                    </a>
-                    <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-users"></i> Users
-                    </a>
-                    <a href="{{ route('admin.institutions.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.institutions.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-building"></i> Institutions
-                    </a>
-                    <a href="{{ route('admin.marketplace.pending') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.marketplace.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-shopping-cart"></i> Marketplace
-                    </a>
-                    <a href="{{ route('admin.analytics') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.analytics') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-chart-bar"></i> Analytics
-                    </a>
-                    <a href="{{ route('admin.payments.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
-                        <i class="ti ti-wallet"></i> Payments
-                    </a>
-                    <a href="{{ route('admin.applications.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.applications.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-files"></i> Applications
-                        @php
-                            $pendingCount = App\Models\Application::where('status', 'pending')->count();
-                        @endphp
-                        @if($pendingCount > 0)
-                            <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('admin.quotes.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
-                        <i class="ti ti-quote"></i> Manage Quotes
-                    </a>
-                @endhasrole
-
-                <!-- ========================================== -->
-                <!-- ADMIN MENU -->
-                <!-- ========================================== -->
-                @hasrole('admin')
-                    <div class="px-3 mt-4 mb-2">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider">Administration</p>
-                    </div>
-                    <a href="{{ route('admin.dashboard') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.dashboard') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-dashboard"></i> Dashboard
-                    </a>
-                    <a href="{{ route('admin.books.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.books.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-books"></i> Books
-                    </a>
-                    <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.users.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-users"></i> Users
-                    </a>
-                    <a href="{{ route('admin.institutions.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.institutions.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-building"></i> Institutions
-                    </a>
-                    <a href="{{ route('admin.marketplace.pending') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.marketplace.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-shopping-cart"></i> Marketplace
-                    </a>
-                    <a href="{{ route('admin.analytics') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.analytics') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-chart-bar"></i> Analytics
-                    </a>
-                    <a href="{{ route('admin.payments.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
-                        <i class="ti ti-wallet"></i> Payments
-                    </a>
-                    <a href="{{ route('admin.applications.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('admin.applications.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-files"></i> Applications
-                        @php
-                            $pendingCount = App\Models\Application::where('status', 'pending')->count();
-                        @endphp
-                        @if($pendingCount > 0)
-                            <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingCount }}</span>
-                        @endif
-                    </a>
-                    <a href="{{ route('admin.quotes.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition">
-                        <i class="ti ti-quote"></i> Manage Quotes
-                    </a>
-                @endhasrole
-
-                <!-- ========================================== -->
-                <!-- INSTITUTION ADMIN MENU -->
-                <!-- ========================================== -->
-                @hasanyrole('institution_admin|school_admin|college_admin|university_admin|library_admin|bookstore_admin|publisher_admin|researcher')
-                    <div class="px-3 mt-4 mb-2">
-                        <p class="text-xs text-gray-500 uppercase tracking-wider">
-                            @php
-                                $user = auth()->user();
-                            @endphp
-                            
-                            @if($user->hasRole('school_admin'))
-                                🏫 School Admin
-                            @elseif($user->hasRole('college_admin'))
-                                🎓 College Admin
-                            @elseif($user->hasRole('university_admin'))
-                                🏛️ University Admin
-                            @elseif($user->hasRole('library_admin'))
-                                📚 Library Admin
-                            @elseif($user->hasRole('bookstore_admin'))
-                                📖 Bookstore Admin
-                            @elseif($user->hasRole('publisher_admin'))
-                                📰 Publisher Admin
-                            @elseif($user->hasRole('researcher'))
-                                🔬 Researcher
-                            @else
-                                🏢 Institution Admin
-                            @endif
-                        </p>
-                    </div>
-                    <a href="{{ route('institution.dashboard') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('institution.dashboard') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-dashboard"></i> Dashboard
-                    </a>
-                    <a href="{{ route('institution.members.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('institution.members.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-users"></i> Members
-                    </a>
-                    <a href="{{ route('institution.books.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('institution.books.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-books"></i> Books
-                    </a>
-                    <a href="{{ route('institution.withdrawals.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('institution.withdrawals.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-wallet"></i> Withdrawals
-                    </a>
-                    <a href="{{ route('institution.quotes.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('institution.quotes.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-quote"></i> Institution Quotes
-                    </a>
-                    <a href="{{ route('institution.join-requests.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('institution.join-requests.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-user-check"></i> Join Requests
-                    </a>
-                    <a href="{{ route('institution.subscription.index') }}" class="sidebar-item flex items-center gap-3 px-3 py-2 rounded-lg transition {{ request()->routeIs('institution.subscription.*') ? 'active' : 'text-gray-300 hover:bg-gray-800' }}">
-                        <i class="ti ti-crown"></i> Subscription
-                        @if(Auth::user()->institution && Auth::user()->institution->isSubscriptionActive())
-                            <span class="ml-auto text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-                                {{ Auth::user()->institution->getDaysLeft() }} days
-                            </span>
-                        @endif
-                    </a>
-                @endhasanyrole
-
-                <hr class="my-3 border-gray-800">
+            <p class="text-xs mt-1 
+                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                    text-red-400
+                @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                    text-indigo-400
+                @elseif(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                    text-blue-400
+                @else
+                    text-gray-400
+                @endif
+            ">
+                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                    Full Platform Control
+                @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                    Platform Management
+                @elseif(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                    Institution Management
+                @else
+                    User Dashboard
+                @endif
+            </p>
+        </div>           
+        <nav class="p-4 space-y-1">
+            <!-- ========================================== -->
+            <!-- DASHBOARD                                -->
+            <!-- ========================================== -->
+            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin') || auth()->user()->isAdmin() || auth()->user()->hasRole('admin') || auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                <div class="px-3 mt-4 mb-2">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Dashboard</p>
+                </div>
                 
-                <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
-                    <i class="ti ti-arrow-left"></i> <span class="hidden sm:inline">Back to Dashboard</span>
+                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                    <a href="{{ route('super-admin.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.dashboard') ? 'active' : '' }}">
+                        <i class="ti ti-crown text-red-400 text-xl"></i>
+                        <span>Super Dashboard</span>
+                    </a>
+                @endif
+
+                @if(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                    <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                        <i class="ti ti-shield text-indigo-400 text-xl"></i>
+                        <span>Admin Dashboard</span>
+                    </a>
+                @endif
+
+                @if(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                    <a href="{{ route('institution.dashboard') }}" class="nav-item {{ request()->routeIs('institution.dashboard') ? 'active' : '' }}">
+                        <i class="ti ti-building text-blue-400 text-xl"></i>
+                        <span>Institution Dashboard</span>
+                    </a>
+                @endif
+            @endif
+
+            <!-- ========================================== -->
+            <!-- PLATFORM MANAGEMENT - Admin & Super Admin -->
+            <!-- ========================================== -->
+            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin') || auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                <div class="nav-section-title mt-4">
+                    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                        🔒 Platform Management
+                    @else
+                        ⚙️ Platform Management
+                    @endif
+                </div>
+
+                <!-- Books -->
+                <a href="{{ route('admin.books.index') }}" class="nav-item {{ request()->routeIs('admin.books.*') ? 'active' : '' }}">
+                    <i class="ti ti-books text-blue-400 text-xl"></i>
+                    <span>Manage Books</span>
                 </a>
-                
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition">
-                        <i class="ti ti-logout"></i> <span class="hidden sm:inline">Logout</span>
-                    </button>
-                </form>
-            </nav>    
+
+                <!-- Users -->
+                <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                    <i class="ti ti-users text-cyan-400 text-xl"></i>
+                    <span>Manage Users</span>
+                </a>
+
+                <!-- Institutions -->
+                <a href="{{ route('admin.institutions.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.institutions.*') ? 'active' : '' }}">
+                    <i class="ti ti-building text-indigo-400 text-xl"></i>
+                    <span>Institutions</span>
+                </a>
+
+              
+
+                <!-- Applications -->
+                <a href="{{ route('admin.applications.index') }}" class="nav-item {{ request()->routeIs('admin.applications.*') ? 'active' : '' }}">
+                    <i class="ti ti-files text-yellow-400 text-xl"></i>
+                    <span>Applications</span>
+                    @php
+                        $pendingAppCount = \App\Models\Application::where('status', 'pending')->count();
+                    @endphp
+                    @if($pendingAppCount > 0)
+                        <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingAppCount }}</span>
+                    @endif
+                </a>
+
+                <!-- Quotes -->
+                <a href="{{ route('admin.quotes.index') }}" class="nav-item {{ request()->routeIs('admin.quotes.*') ? 'active' : '' }}">
+                    <i class="ti ti-quote text-purple-400 text-xl"></i>
+                    <span>Manage Quotes</span>
+                </a>
+
+                <!-- ========================================== -->
+                <!-- ANALYTICS - Admin & Super Admin          -->
+                <!-- ========================================== -->
+                <div class="nav-section-title mt-4">📊 Analytics</div>
+
+                <a href="{{ route('admin.analytics') }}" class="nav-item {{ request()->routeIs('admin.analytics') ? 'active' : '' }}">
+                    <i class="ti ti-chart-bar text-yellow-400 text-xl"></i>
+                    <span>Analytics</span>
+                </a>
+            @endif
+
+            <!-- ========================================== -->
+            <!-- INSTITUTION MANAGEMENT - Institution Admin -->
+            <!-- ========================================== -->
+            @if(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                <div class="nav-section-title mt-4">🏢 Institution Management</div>
+
+                <!-- Members -->
+                <a href="{{ route('institution.members.index') }}" class="nav-item {{ request()->routeIs('institution.members.*') ? 'active' : '' }}">
+                    <i class="ti ti-users text-cyan-400 text-xl"></i>
+                    <span>Members</span>
+                </a>
+
+                <!-- Books -->
+                <a href="{{ route('institution.books.index') }}" class="nav-item {{ request()->routeIs('institution.books.*') ? 'active' : '' }}">
+                    <i class="ti ti-books text-blue-400 text-xl"></i>
+                    <span>Books</span>
+                </a>
+
+                <!-- Withdrawals -->
+                <a href="{{ route('institution.withdrawals.index') }}" class="nav-item {{ request()->routeIs('institution.withdrawals.*') ? 'active' : '' }}">
+                    <i class="ti ti-wallet text-green-400 text-xl"></i>
+                    <span>Withdrawals</span>
+                </a>
+
+                <!-- Join Requests -->
+                <a href="{{ route('institution.join-requests.index') }}" class="nav-item {{ request()->routeIs('institution.join-requests.*') ? 'active' : '' }}">
+                    <i class="ti ti-user-check text-yellow-400 text-xl"></i>
+                    <span>Join Requests</span>
+                </a>
+
+                <!-- Subscription -->
+                <a href="{{ route('institution.subscription.index') }}" class="nav-item {{ request()->routeIs('institution.subscription.*') ? 'active' : '' }}">
+                    <i class="ti ti-crown text-purple-400 text-xl"></i>
+                    <span>Subscription</span>
+                    @if(Auth::user()->institution && Auth::user()->institution->isSubscriptionActive())
+                        <span class="ml-auto text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                            {{ Auth::user()->institution->getDaysLeft() }} days
+                        </span>
+                    @endif
+                </a>
+
+                <!-- Institution Quotes -->
+                <a href="{{ route('institution.quotes.index') }}" class="nav-item {{ request()->routeIs('institution.quotes.*') ? 'active' : '' }}">
+                    <i class="ti ti-quote text-pink-400 text-xl"></i>
+                    <span>Institution Quotes</span>
+                </a>
+            @endif
+
+            <!-- ========================================== -->
+            <!-- NAVIGATION                              -->
+            <!-- ========================================== -->
+            <hr class="my-3 border-gray-800">
+
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 transition">
+                <i class="ti ti-arrow-left"></i> <span class="hidden sm:inline">Back to User Site</span>
+            </a>
+            
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-red-400 hover:bg-red-900/20 transition">
+                    <i class="ti ti-logout"></i> <span class="hidden sm:inline">Logout</span>
+                </button>
+            </form>
+        </nav>           
         </aside>
         
-        <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto bg-gray-50">
+        <!-- ========================================== -->
+        <!-- MAIN CONTENT                              -->
+        <!-- ========================================== -->
+        <div class="main-wrapper">
             <!-- Top Bar -->
-            <div class="bg-white shadow-sm sticky top-0 z-20 border-b">
-                <div class="flex items-center justify-between px-4 sm:px-6 py-3 top-bar-mobile">
+            <div class="bg-white shadow-sm sticky top-0 z-20 border-b flex-shrink-0">
+                <div class="px-4 sm:px-6 py-3 flex justify-between items-center top-bar-mobile">
                     <div class="flex items-center gap-3">
                         <!-- Mobile menu toggle -->
                         <button id="open-sidebar-mobile" class="lg:hidden text-gray-600 hover:text-purple-600">
                             <i class="ti ti-menu-2 text-2xl"></i>
                         </button>
-                        <h1 class="text-gray-800 text-lg sm:text-xl font-semibold truncate">@yield('title', 'Admin Dashboard')</h1>
+                        <h1 class="text-lg sm:text-xl font-semibold text-gray-800 truncate">@yield('title', 'Admin Dashboard')</h1>
                     </div>
                     
-                    <div class="flex items-center gap-2 sm:gap-4">
-                        <!-- Search Bar - Hidden on mobile -->
-                        <div class="relative hidden sm:block">
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i class="ti ti-search text-gray-400 text-sm"></i>
-                                </div>
-                                <input type="text" id="admin-search" 
-                                       placeholder="Search users, books..." 
-                                       class="w-48 lg:w-80 pl-9 pr-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg border border-gray-200 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder-gray-400">
-                                
-                                <div id="search-results" class="search-results hidden">
-                                    <div class="p-2">
-                                        <div class="text-xs text-gray-500 px-3 py-2">Loading...</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Admin Info - Hidden on mobile -->
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <!-- User Info -->
                         <div class="hidden sm:flex items-center gap-2 admin-info-mobile">
-                            <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
-                                <i class="ti ti-user text-white text-sm"></i>
+                            <div class="w-8 h-8 rounded-full 
+                                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                    bg-gradient-to-r from-red-500 to-red-600
+                                @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                                    bg-gradient-to-r from-indigo-500 to-purple-600
+                                @elseif(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                                    bg-gradient-to-r from-blue-500 to-cyan-500
+                                @else
+                                    bg-gradient-to-r from-gray-500 to-gray-600
+                                @endif
+                                flex items-center justify-center flex-shrink-0">
+                                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                    <i class="ti ti-crown text-white text-sm"></i>
+                                @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                                    <i class="ti ti-shield text-white text-sm"></i>
+                                @elseif(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                                    <i class="ti ti-building text-white text-sm"></i>
+                                @else
+                                    <i class="ti ti-user text-white text-sm"></i>
+                                @endif
                             </div>
                             <div class="hidden md:block">
-                                <p class="text-sm font-medium text-gray-700">{{ Auth::user()->full_name }}</p>
-                                <p class="text-xs">
-                                    @php
-                                        $user = auth()->user();
-                                    @endphp
-                                    
-                                    @if($user->hasRole('super_admin'))
-                                        <span class="text-red-500 font-semibold">👑 Super Admin</span>
-                                    @elseif($user->hasRole('admin'))
-                                        <span class="text-purple-500 font-semibold">🛡️ Admin</span>
-                                    @elseif($user->hasRole('institution_admin'))
-                                        <span class="text-blue-500 font-semibold">🏢 Institution Admin</span>
-                                    @else
-                                        <span class="text-gray-400">Admin</span>
-                                    @endif
-                                </p>
+                                <p class="text-sm font-medium text-gray-700">{{ Auth::user()->full_name ?? 'Admin' }}</p>
+                                @if(Auth::user()->isSuperAdmin() || Auth::user()->hasRole('super_admin'))
+                                    <span class="role-badge super-admin">👑 Super Admin</span>
+                                @elseif(Auth::user()->isAdmin() || Auth::user()->hasRole('admin'))
+                                    <span class="role-badge admin">🛡️ Admin</span>
+                                @elseif(Auth::user()->isInstitutionAdmin() || Auth::user()->hasRole('institution_admin'))
+                                    <span class="role-badge institution-admin">🏢 Institution Admin</span>
+                                @else
+                                    <span class="role-badge admin">Admin</span>
+                                @endif
                             </div>
                         </div>
                         
-                        <!-- Mobile avatar (smaller) -->
-                        <div class="sm:hidden w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
-                            <i class="ti ti-user text-white text-sm"></i>
+                        <!-- Mobile avatar -->
+                        <div class="sm:hidden w-8 h-8 rounded-full 
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                bg-gradient-to-r from-red-500 to-red-600
+                            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                                bg-gradient-to-r from-indigo-500 to-purple-600
+                            @elseif(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                                bg-gradient-to-r from-blue-500 to-cyan-500
+                            @else
+                                bg-gradient-to-r from-gray-500 to-gray-600
+                            @endif
+                            flex items-center justify-center flex-shrink-0">
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                <i class="ti ti-crown text-white text-sm"></i>
+                            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                                <i class="ti ti-shield text-white text-sm"></i>
+                            @elseif(auth()->user()->isInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                                <i class="ti ti-building text-white text-sm"></i>
+                            @else
+                                <i class="ti ti-user text-white text-sm"></i>
+                            @endif
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Page Content -->
-            <div class="p-3 sm:p-4 md:p-6">
+            <!-- Page Content - Scrollable -->
+            <div class="scrollable-content">
+                @if(session('success'))
+                    <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <i class="ti ti-check-circle text-green-500"></i>
+                        {{ session('success') }}
+                    </div>
+                @endif
+                
+                @if(session('error'))
+                    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <i class="ti ti-alert-circle text-red-500"></i>
+                        {{ session('error') }}
+                    </div>
+                @endif
+                
+                @if(session('warning'))
+                    <div class="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <i class="ti ti-alert-triangle text-yellow-500"></i>
+                        {{ session('warning') }}
+                    </div>
+                @endif
+                
+                @if(session('info'))
+                    <div class="mb-4 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                        <i class="ti ti-info-circle text-blue-500"></i>
+                        {{ session('info') }}
+                    </div>
+                @endif
+                
                 @yield('content')
             </div>
-        </main>
+        </div>
     </div>
 
     <!-- ========== JAVASCRIPT ========== -->
@@ -396,6 +580,9 @@
                 document.body.style.overflow = '';
             }
 
+            // Make closeSidebar available globally for onclick
+            window.closeSidebar = closeSidebar;
+
             if (openBtn) {
                 openBtn.addEventListener('click', openSidebar);
             }
@@ -411,70 +598,15 @@
                 }
             });
 
-            // ==========================================
-            // SEARCH FUNCTIONALITY
-            // ==========================================
-            const searchInput = document.getElementById('admin-search');
-            const resultsDiv = document.getElementById('search-results');
-            let searchTimeout;
-
-            if (searchInput && resultsDiv) {
-                searchInput.addEventListener('input', function() {
-                    clearTimeout(searchTimeout);
-                    const query = this.value.trim();
-                    
-                    if (query.length < 2) {
-                        resultsDiv.classList.add('hidden');
-                        return;
-                    }
-                    
-                    searchTimeout = setTimeout(() => {
-                        fetch(`/admin/search?q=${encodeURIComponent(query)}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.users.length === 0 && data.books.length === 0) {
-                                    resultsDiv.innerHTML = `<div class="p-4 text-center text-gray-500 text-sm">No results found for "${query}"</div>`;
-                                    resultsDiv.classList.remove('hidden');
-                                    return;
-                                }
-                                
-                                let html = '';
-                                
-                                if (data.users.length > 0) {
-                                    html += '<div class="px-3 py-2 text-xs font-semibold text-gray-500 border-b">USERS</div>';
-                                    data.users.forEach(user => {
-                                        html += `<a href="/admin/users/${user.id}/edit" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition border-b last:border-0">
-                                            <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center"><i class="ti ti-user text-purple-600 text-sm"></i></div>
-                                            <div><p class="text-sm font-medium text-gray-800">${user.full_name}</p><p class="text-xs text-gray-500">${user.email}</p></div>
-                                        </a>`;
-                                    });
-                                }
-                                
-                                if (data.books.length > 0) {
-                                    html += '<div class="px-3 py-2 text-xs font-semibold text-gray-500 border-b">BOOKS</div>';
-                                    data.books.forEach(book => {
-                                        html += `<a href="/admin/books/${book.id}/edit" class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition border-b last:border-0">
-                                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center"><i class="ti ti-book text-blue-600 text-sm"></i></div>
-                                            <div><p class="text-sm font-medium text-gray-800">${book.title}</p><p class="text-xs text-gray-500">by ${book.author}</p></div>
-                                        </a>`;
-                                    });
-                                }
-                                
-                                resultsDiv.innerHTML = html;
-                                resultsDiv.classList.remove('hidden');
-                            });
-                    }, 300);
-                });
-                
-                document.addEventListener('click', function(e) {
-                    if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
-                        resultsDiv.classList.add('hidden');
-                    }
-                });
-            }
+            // Close on window resize to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 1024) {
+                    closeSidebar();
+                }
+            });
         });
     </script>
-    
+
     @stack('scripts')
 </body>
 </html>

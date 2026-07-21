@@ -8,107 +8,138 @@ use Illuminate\Http\Request;
 
 class InstitutionController extends Controller
 {
-    /**
-     * Display a listing of institutions (View-Only).
-     */
     public function index(Request $request)
     {
         $query = Institution::withCount(['users', 'books']);
-
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('city', 'LIKE', "%{$search}%");
+        
+        // Search filter
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('city', 'like', '%' . $request->search . '%');
             });
         }
-
-        // Filter by status
-        if ($request->filled('status') && $request->status !== 'all') {
+        
+        // Status filter
+        if ($request->status) {
             $query->where('status', $request->status);
         }
-
-        // Filter by type
-        if ($request->filled('type') && $request->type !== 'all') {
+        
+        // Type filter
+        if ($request->type) {
             $query->where('type', $request->type);
         }
-
-        $institutions = $query->latest()->paginate(15)->appends($request->query());
-
-        // Stats
-        $stats = [
-            'total' => Institution::count(),
-            'approved' => Institution::where('status', 'approved')->count(),
-            'pending' => Institution::where('status', 'pending')->count(),
-            'suspended' => Institution::where('status', 'suspended')->count(),
-        ];
-
-        return view('admin.institutions.index', compact('institutions', 'stats'));
+        
+        $institutions = $query->latest()->paginate(15);
+        
+        // ==========================================
+        // STATS - ADD ALL THESE VARIABLES
+        // ==========================================
+        $totalInstitutions = Institution::count();
+        $pendingInstitutions = Institution::where('status', 'pending')->count();
+        $approvedInstitutions = Institution::where('status', 'approved')->count();
+        $suspendedInstitutions = Institution::where('status', 'suspended')->count();
+        
+        return view('admin.institutions.index', compact(
+            'institutions',
+            'totalInstitutions',
+            'pendingInstitutions',
+            'approvedInstitutions',
+            'suspendedInstitutions'
+        ));
     }
 
-    /**
-     * Display the specified institution (View-Only).
-     */
-    public function show($id)
-    {
-        $institution = Institution::withCount(['users', 'books'])
-            ->with(['wallet'])
-            ->findOrFail($id);
-
-        // Get recent users (only names, no sensitive data)
-        $recentUsers = $institution->users()
-            ->latest()
-            ->limit(5)
-            ->get(['id', 'full_name', 'email', 'role', 'created_at']);
-
-        // Get recent books
-        $recentBooks = $institution->books()
-            ->latest()
-            ->limit(5)
-            ->get(['id', 'title', 'author', 'status', 'created_at']);
-
-        return view('admin.institutions.show', compact('institution', 'recentUsers', 'recentBooks'));
-    }
-
-    /**
-     * Show the form for creating a new institution (DISABLED for admin).
-     */
     public function create()
     {
-        abort(403, 'Admin does not have permission to create institutions.');
+        return view('admin.institutions.create');
     }
 
-    /**
-     * Store a newly created institution (DISABLED for admin).
-     */
     public function store(Request $request)
     {
-        abort(403, 'Admin does not have permission to create institutions.');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string',
+            'email' => 'required|email|unique:institutions,email',
+            'phone' => 'nullable|string',
+            'city' => 'nullable|string',
+            'region' => 'nullable|string',
+            'address' => 'nullable|string',
+            'website' => 'nullable|url',
+            'status' => 'required|in:pending,approved,suspended,inactive',
+            'subscription_tier' => 'required|in:basic,premium,enterprise',
+            'max_users' => 'nullable|integer|min:0',
+            'max_books' => 'nullable|integer|min:0',
+        ]);
+
+        $institution = Institution::create($request->all());
+
+        return redirect()->route('admin.institutions.index')
+            ->with('success', 'Institution created successfully!');
     }
 
-    /**
-     * Show the form for editing the specified institution (DISABLED for admin).
-     */
-    public function edit($id)
+    public function show(Institution $institution)
     {
-        abort(403, 'Admin does not have permission to edit institutions.');
+        $institution->loadCount(['users', 'books']);
+        return view('admin.institutions.show', compact('institution'));
     }
 
-    /**
-     * Update the specified institution (DISABLED for admin).
-     */
-    public function update(Request $request, $id)
+    public function edit(Institution $institution)
     {
-        abort(403, 'Admin does not have permission to update institutions.');
+        return view('admin.institutions.edit', compact('institution'));
     }
 
-    /**
-     * Remove the specified institution (DISABLED for admin).
-     */
-    public function destroy($id)
+    public function update(Request $request, Institution $institution)
     {
-        abort(403, 'Admin does not have permission to delete institutions.');
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string',
+            'email' => 'required|email|unique:institutions,email,' . $institution->id,
+            'phone' => 'nullable|string',
+            'city' => 'nullable|string',
+            'region' => 'nullable|string',
+            'address' => 'nullable|string',
+            'website' => 'nullable|url',
+            'status' => 'required|in:pending,approved,suspended,inactive',
+            'subscription_tier' => 'required|in:basic,premium,enterprise',
+            'max_users' => 'nullable|integer|min:0',
+            'max_books' => 'nullable|integer|min:0',
+        ]);
+
+        $institution->update($request->all());
+
+        return redirect()->route('admin.institutions.index')
+            ->with('success', 'Institution updated successfully!');
+    }
+
+    public function destroy(Institution $institution)
+    {
+        // Check if institution has users
+        if ($institution->users()->count() > 0) {
+            return redirect()->back()->with('error', 'Cannot delete institution with users. Remove users first.');
+        }
+
+        $institution->delete();
+
+        return redirect()->route('admin.institutions.index')
+            ->with('success', 'Institution deleted successfully!');
+    }
+
+    public function approve(Institution $institution)
+    {
+        $institution->update(['status' => 'approved']);
+        return redirect()->back()->with('success', 'Institution approved successfully!');
+    }
+
+    public function reject(Institution $institution)
+    {
+        $institution->update(['status' => 'inactive']);
+        return redirect()->back()->with('success', 'Institution rejected successfully!');
+    }
+
+    public function suspend(Institution $institution)
+    {
+        $institution->update(['status' => 'suspended']);
+        return redirect()->back()->with('success', 'Institution suspended successfully!');
     }
 }

@@ -14,8 +14,7 @@ class AdminMiddleware
         
         $user = auth()->user();
         
-        // Log the user's roles for debugging
-        // \Log::info('AdminMiddleware: User roles', ['roles' => $user->getRoleNames()->toArray()]);
+       
         
         // Check if user has admin or super_admin role using Spatie
         if ($user->hasRole(['admin', 'super_admin'])) {

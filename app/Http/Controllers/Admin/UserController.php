@@ -12,53 +12,86 @@ use App\Models\Institution;
 class UserController extends Controller
 {
     public function index(Request $request)
-{
-    $query = User::query();
-    
-    // ==========================================
-    // PRIVACY FILTER: Hide institution members from Admin
-    // ==========================================
-    // Admin can ONLY see users with NO institution (strangers)
-    $query->whereNull('institution_id');
-    
-    // Search functionality
-    if ($request->search) {
-        $query->where(function($q) use ($request) {
-            $q->where('full_name', 'like', '%' . $request->search . '%')
-              ->orWhere('email', 'like', '%' . $request->search . '%');
-        });
+    {
+        $query = User::query();
+        
+        // ==========================================
+        // PRIVACY FILTER: Hide institution members from Admin
+        // ==========================================
+        // Admin can ONLY see users with NO institution (strangers)
+        $query->whereNull('institution_id');
+        
+        // Search functionality
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('full_name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+        
+        // Filter by role (only roles that can exist without institution)
+        if ($request->role && $request->role !== 'all') {
+            $query->where('role', $request->role);
+        }
+        
+        // Filter by institution status
+        if ($request->institution_status && $request->institution_status !== 'all') {
+            if ($request->institution_status === 'with_institution') {
+                $query->whereNotNull('institution_id');
+            } elseif ($request->institution_status === 'without_institution') {
+                $query->whereNull('institution_id');
+            }
+        }
+        
+        // Filter by institution
+        if ($request->institution_id && $request->institution_id !== 'all') {
+            $query->where('institution_id', $request->institution_id);
+        }
+        
+        // Sort options
+        switch ($request->sort) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'name_asc':
+                $query->orderBy('full_name', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('full_name', 'desc');
+                break;
+            default:
+                $query->latest();
+        }
+        
+        $users = $query->paginate(15);
+        
+        // ==========================================
+        // STATS - Count users with NO institution
+        // ==========================================
+        $totalUsers = User::whereNull('institution_id')->count();
+        $superAdminCount = User::where('role', 'super_admin')->whereNull('institution_id')->count();
+        $adminCount = User::where('role', 'admin')->whereNull('institution_id')->count();
+        $institutionAdminCount = User::where('role', 'institution_admin')->whereNull('institution_id')->count(); // ADD THIS
+        $withInstitutionCount = User::whereNotNull('institution_id')->count(); // ADD THIS
+        $withoutInstitutionCount = User::whereNull('institution_id')->count(); // ADD THIS
+        $userCount = User::where('role', 'user')->whereNull('institution_id')->count();
+        
+        // Get institutions for filter dropdown
+        $institutions = Institution::where('status', 'approved')->get();
+        
+        return view('admin.users.index', compact(
+            'users',
+            'totalUsers',
+            'superAdminCount',
+            'adminCount',
+            'institutionAdminCount', // ADD THIS
+            'withInstitutionCount', // ADD THIS
+            'withoutInstitutionCount', // ADD THIS
+            'userCount',
+            'institutions'
+        ));
     }
     
-    // Filter by role (only roles that can exist without institution)
-    if ($request->role && $request->role !== 'all') {
-        $query->where('role', $request->role);
-    }
-    
-    // Sort options
-    switch ($request->sort) {
-        case 'oldest':
-            $query->oldest();
-            break;
-        case 'name_asc':
-            $query->orderBy('full_name', 'asc');
-            break;
-        case 'name_desc':
-            $query->orderBy('full_name', 'desc');
-            break;
-        default:
-            $query->latest();
-    }
-    
-    $users = $query->paginate(15);
-    
-    // Stats for cards (only count users with no institution)
-    $totalUsers = User::whereNull('institution_id')->count();
-    $superAdminCount = User::where('role', 'super_admin')->whereNull('institution_id')->count();
-    $adminCount = User::where('role', 'admin')->whereNull('institution_id')->count();
-    $userCount = User::where('role', 'user')->whereNull('institution_id')->count();
-    
-    return view('admin.users.index', compact('users', 'totalUsers', 'superAdminCount', 'adminCount', 'userCount'));
-}   
     public function show(User $user)
     {
         $user->load(['books', 'certificates']);
@@ -67,8 +100,18 @@ class UserController extends Controller
     
     public function create()
     {
+        $availableRoles = [
+            'user' => '👤 Member',
+            'admin' => '🛡️ Admin',
+            'institution_admin' => '🏢 Institution Admin',
+            'librarian' => '📚 Librarian',
+            'instructor' => '👨‍🏫 Instructor',
+            'author' => '✍️ Author',
+            'researcher' => '🔬 Researcher',
+        ];
+        
         $institutions = Institution::where('status', 'approved')->get();
-        return view('admin.users.create', compact('institutions'));
+        return view('admin.users.create', compact('institutions', 'availableRoles'));
     }
     
     public function store(Request $request)
@@ -77,7 +120,7 @@ class UserController extends Controller
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => ['required', Rule::in(['user', 'admin', 'institution_admin'])],
+            'role' => ['required', Rule::in(['user', 'admin', 'institution_admin', 'librarian', 'instructor', 'author', 'researcher'])],
             'institution_id' => 'nullable|exists:institutions,id',
             'is_institution_admin' => 'boolean',
         ]);
@@ -103,8 +146,19 @@ class UserController extends Controller
             abort(403, 'You cannot edit admin or super admin users.');
         }
         
+        $availableRoles = [
+            'user' => '👤 Member',
+            'admin' => '🛡️ Admin',
+            'super_admin' => '👑 Super Admin',
+            'institution_admin' => '🏢 Institution Admin',
+            'librarian' => '📚 Librarian',
+            'instructor' => '👨‍🏫 Instructor',
+            'author' => '✍️ Author',
+            'researcher' => '🔬 Researcher',
+        ];
+        
         $institutions = Institution::where('status', 'approved')->get();
-        return view('admin.users.edit', compact('user', 'institutions'));
+        return view('admin.users.edit', compact('user', 'institutions', 'availableRoles'));
     }
     
     public function update(Request $request, User $user)
@@ -117,7 +171,7 @@ class UserController extends Controller
         $request->validate([
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => ['required', Rule::in(['user', 'admin', 'institution_admin', 'super_admin'])],
+            'role' => ['required', Rule::in(['user', 'admin', 'institution_admin', 'super_admin', 'librarian', 'instructor', 'author', 'researcher'])],
             'institution_id' => 'nullable|exists:institutions,id',
             'is_institution_admin' => 'boolean',
         ]);
