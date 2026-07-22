@@ -255,7 +255,7 @@ class BookController extends Controller
                 $query->latest();
         }
         
-        $books = $query->paginate(15);
+        $books = $query->paginate(24);
         
         // Stats
         $totalBooks = Book::count();

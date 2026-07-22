@@ -87,14 +87,14 @@ class LibraryController extends Controller
      */
     public function index(Request $request)
     {
-        // ✅ Get books from BOTH tables
+        // Get books from BOTH tables
         $regularBooks = Book::where('status', 'approved')->get();
         $bookstoreBooks = BookshopBook::where('status', 'active')->get();
 
-        // ✅ Merge collections
+        // Merge collections
         $allBooks = $regularBooks->merge($bookstoreBooks);
 
-        // ✅ Apply filters
+        // Apply filters
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $allBooks = $allBooks->filter(function($book) use ($search) {
@@ -109,15 +109,18 @@ class LibraryController extends Controller
             });
         }
 
-        // ✅ Sort by created_at
+        // Sort by created_at
         $allBooks = $allBooks->sortByDesc('created_at');
 
-        // ✅ Paginate
+        // Paginate - FIXED: removed the stray quote
+        $perPage = $request->get('per_page', 48); // Allow user to change per page, default 48
+        $page = $request->get('page', 1);
+        
         $books = new \Illuminate\Pagination\LengthAwarePaginator(
-            $allBooks->forPage($request->get('page', 1), 12),
+            $allBooks->forPage($page, $perPage),
             $allBooks->count(),
-            12,
-            $request->get('page', 1),
+            $perPage,
+            $page,
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
@@ -128,47 +131,45 @@ class LibraryController extends Controller
     }
     
     /**
-     * Show a single book - FIXED to work with both tables
+     * Show a single book - works with both tables
      */
-   /**
- * Show a single book - FIXED to work with both tables
- */
-public function show($id)
-{
-    // ✅ Try to find the book in BOTH tables
-    $book = Book::find($id);
-    if (!$book) {
-        $book = BookshopBook::find($id);
-    }
-    
-    if (!$book) {
-        abort(404, 'Book not found.');
-    }
-    
-    // ✅ If book has NO institution, show it directly in a dedicated view
-    if (!$book->institution_id) {
-        // Load relationships
-        $book->load(['uploader', 'ratings.user', 'reviews.user']);
-        $book->loadCount(['ratings', 'reviews', 'bookmarks']);
-        
-        // Check if user has access
-        $hasAccess = false;
-        $progress = null;
-        
-        if (auth()->check()) {
-            $hasAccess = !$book->is_paid || $book->userHasAccess(auth()->id());
-            $progress = auth()->user()->books()->where('book_id', $book->id)->first();
+    public function show($id)
+    {
+        // Try to find the book in BOTH tables
+        $book = Book::find($id);
+        if (!$book) {
+            $book = BookshopBook::find($id);
         }
         
-        return view('library.global-book-show', compact('book', 'hasAccess', 'progress'));
-    }
+        if (!$book) {
+            abort(404, 'Book not found.');
+        }
+        
+        // If book has NO institution, show it directly in a dedicated view
+        if (!$book->institution_id) {
+            // Load relationships
+            $book->load(['uploader', 'ratings.user', 'reviews.user']);
+            $book->loadCount(['ratings', 'reviews', 'bookmarks']);
+            
+            // Check if user has access
+            $hasAccess = false;
+            $progress = null;
+            
+            if (auth()->check()) {
+                $hasAccess = !$book->is_paid || $book->userHasAccess(auth()->id());
+                $progress = auth()->user()->books()->where('book_id', $book->id)->first();
+            }
+            
+            return view('library.global-book-show', compact('book', 'hasAccess', 'progress'));
+        }
+        
+        // If book HAS institution, redirect to institution page
+        return redirect()->route('institution.public.show', [
+            'institutionId' => $book->institution_id, 
+            'book' => $book->id
+        ]);
+    }    
     
-    // ✅ If book HAS institution, redirect to institution page
-    return redirect()->route('institution.public.show', [
-        'institutionId' => $book->institution_id, 
-        'book' => $book->id
-    ]);
-}    
     /**
      * Read book online (PDF viewer)
      */
@@ -176,7 +177,7 @@ public function show($id)
     {
         $user = auth()->user();
         
-        // ✅ Try to find the book in BOTH tables
+        // Try to find the book in BOTH tables
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -243,7 +244,7 @@ public function show($id)
             'total_pages' => 'required|integer'
         ]);
         
-        // ✅ Try to find the book
+        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -281,7 +282,7 @@ public function show($id)
     {
         $user = auth()->user();
         
-        // ✅ Try to find the book
+        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -358,7 +359,7 @@ public function show($id)
             abort(403, 'Please login to read this book.');
         }
         
-        // ✅ Try to find the book
+        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -410,7 +411,7 @@ public function show($id)
     {
         $status = $request->status ?? 'want_to_read';
         
-        // ✅ Try to find the book
+        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);

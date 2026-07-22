@@ -539,31 +539,32 @@
     <!-- ========== JAVASCRIPT ========== -->
     <script>
         // Hide community badge when clicked
-    function hideCommunityBadge() {
-        const badge = document.getElementById('community-badge');
-        if (badge) {
-            badge.style.display = 'none';
-            // Store in session storage so it stays hidden
-            sessionStorage.setItem('community_badge_hidden', 'true');
-        }
-    }
-
-    // Check if badge should be hidden on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const badge = document.getElementById('community-badge');
-        if (badge && sessionStorage.getItem('community_badge_hidden') === 'true') {
-            badge.style.display = 'none';
-        }
-        
-        // If on communities page, always hide the badge
-        @if(request()->routeIs('super-admin.communities.*'))
+        function hideCommunityBadge() {
+            const badge = document.getElementById('community-badge');
             if (badge) {
                 badge.style.display = 'none';
+                // Store in session storage so it stays hidden
                 sessionStorage.setItem('community_badge_hidden', 'true');
             }
-        @endif
-    });
-    
+        }
+
+        // Check if badge should be hidden on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const badge = document.getElementById('community-badge');
+            if (badge && sessionStorage.getItem('community_badge_hidden') === 'true') {
+                badge.style.display = 'none';
+            }
+            
+            // If on communities page, always hide the badge
+            @if(request()->routeIs('super-admin.communities.*'))
+                if (badge) {
+                    badge.style.display = 'none';
+                    sessionStorage.setItem('community_badge_hidden', 'true');
+                }
+            @endif
+        });
+
+        // Sidebar functions
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('super-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
