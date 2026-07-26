@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.author')
 
 @section('title', 'Request Withdrawal')
+@section('page-title', 'Request Withdrawal')
 
 @section('content')
 
@@ -69,6 +70,7 @@
                         <option value="mpesa" {{ old('payment_method') == 'mpesa' ? 'selected' : '' }}>📱 M-Pesa</option>
                         <option value="tigopesa" {{ old('payment_method') == 'tigopesa' ? 'selected' : '' }}>📱 Tigo Pesa</option>
                         <option value="halopesa" {{ old('payment_method') == 'halopesa' ? 'selected' : '' }}>📱 Halo Pesa</option>
+                        <option value="airtel_money" {{ old('payment_method') == 'airtel_money' ? 'selected' : '' }}>📱 Airtel Money</option>
                         <option value="bank" {{ old('payment_method') == 'bank' ? 'selected' : '' }}>🏦 Bank Transfer</option>
                     </select>
                     @error('payment_method')
@@ -87,7 +89,7 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                     <p class="text-xs text-slate-400 mt-1">
-                        For M-Pesa/Tigo/Halo: Enter phone number (e.g., 0712345678)
+                        For M-Pesa/Tigo/Halo/Airtel: Enter phone number (e.g., 0712345678)
                         <br>For Bank: Enter account number and bank name
                     </p>
                 </div>
@@ -121,4 +123,74 @@
         </form>
     </div>
 </div>
+
+@push('styles')
+<style>
+    /* Custom styles for the withdrawal page */
+    .bg-emerald-100 {
+        background-color: #d1fae5;
+    }
+    .text-emerald-600 {
+        color: #059669;
+    }
+    .border-emerald-200\/60 {
+        border-color: rgba(167, 243, 208, 0.6);
+    }
+    .bg-amber-50 {
+        background-color: #fffbeb;
+    }
+    .border-amber-200\/80 {
+        border-color: rgba(252, 211, 77, 0.8);
+    }
+    .text-amber-800 {
+        color: #92400e;
+    }
+    .text-amber-700 {
+        color: #b45309;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-calculate maximum amount based on balance
+        const amountInput = document.querySelector('input[name="amount"]');
+        const balance = {{ $balance }};
+        
+        if (amountInput) {
+            // Set max attribute
+            amountInput.setAttribute('max', balance);
+            
+            // Add validation on input
+            amountInput.addEventListener('input', function() {
+                const value = parseFloat(this.value);
+                if (value > balance) {
+                    this.value = balance;
+                }
+            });
+        }
+        
+        // Show/hide account details placeholder based on payment method
+        const paymentMethod = document.querySelector('select[name="payment_method"]');
+        const accountDetails = document.querySelector('input[name="account_details"]');
+        
+        if (paymentMethod && accountDetails) {
+            paymentMethod.addEventListener('change', function() {
+                const method = this.value;
+                if (method === 'bank') {
+                    accountDetails.placeholder = 'Bank Name, Account Number, Account Name';
+                } else if (['mpesa', 'tigopesa', 'halopesa', 'airtel_money'].includes(method)) {
+                    accountDetails.placeholder = 'Phone number (e.g., 0712345678)';
+                } else {
+                    accountDetails.placeholder = 'Phone number or bank account details';
+                }
+            });
+            
+            // Trigger change event to set initial placeholder
+            paymentMethod.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+@endpush
 @endsection

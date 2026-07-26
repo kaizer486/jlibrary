@@ -166,6 +166,60 @@
     color: #e9d5ff;
 }
 
+/* ========================================== */
+/* FIX: DROPDOWN VISIBILITY                   */
+/* ========================================== */
+select option {
+    background: #1a1f3e !important;
+    color: #ffffff !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+}
+
+/* For Firefox */
+select option {
+    background: #1a1f3e;
+    color: #ffffff;
+}
+
+/* For the select itself - ensure it has a proper background */
+#documentSelector {
+    background-color: rgba(26, 31, 62, 0.9) !important;
+    color: #ffffff !important;
+    cursor: pointer;
+}
+
+#documentSelector option {
+    background-color: #1a1f3e !important;
+    color: #ffffff !important;
+    padding: 8px 12px;
+}
+
+#documentSelector option:hover {
+    background-color: #7c3aed !important;
+}
+
+/* Dropdown arrow fix */
+#documentSelector {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+}
+
+#documentSelector option:checked {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+}
         
 
         /* Mobile Sidebar Overlay */
@@ -429,7 +483,35 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- DOCUMENT SELECTOR - Add before INPUT AREA -->
+<div class="px-4 pb-1">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+            @if(isset($documents) && $documents->count() > 0)
+                <span class="text-purple-300/60 text-xs flex items-center gap-1">
+                    <i class="ti ti-file-text text-xs"></i> Reference:
+                </span>
+                <select id="documentSelector" 
+                        class="bg-white/10 border border-white/15 text-white text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 max-w-[220px]">
+                    <option value="">None</option>
+                    @foreach($documents as $doc)
+                        <option value="{{ $doc->id }}" style="color: #1a1a2e; background: white; padding: 4px 8px;">
+                            {{ Str::limit($doc->title, 30) }}
+                        </option>
+                    @endforeach
+                </select>
+                <span class="text-purple-300/40 text-xs">Ask about your document</span>
+            @else
+                <span class="text-purple-300/40 text-xs flex items-center gap-1">
+                    <i class="ti ti-file-text text-xs"></i> No documents
+                </span>
+                <a href="{{ route('documents.create') }}" class="text-purple-400 hover:text-purple-300 text-xs underline">Upload a document</a>
+            @endif
+        </div>
+    </div>
+</div>
+
         <!-- INPUT AREA -->
         <div class="px-4 pb-4 pt-2 flex-shrink-0">
             <div class="max-w-3xl mx-auto">
@@ -468,6 +550,14 @@ marked.setOptions({
 let currentSessionId = {{ $currentSession ? $currentSession->id : 'null' }};
 let isSending = false;
 let activeDropdown = null;
+
+// Data for auto-firing an analysis (fresh upload) or a redirected
+// document question on page load, without changing manual sending.
+const autoAnalyze = @json($autoAnalyze ?? false);
+const autoAnalyzePrompt = @json($autoAnalyzePrompt ?? null);
+const autoAnalyzeDisplay = @json($autoAnalyzeDisplay ?? null);
+const autoQuestionText = @json($autoQuestion ?? null);
+const preselectedDocumentId = @json($selectedDocumentId ?? null);
 
 // ============================================
 // DOM ELEMENTS
@@ -586,14 +676,9 @@ async function newChat() {
 }
 
 // ============================================
-// SEND MESSAGE FUNCTION
+// SHARED NETWORK CALL (used by manual sends AND auto-analysis)
 // ============================================
-async function sendMessage() {
-    const message = messageInput.value.trim();
-    if (!message || isSending) return;
-
-    addMessage('user', message);
-    messageInput.value = '';
+async function submitToAI(messageForAI, displayText, documentId) {
     isSending = true;
     sendBtn.disabled = true;
     showTyping();
@@ -606,8 +691,10 @@ async function sendMessage() {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
-                message: message,
-                session_id: currentSessionId
+                message: messageForAI,
+                display_message: displayText,
+                session_id: currentSessionId,
+                document_id: documentId
             })
         });
 
@@ -637,11 +724,51 @@ async function sendMessage() {
 
     isSending = false;
     sendBtn.disabled = false;
+}
+
+async function sendMessage() {
+    const message = messageInput.value.trim();
+    if (!message || isSending) return;
+
+    // Get selected document
+    const documentSelector = document.getElementById('documentSelector');
+    const documentId = documentSelector ? documentSelector.value : null;
+
+    addMessage('user', message);
+    messageInput.value = '';
+
+    await submitToAI(message, message, documentId);
     messageInput.focus();
 }
 
 // ============================================
+// AUTO-ANALYZE / AUTO-QUESTION ON LOAD
+// ============================================
+async function runAutoAnalysis() {
+    const documentSelector = document.getElementById('documentSelector');
+    if (documentSelector && preselectedDocumentId) {
+        documentSelector.value = preselectedDocumentId;
+    }
+
+    if (autoAnalyze && autoAnalyzePrompt) {
+        addMessage('user', autoAnalyzeDisplay || 'Analyze this document');
+        await submitToAI(autoAnalyzePrompt, autoAnalyzeDisplay, preselectedDocumentId);
+        return;
+    }
+
+    if (autoQuestionText) {
+        addMessage('user', autoQuestionText);
+        await submitToAI(autoQuestionText, autoQuestionText, preselectedDocumentId);
+    }
+}
+
+// ============================================
 // DELETE CHAT FUNCTION
+// FIX: previously used location.reload(), which reloads the CURRENT
+// URL — including any ?analyze=1&document_id=... still in the address
+// bar from a fresh upload. Deleting that session then reloading the
+// same URL made the page re-run the analysis on a session that no
+// longer existed. Now it navigates to a clean ai.chat URL instead.
 // ============================================
 async function deleteChat(sessionId) {
     try {
@@ -649,7 +776,7 @@ async function deleteChat(sessionId) {
             method: 'DELETE',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
         });
-        location.reload();
+        window.location.href = '{{ route("ai.chat") }}';
     } catch (error) {
         console.error('Delete failed:', error);
     }
@@ -757,9 +884,13 @@ document.querySelectorAll('.chat-menu-btn').forEach(btn => {
 });
 
 // ============================================
-// FOCUS ON LOAD
+// FOCUS ON LOAD + AUTO-FIRE ANALYSIS/QUESTION
 // ============================================
 messageInput.focus();
+
+if (autoAnalyze || autoQuestionText) {
+    runAutoAnalysis();
+}
 </script>
 </body>
 </html>

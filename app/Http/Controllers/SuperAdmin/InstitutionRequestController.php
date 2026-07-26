@@ -62,7 +62,10 @@ class InstitutionRequestController extends Controller
    /**
  * Approve an institution creation request.
  */
-public function approve($id)
+/**
+ * Approve an institution creation request.
+ */
+public function approve(Request $request, $id)
 {
     $creationRequest = InstitutionCreationRequest::with(['user'])->findOrFail($id);
 
@@ -74,16 +77,11 @@ public function approve($id)
         return redirect()->back()->with('error', 'User not found for this request.');
     }
 
-    if ($creationRequest->user->institution_id) {
-        return redirect()->back()->with('error', 'User is already a member of an institution.');
-    }
+    $user = $creationRequest->user;
 
-    // ==========================================
-    // ✅ FIX: USE USER'S EMAIL IF MISSING
-    // ==========================================
+    // FIX: Use user's email if missing
     if (empty($creationRequest->email)) {
-        // Use the user's email as fallback
-        $creationRequest->email = $creationRequest->user->email;
+        $creationRequest->email = $user->email;
         $creationRequest->save();
     }
 
@@ -103,13 +101,11 @@ public function approve($id)
         'approved_by' => auth()->id(),
         'approved_at' => now(),
     ]);
+
     // Create institution wallet
     $institution->createWallet();
 
-    // ==========================================
     // ASSIGN ROLE BASED ON INSTITUTION TYPE
-    // ==========================================
-    $user = $creationRequest->user;
     $role = User::getRoleForInstitutionType($creationRequest->type ?? 'library');
 
     // Update user
@@ -120,7 +116,16 @@ public function approve($id)
     ]);
 
     // Assign Spatie role
-    $user->assignRole($role);
+    $user->syncRoles([$role]);
+
+    // Add to pivot table
+    $user->institutions()->syncWithoutDetaching([
+        $institution->id => [
+            'role' => 'admin',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]
+    ]);
 
     // Update the request
     $creationRequest->update([

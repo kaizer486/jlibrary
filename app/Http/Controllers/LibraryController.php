@@ -10,6 +10,7 @@ use App\Models\Institution;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class LibraryController extends Controller
 {
@@ -83,7 +84,7 @@ class LibraryController extends Controller
     }
 
     /**
-     * Display all books in the global library
+     * Display all books in the global library with filters
      */
     public function index(Request $request)
     {
@@ -94,29 +95,124 @@ class LibraryController extends Controller
         // Merge collections
         $allBooks = $regularBooks->merge($bookstoreBooks);
 
-        // Apply filters
+        // ==========================================
+        // FILTERS
+        // ==========================================
+        
+        // Search filter
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $allBooks = $allBooks->filter(function($book) use ($search) {
                 return stripos($book->title, $search) !== false || 
-                       stripos($book->author ?? '', $search) !== false;
+                       stripos($book->author ?? '', $search) !== false ||
+                       stripos($book->description ?? '', $search) !== false;
             });
         }
 
+        // Category filter
         if ($request->has('category') && $request->category) {
             $allBooks = $allBooks->filter(function($book) use ($request) {
                 return $book->category == $request->category;
             });
         }
+        
+        // Sub-category filter
+        if ($request->has('sub_category') && $request->sub_category) {
+            $allBooks = $allBooks->filter(function($book) use ($request) {
+                return $book->sub_category == $request->sub_category;
+            });
+        }
+        
+        // Trending filter - NEW
+        if ($request->has('trending') && $request->trending == 'true') {
+            $allBooks = $allBooks->filter(function($book) {
+                return $book->is_trending == true;
+            });
+        }
+        
+        // Recent filter - NEW
+        if ($request->has('recent') && $request->recent == 'true') {
+            $allBooks = $allBooks->sortByDesc('created_at');
+        }
+        
+        // Featured filter - NEW
+        if ($request->has('featured') && $request->featured == 'true') {
+            $allBooks = $allBooks->filter(function($book) {
+                return $book->is_featured == true;
+            });
+        }
+        
+        // Price type filter (free/paid)
+        if ($request->has('price_type') && $request->price_type) {
+            if ($request->price_type == 'free') {
+                $allBooks = $allBooks->filter(function($book) {
+                    return $book->is_paid == false || $book->is_paid == 0;
+                });
+            } elseif ($request->price_type == 'paid') {
+                $allBooks = $allBooks->filter(function($book) {
+                    return $book->is_paid == true || $book->is_paid == 1;
+                });
+            }
+        }
+        
+        // Institution filter
+        if ($request->has('institution_id') && $request->institution_id) {
+            $allBooks = $allBooks->filter(function($book) use ($request) {
+                return $book->institution_id == $request->institution_id;
+            });
+        }
+        
+        // Author filter
+        if ($request->has('author') && $request->author) {
+            $author = $request->author;
+            $allBooks = $allBooks->filter(function($book) use ($author) {
+                return stripos($book->author ?? '', $author) !== false;
+            });
+        }
 
-        // Sort by created_at
-        $allBooks = $allBooks->sortByDesc('created_at');
+        // ==========================================
+        // SORTING
+        // ==========================================
+        
+        $sort = $request->get('sort', 'latest');
+        
+        switch ($sort) {
+            case 'latest':
+                $allBooks = $allBooks->sortByDesc('created_at');
+                break;
+            case 'oldest':
+                $allBooks = $allBooks->sortBy('created_at');
+                break;
+            case 'title_asc':
+                $allBooks = $allBooks->sortBy('title');
+                break;
+            case 'title_desc':
+                $allBooks = $allBooks->sortByDesc('title');
+                break;
+            case 'downloads':
+                $allBooks = $allBooks->sortByDesc('downloads');
+                break;
+            case 'views':
+                $allBooks = $allBooks->sortByDesc('views_count');
+                break;
+            case 'price_low':
+                $allBooks = $allBooks->sortBy('price');
+                break;
+            case 'price_high':
+                $allBooks = $allBooks->sortByDesc('price');
+                break;
+            default:
+                $allBooks = $allBooks->sortByDesc('created_at');
+        }
 
-        // Paginate - FIXED: removed the stray quote
-        $perPage = $request->get('per_page', 48); // Allow user to change per page, default 48
+        // ==========================================
+        // PAGINATION
+        // ==========================================
+        
+        $perPage = $request->get('per_page', 48);
         $page = $request->get('page', 1);
         
-        $books = new \Illuminate\Pagination\LengthAwarePaginator(
+        $books = new LengthAwarePaginator(
             $allBooks->forPage($page, $perPage),
             $allBooks->count(),
             $perPage,
@@ -126,8 +222,11 @@ class LibraryController extends Controller
 
         // Get all categories (static list)
         $categories = $this->getCategories();
+        
+        // Get institutions for filter
+        $institutions = Institution::where('status', 'approved')->get();
 
-        return view('library.index', compact('books', 'categories'));
+        return view('library.index', compact('books', 'categories', 'institutions'));
     }
     
     /**
@@ -143,6 +242,11 @@ class LibraryController extends Controller
         
         if (!$book) {
             abort(404, 'Book not found.');
+        }
+        
+        // Increment view count
+        if (isset($book->views_count)) {
+            $book->increment('views_count');
         }
         
         // If book has NO institution, show it directly in a dedicated view
@@ -430,5 +534,44 @@ class LibraryController extends Controller
         );
         
         return redirect()->back()->with('success', 'Book added to your library!');
+    }
+    
+    /**
+     * Get trending books (API endpoint for dashboard)
+     */
+    public function getTrendingBooks()
+    {
+        $books = Book::where('is_trending', true)
+            ->where('status', 'approved')
+            ->limit(10)
+            ->get();
+        
+        return response()->json($books);
+    }
+    
+    /**
+     * Get recent books (API endpoint for dashboard)
+     */
+    public function getRecentBooks()
+    {
+        $books = Book::where('status', 'approved')
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+        
+        return response()->json($books);
+    }
+    
+    /**
+     * Get featured books (API endpoint for dashboard)
+     */
+    public function getFeaturedBooks()
+    {
+        $books = Book::where('is_featured', true)
+            ->where('status', 'approved')
+            ->limit(10)
+            ->get();
+        
+        return response()->json($books);
     }
 }

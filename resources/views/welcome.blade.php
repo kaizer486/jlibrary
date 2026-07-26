@@ -218,7 +218,7 @@
         background-clip: text;
     }
 
-    /* ========================================== */
+      /* ========================================== */
     /* FOUNDER CARD - Orange Border              */
     /* ========================================== */
     .founder-card-gradient {
@@ -244,9 +244,11 @@
         height: 100%;
     }
 
+    /* ========================================== */
+    /* FOUNDER IMAGE - Full photo, no cutoff     */
+    /* ========================================== */
     .founder-image-wrap {
         width: 100%;
-        height: 280px;
         overflow: hidden;
         background: #f0f2f5;
         display: flex;
@@ -256,17 +258,91 @@
 
     .founder-image-wrap img {
         width: 100%;
-        height: 100%;
-        object-fit: ;
-        object-position: center top;
+        height: auto;
+        display: block;
     }
 
     .founder-image-wrap .placeholder {
+        width: 100%;
+        height: 280px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 80px;
         font-weight: 700;
         color: #3B82F6;
+        background: linear-gradient(135deg, #e0e7ff, #dbeafe);
     }
 
+    /* ========================================== */
+    /* FOUNDER TOGGLE BUTTON                     */
+    /* ========================================== */
+    .founder-toggle-btn {
+        background: linear-gradient(135deg, #F97316, #EA580C);
+        color: white;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
+    }
+
+    .founder-toggle-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
+        background: linear-gradient(135deg, #FB923C, #EA580C);
+    }
+
+    .founder-toggle-btn.active {
+        background: #64748B;
+        box-shadow: 0 2px 8px rgba(100, 116, 139, 0.25);
+    }
+
+    .founder-toggle-btn.active:hover {
+        background: #475569;
+        box-shadow: 0 4px 16px rgba(100, 116, 139, 0.35);
+    }
+
+    .founder-toggle-btn .toggle-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .founder-toggle-btn.active .toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    /* ========================================== */
+    /* FOUNDER BIO - Collapsible                 */
+    /* ========================================== */
+    .founder-bio {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.4s ease, opacity 0.3s ease, margin-top 0.3s ease;
+    }
+
+    .founder-bio.show {
+        max-height: 500px;
+        opacity: 1;
+        margin-top: 0.75rem;
+    }
+
+    .founder-bio.hidden {
+        display: none;
+    }
+
+    .founder-bio .bio-content {
+        animation: bioSlideIn 0.3s ease forwards;
+    }
+
+    @keyframes bioSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
     /* ========================================== */
     /* LIGHT BACKGROUND SECTIONS                 */
     /* ========================================== */
@@ -732,8 +808,9 @@
         </div>
     </div>
 </section>
+
 <!-- ========================================== -->
-<!-- FOUNDER SECTION - Centered with Flex Wrap  -->
+<!-- FOUNDER SECTION - Expandable Bio Cards     -->
 <!-- ========================================== -->
 <section id="founders" class="py-16 light-body-bg">
     <div class="container mx-auto px-4 md:px-8">
@@ -757,17 +834,19 @@
                         $socialLinks = is_string($founder->social_links) ? json_decode($founder->social_links, true) : ($founder->social_links ?? []);
                         $socialLinks = is_array($socialLinks) ? $socialLinks : [];
                         $hasLinks = count($socialLinks) > 0;
+                        $founderId = 'founder-' . $founder->id;
                     @endphp
 
                     <div class="founder-card-gradient w-full sm:w-[300px] md:w-[300px] lg:w-[310px] flex-shrink-0">
                         <div class="founder-card-inner h-full flex flex-col">
-                            <div class="founder-image-wrap" style="height: 280px; width: 100%; overflow: hidden; background: #f0f2f5;">
+                            
+                            <!-- IMAGE: Full width, natural height, no cutoff -->
+                            <div class="founder-image-wrap">
                                 @if($founder->photo)
                                     <img src="{{ url('media/' . $founder->photo) }}" 
-                                         alt="{{ $founder->name }}"
-                                         style="width: 100%; height: 100%; object-fit: fill; object-position: center top;">
+                                         alt="{{ $founder->name }}">
                                 @else
-                                    <div class="placeholder" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 80px; font-weight: 700; color: #3B82F6; background: linear-gradient(135deg, #e0e7ff, #dbeafe);">
+                                    <div class="placeholder">
                                         {{ substr($founder->name, 0, 1) }}
                                     </div>
                                 @endif
@@ -779,9 +858,23 @@
                                     <p class="text-sm text-orange-500 font-semibold mt-1">{{ $founder->title }}</p>
                                 @endif
 
+                                <!-- TOGGLE BUTTON -->
                                 @if($founder->bio)
-                                    <div class="mt-2 text-gray-600 text-sm leading-relaxed line-clamp-3 flex-1">
-                                        {{ Str::limit($founder->bio, 100) }}
+                                    <button type="button" 
+                                            class="founder-toggle-btn mt-3 mx-auto inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-full transition-all duration-300"
+                                            data-target="{{ $founderId }}"
+                                            aria-expanded="false">
+                                        <i class="ti ti-chevron-down toggle-icon"></i>
+                                        <span class="toggle-text">Read Bio</span>
+                                    </button>
+
+                                    <!-- COLLAPSIBLE BIO -->
+                                    <div id="{{ $founderId }}" class="founder-bio hidden mt-3 text-left">
+                                        <div class="bio-content p-3 rounded-xl" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                                            <p class="text-gray-600 text-sm leading-relaxed">
+                                                {{ $founder->bio }}
+                                            </p>
+                                        </div>
                                     </div>
                                 @endif
 
@@ -1082,6 +1175,35 @@
         if (slides.length > 1) {
             startAutoSlide();
         }
+        // ==========================================
+        // FOUNDER BIO TOGGLE
+        // ==========================================
+        document.querySelectorAll('.founder-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.dataset.target;
+                const bio = document.getElementById(targetId);
+                const text = this.querySelector('.toggle-text');
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+
+                if (isExpanded) {
+                    // Collapse
+                    bio.classList.remove('show');
+                    setTimeout(() => bio.classList.add('hidden'), 400);
+                    this.classList.remove('active');
+                    this.setAttribute('aria-expanded', 'false');
+                    text.textContent = 'Read Bio';
+                } else {
+                    // Expand
+                    bio.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        bio.classList.add('show');
+                    });
+                    this.classList.add('active');
+                    this.setAttribute('aria-expanded', 'true');
+                    text.textContent = 'Hide Bio';
+                }
+            });
+        });
 
         // Mobile Menu
         const menuToggle = document.getElementById('mobile-menu-toggle');

@@ -10,7 +10,6 @@
             <i class="ti ti-arrow-left text-2xl"></i>
         </a>
         <div>
-            <!-- DEPLOYMENT TEST 2026 -->
             <h1 class="text-2xl font-bold text-gray-800">Add Founder</h1>
             <p class="text-gray-500 text-sm mt-1">Add a new founder or leadership team member</p>
         </div>
@@ -18,7 +17,7 @@
 
     <!-- Form -->
     <div class="bg-white rounded-xl shadow-sm p-6 max-w-3xl">
-        <form action="{{ route('super-admin.founders.store') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('super-admin.founders.store') }}" method="POST" enctype="multipart/form-data" id="founderForm">
             @csrf
 
             <!-- Name & Title -->
@@ -54,17 +53,65 @@
                 @enderror
             </div>
 
-            <!-- Photo -->
+            <!-- Photo with Cropper -->
             <div class="mb-4">
                 <label for="photo" class="block text-sm font-medium text-gray-700 mb-1">Profile Photo</label>
-                <input type="file" name="photo" id="photo" accept="image/*"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition">
-                <p class="text-xs text-gray-500 mt-1">Recommended: Square image, 400x400px. Max 2MB. Supported: JPG, PNG, WebP</p>
+                
+                <!-- Hidden file input (replaced by cropper) -->
+                <input type="file" name="photo" id="photo" accept="image/*" class="hidden">
+                
+                <!-- File picker button -->
+                <button type="button" id="pick-photo-btn" 
+                        class="w-full px-4 py-3 border-2 border-dashed border-purple-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition text-purple-600 font-medium flex items-center justify-center gap-2">
+                    <i class="ti ti-upload"></i> Choose Photo
+                </button>
+                
+                <p class="text-xs text-gray-500 mt-2">
+                    <i class="ti ti-info-circle"></i> 
+                    <strong>Required:</strong> Crop to <strong>4:5 portrait ratio</strong> (e.g., 400×500px). Max 2MB. JPG, PNG, WebP.
+                </p>
                 @error('photo')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
-                <div id="photo-preview" class="mt-3 hidden">
-                    <img src="#" alt="Preview" class="w-24 h-24 rounded-full object-cover border-4 border-purple-100">
+                
+                <!-- Cropper Container -->
+                <div id="cropper-container" class="mt-4 hidden">
+                    <div class="border-2 border-dashed border-purple-200 rounded-xl p-4 bg-purple-50/50">
+                        <div class="flex items-center justify-between mb-3">
+                            <p class="text-sm font-medium text-purple-700">
+                                <i class="ti ti-crop"></i> Adjust crop area
+                            </p>
+                            <button type="button" id="remove-photo" class="text-xs text-red-500 hover:text-red-700 font-medium flex items-center gap-1">
+                                <i class="ti ti-trash"></i> Remove
+                            </button>
+                        </div>
+                        
+                        <div class="max-h-[400px] overflow-hidden rounded-lg bg-gray-100">
+                            <img id="cropper-image" src="#" alt="Crop preview" class="w-full block">
+                        </div>
+                        
+                        <div class="flex flex-wrap justify-center gap-2 mt-3">
+                            <button type="button" id="rotate-left" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                <i class="ti ti-rotate-2"></i> Rotate Left
+                            </button>
+                            <button type="button" id="rotate-right" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                <i class="ti ti-rotate-clockwise-2"></i> Rotate Right
+                            </button>
+                            <button type="button" id="zoom-in" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                <i class="ti ti-zoom-in"></i> Zoom In
+                            </button>
+                            <button type="button" id="zoom-out" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                <i class="ti ti-zoom-out"></i> Zoom Out
+                            </button>
+                            <button type="button" id="reset-crop" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                <i class="ti ti-restore"></i> Reset
+                            </button>
+                        </div>
+                        
+                        <p class="text-xs text-gray-400 mt-2 text-center">
+                            Drag to move • Corner handles to resize • All photos will be 4:5 ratio
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -168,24 +215,134 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const photoInput = document.getElementById('photo');
-        const preview = document.getElementById('photo-preview');
-        const previewImg = preview.querySelector('img');
+document.addEventListener('DOMContentLoaded', function() {
+    const pickBtn = document.getElementById('pick-photo-btn');
+    const photoInput = document.getElementById('photo');
+    const cropperContainer = document.getElementById('cropper-container');
+    const cropperImage = document.getElementById('cropper-image');
+    const removeBtn = document.getElementById('remove-photo');
+    const founderForm = document.getElementById('founderForm');
+    
+    let cropper = null;
+    let croppedFile = null;
 
-        photoInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    preview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(this.files[0]);
-            } else {
-                preview.classList.add('hidden');
-            }
-        });
+    // FIXED ASPECT RATIO: 4/5 (portrait) — change this to match your frontend
+    const ASPECT_RATIO = 4 / 5;
+
+    // Open file picker
+    pickBtn.addEventListener('click', function() {
+        photoInput.click();
     });
+
+    // Handle file selection
+    photoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate
+        if (!file.type.startsWith('image/')) {
+            alert('Please select a valid image file (JPG, PNG, WebP).');
+            photoInput.value = '';
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Image must be less than 2MB.');
+            photoInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            cropperImage.src = event.target.result;
+            pickBtn.classList.add('hidden');
+            cropperContainer.classList.remove('hidden');
+
+            if (cropper) cropper.destroy();
+
+            cropper = new Cropper(cropperImage, {
+                aspectRatio: ASPECT_RATIO,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 0.85,
+                restore: false,
+                guides: true,
+                center: true,
+                highlight: true,
+                cropBoxMovable: true,
+                cropBoxResizable: true,
+                toggleDragModeOnDblclick: false,
+                minContainerWidth: 250,
+                minContainerHeight: 250,
+                ready: function() {
+                    // Set initial crop to portrait 4:5
+                    const canvasData = this.cropper.getCanvasData();
+                    const cropWidth = Math.min(canvasData.width, canvasData.height * ASPECT_RATIO) * 0.85;
+                    const cropHeight = cropWidth / ASPECT_RATIO;
+                    
+                    this.cropper.setCropBoxData({
+                        width: cropWidth,
+                        height: cropHeight,
+                        left: (canvasData.width - cropWidth) / 2,
+                        top: (canvasData.height - cropHeight) / 2
+                    });
+                }
+            });
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Remove photo
+    removeBtn.addEventListener('click', function() {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        photoInput.value = '';
+        croppedFile = null;
+        cropperContainer.classList.add('hidden');
+        pickBtn.classList.remove('hidden');
+        cropperImage.src = '#';
+    });
+
+    // Toolbar buttons
+    document.getElementById('rotate-left').addEventListener('click', () => { if (cropper) cropper.rotate(-90); });
+    document.getElementById('rotate-right').addEventListener('click', () => { if (cropper) cropper.rotate(90); });
+    document.getElementById('zoom-in').addEventListener('click', () => { if (cropper) cropper.zoom(0.1); });
+    document.getElementById('zoom-out').addEventListener('click', () => { if (cropper) cropper.zoom(-0.1); });
+    document.getElementById('reset-crop').addEventListener('click', () => { if (cropper) cropper.reset(); });
+
+    // Before submit: crop and replace file input
+    founderForm.addEventListener('submit', function(e) {
+        if (!cropper || !photoInput.files.length) return; // No photo or no cropper = submit as-is
+
+        e.preventDefault();
+
+        // Get cropped canvas at 400x500 (4:5 ratio)
+        const canvas = cropper.getCroppedCanvas({
+            width: 400,
+            height: 500,
+            fillColor: '#ffffff',
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+
+        // Convert canvas to Blob → File
+        canvas.toBlob(function(blob) {
+            // Create new File from blob
+            const originalName = photoInput.files[0].name;
+            const fileName = originalName.replace(/\.[^/.]+$/, '') + '_cropped.jpg';
+            croppedFile = new File([blob], fileName, { type: 'image/jpeg', lastModified: Date.now() });
+
+            // Create DataTransfer to replace the file input's files
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(croppedFile);
+            photoInput.files = dataTransfer.files;
+
+            // Now submit with the cropped file
+            founderForm.submit();
+        }, 'image/jpeg', 0.92);
+    });
+});
 </script>
 @endpush
 @endsection

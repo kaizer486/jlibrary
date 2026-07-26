@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\InstitutionMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
+use App\Http\Middleware\AuthorOrSeller; // Add this import
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -21,9 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             // Your custom middleware
-            'admin'       => AdminMiddleware::class,
-            'institution' => InstitutionMiddleware::class,
-            'superadmin'  => SuperAdminMiddleware::class,
+            'admin'         => AdminMiddleware::class,
+            'institution'   => InstitutionMiddleware::class,
+            'superadmin'    => SuperAdminMiddleware::class,
+            'author.seller' => AuthorOrSeller::class, // ADD THIS LINE
             
             // Spatie middleware
             'role'        => RoleMiddleware::class,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\GeminiNativeService;
 use App\Models\ChatSession;
+use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -36,12 +37,53 @@ class AIController extends Controller
             $currentSession = $sessions->first();
         }
         
-        return view('ai.chat', compact('sessions', 'currentSession'));
+        // Get user's documents
+        $documents = Document::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // If document_id is in URL, pre-select it
+        $selectedDocumentId = $request->document_id;
+        
+        // If there's a question in URL, auto-send it
+        $autoQuestion = $request->question;
+
+        // ==========================================
+        // AUTO-ANALYZE: freshly uploaded document,
+        // session has no messages yet, ?analyze=1.
+        // Build the full analysis prompt server-side
+        // so the JS on the page just fires it verbatim.
+        // ==========================================
+        $autoAnalyze = false;
+        $autoAnalyzePrompt = null;
+        $autoAnalyzeDisplay = null;
+
+        $hasNoMessages = !$currentSession || empty($currentSession->messages) || count($currentSession->messages) === 0;
+
+        if ($request->boolean('analyze') && $selectedDocumentId && $hasNoMessages) {
+            $document = $documents->firstWhere('id', (int) $selectedDocumentId);
+
+            if ($document) {
+                $autoAnalyze = true;
+                $autoAnalyzeDisplay = "📄 I've uploaded a document: \"{$document->title}\"";
+                $autoAnalyzePrompt = "I've just uploaded a document titled \"{$document->title}\". Please analyze it and give me a comprehensive summary including:\n\n"
+                    . "1. **Main topic/theme** - What is this document primarily about?\n"
+                    . "2. **Key points** - What are the main arguments or findings?\n"
+                    . "3. **Structure** - How is the document organized?\n"
+                    . "4. **Key takeaways** - What are the most important things to remember?\n"
+                    . "5. **Questions** - What questions should I ask about this document?\n\n"
+                    . "Please provide a thorough analysis.";
+            }
+        }
+        
+        return view('ai.chat', compact(
+            'sessions', 'currentSession', 'documents', 'selectedDocumentId', 'autoQuestion',
+            'autoAnalyze', 'autoAnalyzePrompt', 'autoAnalyzeDisplay'
+        ));
     }
     
     public function sendMessage(Request $request)
     {
-        // RATE LIMIT CHECK - 10 requests per minute per user
         $userId = Auth::id();
         $cacheKey = "ai_rate_limit_{$userId}";
         $limit = 10;
@@ -68,10 +110,11 @@ class AIController extends Controller
         $requests[] = $now;
         Cache::put($cacheKey, $requests, $timeWindow);
         
-        // Validate input
         $request->validate([
-            'message' => 'required|string|max:2000',
-            'session_id' => 'nullable|exists:chat_sessions,id'
+            'message' => 'required|string|max:8000',
+            'display_message' => 'nullable|string|max:2000',
+            'session_id' => 'nullable|exists:chat_sessions,id',
+            'document_id' => 'nullable|exists:documents,id'
         ]);
         
         try {
@@ -90,13 +133,68 @@ class AIController extends Controller
                 ]);
             }
             
+            $userMessageToSave = $request->display_message ?: $request->message;
+
+            // ==========================================
+            // DOCUMENT CONTEXT
+            // If a document_id was sent but the document has
+            // no extracted text (PDF/DOCX parsing failed), tell
+            // the user honestly instead of silently asking
+            // Gemini to analyze a document it was never shown —
+            // that produces confusing "I can't access files"
+            // replies that look like a bug in the AI itself.
+            // ==========================================
+            $documentContext = null;
+
+            if ($request->document_id) {
+                $document = Document::where('id', $request->document_id)
+                    ->where('user_id', Auth::id())
+                    ->first();
+
+                if ($document) {
+                    $session->document_id = $document->id;
+                    $session->save();
+
+                    $extractedContent = trim($document->content ?? '');
+
+                    Log::info('AI document context check', [
+                        'document_id' => $document->id,
+                        'content_length' => strlen($extractedContent),
+                    ]);
+
+                    if ($extractedContent === '') {
+                        $session->addMessage('user', $userMessageToSave);
+
+                        $warning = "I wasn't able to extract any readable text from \"{$document->title}\" "
+                            . "(this usually happens with scanned/image-only PDFs, or if a required PDF/DOCX "
+                            . "library isn't installed on the server). Could you try re-uploading it, or "
+                            . "paste the relevant text directly here?";
+
+                        $session->addMessage('assistant', $warning);
+
+                        return response()->json([
+                            'success' => true,
+                            'response' => $warning,
+                            'session_id' => $session->id,
+                        ]);
+                    }
+
+                    $documentContext = [
+                        'title' => $document->title,
+                        'content' => substr($extractedContent, 0, 8000),
+                    ];
+                }
+            }
+            
             $messages = $session->getRecentMessages(20);
             
-            $result = $this->gemini->chat($request->message, $messages);
+            $result = $this->gemini->chat(
+                $request->message, 
+                $messages,
+                $documentContext
+            );
             
-            // Check if Gemini returned an error
             if (!$result['success']) {
-                // Get status code from result or default to 500
                 $statusCode = $result['status_code'] ?? 500;
                 
                 return response()->json([
@@ -107,8 +205,7 @@ class AIController extends Controller
                 ], $statusCode);
             }
             
-            // Add messages using the model's helper method
-            $session->addMessage('user', $request->message);
+            $session->addMessage('user', $userMessageToSave);
             $session->addMessage('assistant', $result['response']);
             
             return response()->json([
@@ -122,7 +219,6 @@ class AIController extends Controller
             
             $errorMessage = $e->getMessage();
             
-            // Check if it's a rate limit/quota error
             if (strpos($errorMessage, '429') !== false || 
                 strpos(strtolower($errorMessage), 'quota') !== false ||
                 strpos(strtolower($errorMessage), 'rate limit') !== false) {
@@ -134,13 +230,12 @@ class AIController extends Controller
                 
                 return response()->json([
                     'success' => false,
-                    'response' => "The AI service has reached its free usage limit. Please wait about {$retrySeconds} seconds and try again. You can upgrade to a paid plan for higher limits.",
+                    'response' => "The AI service has reached its free usage limit. Please wait about {$retrySeconds} seconds and try again.",
                     'rate_limited' => true,
                     'retry_after' => $retrySeconds
                 ], 429);
             }
             
-            // Generic error
             return response()->json([
                 'success' => false,
                 'response' => 'Sorry, something went wrong. Please try again.',

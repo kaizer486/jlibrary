@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.author')
 
 @section('title', 'Edit Book')
+@section('page-title', 'Edit Book')
 
 @section('content')
 
@@ -183,4 +184,47 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    /* Custom file input styling */
+    input[type="file"] {
+        cursor: pointer;
+    }
+    input[type="file"]::file-selector-button {
+        cursor: pointer;
+    }
+    
+    /* Danger zone styling */
+    .bg-red-50 {
+        background-color: #fef2f2;
+    }
+    .bg-red-100 {
+        background-color: #fee2e2;
+    }
+    .border-red-200 {
+        border-color: #fecaca;
+    }
+    .text-red-700 {
+        color: #b91c1c;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Optional: Add confirmation for status change if needed
+        const statusSelect = document.querySelector('select[name="status"]');
+        if (statusSelect) {
+            statusSelect.addEventListener('change', function() {
+                if (this.value === 'approved') {
+                    // Optional: Show a notification or confirmation
+                    console.log('Book will be published');
+                }
+            });
+        }
+    });
+</script>
+@endpush
 @endsection

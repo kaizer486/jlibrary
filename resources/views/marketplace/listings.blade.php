@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.author')
 
 @section('title', 'My Listings')
+@section('page-title', 'My Listings')
 
 @section('content')
 <div class="container mx-auto px-4 py-8">

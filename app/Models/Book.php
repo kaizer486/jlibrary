@@ -312,6 +312,30 @@ class Book extends Model
             && ($this->availability === 'available' || $this->availability === 'borrowed');
     }
 
+
+/**
+ * Get order items for this book
+ */
+public function orderItems()
+{
+    return $this->hasMany(OrderItem::class);
+}
+
+/**
+ * Get orders for this book
+ */
+public function orders()
+{
+    return $this->hasManyThrough(
+        Order::class,
+        OrderItem::class,
+        'book_id', // Foreign key on order_items
+        'id', // Local key on orders
+        'id', // Local key on books
+        'order_id' // Foreign key on order_items
+    );
+}
+
     // ==========================================
     // SCOPES
     // ==========================================

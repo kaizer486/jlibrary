@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.author')
 
 @section('title', 'Add New Book')
+@section('page-title', 'Add New Book')
 
 @section('content')
 <div class="max-w-3xl mx-auto">
@@ -120,14 +121,24 @@
                     @enderror
                 </div>
                 
-            
+                <!-- Commission Info -->
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <p class="text-sm text-purple-700">
+                        <i class="ti ti-info-circle"></i> 
+                        Platform commission: <strong>20%</strong>. You keep <strong>80%</strong>.
+                    </p>
+                    <div class="mt-2 flex gap-4 text-sm">
+                        <span>Commission: <span id="commission-display" class="font-semibold">TSh 0.00</span></span>
+                        <span>Your Earnings: <span id="earnings-display" class="font-semibold text-green-600">TSh 0.00</span></span>
+                    </div>
+                </div>
                 
                 <!-- Buttons -->
                 <div class="flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition font-semibold">
                         <i class="ti ti-plus"></i> Publish Book
                     </button>
-                    <a href="{{ route('seller.dashboard') }}" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-center">
+                    <a href="{{ route('author.dashboard') }}" class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition text-center">
                         Cancel
                     </a>
                 </div>

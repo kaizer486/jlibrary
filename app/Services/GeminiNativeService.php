@@ -20,10 +20,21 @@ class GeminiNativeService
         $this->timeout = 120;
     }
     
-    public function chat($message, $previousMessages = [])
+    public function chat($message, $previousMessages = [], $documentContext = null)
     {
         try {
             $contents = [];
+            
+            // If document context is provided, add it as a system instruction
+            $systemPrompt = $this->getSystemPrompt();
+            
+            if ($documentContext && !empty($documentContext['content'])) {
+                $systemPrompt .= "\n\nDOCUMENT REFERENCE:\n";
+                $systemPrompt .= "The user has uploaded a document titled: \"{$documentContext['title']}\"\n";
+                $systemPrompt .= "Here is the document content:\n";
+                $systemPrompt .= "---\n" . $documentContext['content'] . "\n---\n";
+                $systemPrompt .= "\nIMPORTANT: When answering questions, use the document content as your primary source. If the answer is not in the document, say so clearly and offer general help instead.\n";
+            }
             
             foreach ($previousMessages as $msg) {
                 if ($msg['role'] === 'assistant' && strpos($msg['content'], 'error') !== false) {
@@ -43,7 +54,7 @@ class GeminiNativeService
             $requestBody = [
                 'contents' => $contents,
                 'system_instruction' => [
-                    'parts' => [['text' => $this->getSystemPrompt()]]
+                    'parts' => [['text' => $systemPrompt]]
                 ],
                 'generationConfig' => [
                     'temperature' => 0.8,
@@ -52,7 +63,12 @@ class GeminiNativeService
                 ]
             ];
             
-            Log::info('Sending to Gemini', ['model' => $this->model, 'message' => substr($message, 0, 100)]);
+            Log::info('Sending to Gemini', [
+                'model' => $this->model, 
+                'message' => substr($message, 0, 100),
+                'has_document' => $documentContext ? true : false,
+                'document_title' => $documentContext['title'] ?? 'N/A'
+            ]);
             
             $response = Http::timeout($this->timeout)
                 ->withOptions(['verify' => false])
@@ -147,11 +163,11 @@ class GeminiNativeService
         }
     }
     
-  private function getSystemPrompt(): string
-{
-    $currentDate = date('D, d M Y');
+    private function getSystemPrompt(): string
+    {
+        $currentDate = date('D, d M Y');
 
-    return <<<PROMPT
+        return <<<PROMPT
 You are JLIBRARY AI Assistant - a knowledgeable, friendly academic librarian.
 
 ABOUT YOU:
@@ -177,16 +193,16 @@ HOW TO STRUCTURE ANSWERS:
 
 Current date: {$currentDate}
 PROMPT;
-}
+    }
     
-   private function cleanResponse($text)
-{
-    // Remove filler phrases only
-    $text = preg_replace('/^(Great question!|That\'s a fantastic question!|Wonderful question!|Excellent question!|That\'s a great way to)/i', '', $text);
-    
-    // Collapse excessive blank lines, nothing else
-    $text = preg_replace('/\n{3,}/', "\n\n", $text);
-    
-    return trim($text);
-}
+    private function cleanResponse($text)
+    {
+        // Remove filler phrases only
+        $text = preg_replace('/^(Great question!|That\'s a fantastic question!|Wonderful question!|Excellent question!|That\'s a great way to)/i', '', $text);
+        
+        // Collapse excessive blank lines, nothing else
+        $text = preg_replace('/\n{3,}/', "\n\n", $text);
+        
+        return trim($text);
+    }
 }

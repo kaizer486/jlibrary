@@ -118,7 +118,7 @@
                             @elseif($user->hasRole('researcher'))
                                 🔬 Researcher
                             @elseif($user->hasRole('author'))
-                                ✍️ Author
+                                 Author
                             @elseif($user->hasRole('librarian'))
                                 📚 Librarian
                             @elseif($user->hasRole('instructor'))
@@ -279,7 +279,7 @@
                     @elseif($user->hasRole('researcher'))
                         🔬 Researcher
                     @elseif($user->hasRole('author'))
-                        ✍️ Author
+                         Author
                     @elseif($user->hasRole('librarian'))
                         📚 Librarian
                     @elseif($user->hasRole('instructor'))

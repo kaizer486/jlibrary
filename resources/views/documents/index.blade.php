@@ -37,7 +37,7 @@
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <a href="{{ route('documents.show', $doc) }}" 
+                            <a href="{{ route('documents.chat', $doc) }}" 
                                class="flex-1 text-center bg-jlibrary-600 text-white px-3 py-2 rounded-lg hover:bg-jlibrary-700 transition text-sm">
                                 <i class="ti ti-message-circle"></i> Chat with Doc
                             </a>

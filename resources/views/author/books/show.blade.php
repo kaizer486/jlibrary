@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.author')
 
 @section('title', $book->title)
+@section('page-title', $book->title)
 
 @section('content')
 
@@ -147,4 +148,41 @@
         </div>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .bg-emerald-100 {
+        background-color: #d1fae5;
+    }
+    .text-emerald-700 {
+        color: #047857;
+    }
+    .bg-yellow-100 {
+        background-color: #fef3c7;
+    }
+    .text-yellow-700 {
+        color: #b45309;
+    }
+    .bg-red-100 {
+        background-color: #fee2e2;
+    }
+    .text-red-700 {
+        color: #b91c1c;
+    }
+    
+    .sticky {
+        position: sticky;
+        top: 1.5rem;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Optional: Add any JavaScript for the book show page
+        // For example, you could add a "View PDF" modal or confirmation dialogs
+    });
+</script>
+@endpush
 @endsection

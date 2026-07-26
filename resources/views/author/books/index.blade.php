@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.author')
 
 @section('title', 'My Books')
+@section('page-title', 'My Books')
 
 @section('content')
 
@@ -123,4 +124,49 @@
 
     </div>
 </div>
+
+@push('styles')
+<style>
+    .line-clamp-1 {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .bg-emerald-500 {
+        background-color: #10b981;
+    }
+    .border-emerald-400\/30 {
+        border-color: rgba(52, 211, 153, 0.3);
+    }
+    .bg-yellow-500 {
+        background-color: #f59e0b;
+    }
+    .border-yellow-400\/30 {
+        border-color: rgba(251, 191, 36, 0.3);
+    }
+    .bg-red-500 {
+        background-color: #ef4444;
+    }
+    .border-red-400\/30 {
+        border-color: rgba(248, 113, 113, 0.3);
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Optional: Add any JavaScript for the books index page
+        // For example, you could add a search/filter functionality
+    });
+</script>
+@endpush
 @endsection

@@ -1,4 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.author')
+
+@section('title', 'My Listings')
+@section('page-title', 'My Listings')
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
@@ -21,7 +24,7 @@
                     </div>
                     <div class="flex-1">
                         <h3 class="font-semibold text-gray-900">{{ $listing->title }}</h3>
-                        <p class="text-gray-500 text-sm">${{ number_format($listing->price, 2) }}</p>
+                        <p class="text-gray-500 text-sm">TSh {{ number_format($listing->price, 2) }}</p>
                         <div class="flex items-center gap-2 mt-1">
                             @if($listing->status === 'approved')
                                 <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Approved</span>
@@ -30,12 +33,12 @@
                             @else
                                 <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">{{ ucfirst($listing->status) }}</span>
                             @endif
-                            <span class="text-xs text-gray-500"><i class="ti ti-eye"></i> {{ $listing->views }} views</span>
+                            <span class="text-xs text-gray-500"><i class="ti ti-eye"></i> {{ $listing->views ?? 0 }} views</span>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <a href="{{ route('marketplace.show', $listing) }}" class="text-jlibrary-600 hover:text-jlibrary-700">
-                            View
+                        <a href="{{ route('marketplace.edit', $listing) }}" class="text-jlibrary-600 hover:text-jlibrary-700">
+                            Edit
                         </a>
                         <form method="POST" action="{{ route('marketplace.destroy', $listing) }}" 
                               onsubmit="return confirm('Delete this listing?')">

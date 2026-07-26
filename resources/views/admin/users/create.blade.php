@@ -69,10 +69,16 @@
                         @endforeach
                     </select>
                     @error('role') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    
+                    @if(!auth()->user()->isSuperAdmin())
+                        <p class="text-xs text-amber-600 mt-1">
+                            <i class="ti ti-info-circle"></i> You can only create Member, Institution Admin, Librarian, Instructor, Author, Researcher, and Bookseller roles.
+                        </p>
+                    @endif
                 </div>
 
                 <!-- Institution Assignment -->
-                <div id="institution-fields" style="display: {{ old('role') && in_array(old('role'), ['institution_admin', 'school_admin', 'college_admin', 'university_admin', 'library_admin', 'bookstore_admin', 'publisher_admin', 'librarian', 'instructor']) ? 'block' : 'none' }};" class="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div id="institution-fields" style="display: {{ old('role') && in_array(old('role'), ['institution_admin', 'librarian', 'instructor', 'author', 'researcher', 'bookseller']) ? 'block' : 'none' }};" class="p-4 bg-gray-50 rounded-xl border border-gray-200">
                     <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                         <i class="ti ti-building text-indigo-600"></i> Institution Settings
                     </h3>
@@ -88,6 +94,7 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <p class="text-xs text-gray-400 mt-1">Required for Institution Admin, Librarian, Instructor, Author, Researcher, and Bookseller roles</p>
                         </div>
                         
                         <div>
@@ -114,16 +121,20 @@
 </div>
 
 <script>
-    // Show/hide institution fields based on role selection
     const roleSelect = document.getElementById('role-select');
     const institutionFields = document.getElementById('institution-fields');
     
-    const institutionRoles = ['institution_admin', 'school_admin', 'college_admin', 'university_admin', 'library_admin', 'bookstore_admin', 'publisher_admin', 'librarian', 'instructor'];
+    const institutionRoles = ['institution_admin', 'librarian', 'instructor', 'author', 'researcher', 'bookseller'];
+    const nonInstitutionRoles = ['admin', 'super_admin', 'publisher', 'media_team'];
     
     if (roleSelect) {
         roleSelect.addEventListener('change', function() {
-            if (institutionRoles.includes(this.value)) {
+            const selectedRole = this.value;
+            
+            if (institutionRoles.includes(selectedRole)) {
                 institutionFields.style.display = 'block';
+            } else if (nonInstitutionRoles.includes(selectedRole)) {
+                institutionFields.style.display = 'none';
             } else {
                 institutionFields.style.display = 'none';
             }

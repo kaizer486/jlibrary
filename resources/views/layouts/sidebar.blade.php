@@ -12,65 +12,64 @@
     </div>
 
     <!-- User Info -->
-<div class="p-4 border-b border-white/10">
-    <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
-            @if(Auth::user()->avatar)
-                <img src="{{ url('media/' . Auth::user()->avatar) }}" class="w-full h-full object-cover" alt="Avatar">
-            @else
-                <i class="ti ti-user text-white text-lg"></i>
-            @endif
-        </div>
-        <div class="flex-1">
-            <p class="font-semibold text-sm text-white">{{ Auth::user()->full_name }}</p>
-            <p class="text-xs text-gray-400">
-                @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-                    👑 Super Administrator
-                @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
-                    🎨 Media Team
-                @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-                    🛡️ Administrator
-                @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
-                    🏢 Institution Admin
-                @elseif(auth()->user()->role === 'school_admin' || auth()->user()->hasRole('school_admin'))
-                    🏫 School Admin
-                @elseif(auth()->user()->role === 'college_admin' || auth()->user()->hasRole('college_admin'))
-                    🎓 College Admin
-                @elseif(auth()->user()->role === 'university_admin' || auth()->user()->hasRole('university_admin'))
-                    🏛️ University Admin
-                @elseif(auth()->user()->role === 'library_admin' || auth()->user()->hasRole('library_admin'))
-                    📚 Library Admin
-                @elseif(auth()->user()->role === 'bookstore_admin' || auth()->user()->hasRole('bookstore_admin'))
-                    📖 Bookstore Admin
-                @elseif(auth()->user()->role === 'publisher_admin' || auth()->user()->hasRole('publisher_admin'))
-                    📰 Publisher Admin
-                @elseif(auth()->user()->role === 'researcher' || auth()->user()->hasRole('researcher'))
-                    🔬 Researcher
-                @elseif(auth()->user()->role === 'author' || auth()->user()->hasRole('author'))
-                    ✍️ Author
-                @elseif(auth()->user()->role === 'librarian' || auth()->user()->hasRole('librarian'))
-                    📚 Librarian
-                @elseif(auth()->user()->role === 'instructor' || auth()->user()->hasRole('instructor'))
-                    👨‍🏫 Instructor
+    <div class="p-4 border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                @if(Auth::user()->avatar)
+                    <img src="{{ url('media/' . Auth::user()->avatar) }}" class="w-full h-full object-cover" alt="Avatar">
                 @else
-                    👤 Member
+                    <i class="ti ti-user text-white text-lg"></i>
                 @endif
-            </p>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm text-white truncate">{{ Auth::user()->full_name }}</p>
+                <p class="text-xs text-gray-400">
+                    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                        👑 Super Administrator
+                    @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+                        🎨 Media Team
+                    @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                        🛡️ Administrator
+                    @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                        🏢 Institution Admin
+                    @elseif(auth()->user()->role === 'school_admin' || auth()->user()->hasRole('school_admin'))
+                        🏫 School Admin
+                    @elseif(auth()->user()->role === 'college_admin' || auth()->user()->hasRole('college_admin'))
+                        🎓 College Admin
+                    @elseif(auth()->user()->role === 'university_admin' || auth()->user()->hasRole('university_admin'))
+                        🏛️ University Admin
+                    @elseif(auth()->user()->role === 'library_admin' || auth()->user()->hasRole('library_admin'))
+                        📚 Library Admin
+                    @elseif(auth()->user()->role === 'bookstore_admin' || auth()->user()->hasRole('bookstore_admin'))
+                        📖 Bookstore Admin
+                    @elseif(auth()->user()->role === 'publisher_admin' || auth()->user()->hasRole('publisher_admin'))
+                        📰 Publisher Admin
+                    @elseif(auth()->user()->role === 'researcher' || auth()->user()->hasRole('researcher'))
+                        🔬 Researcher
+                    @elseif(auth()->user()->hasAnyRole(['author', 'seller']))
+                        ✍️ Author & Seller
+                    @elseif(auth()->user()->role === 'librarian' || auth()->user()->hasRole('librarian'))
+                        📚 Librarian
+                    @elseif(auth()->user()->role === 'instructor' || auth()->user()->hasRole('instructor'))
+                        👨‍🏫 Instructor
+                    @else
+                        👤 Member
+                    @endif
+                </p>
+            </div>
         </div>
-    </div>
-</div>   
- <!-- Navigation -->
+    </div>   
+    
+    <!-- Navigation -->
     <nav class="flex-1 py-4">
         <div class="px-3 mb-2">
             <p class="text-xs text-gray-500 uppercase tracking-wider">Main Menu</p>
         </div>
         
-       
-            <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i class="ti ti-dashboard text-indigo-400 text-xl"></i>
-                <span>Dashboard</span>
-            </a>
-        
+        <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <i class="ti ti-dashboard text-indigo-400 text-xl"></i>
+            <span>Dashboard</span>
+        </a>
 
         <!-- REGULAR USER MENUS -->
         <a href="{{ route('library.index') }}" class="nav-item {{ (request()->routeIs('library.*') && !request()->routeIs('library.my-library')) ? 'active' : '' }}">
@@ -83,51 +82,48 @@
             <span>AI Assistant</span>
         </a>
 
-<!-- ========================================== -->
-<!-- INSTITUTION SECTION - PERSISTENT STATE     -->
-<!-- ========================================== -->
-<div x-data="{ 
-        open: localStorage.getItem('institutionOpen') === 'true',
-        toggle() {
-            this.open = !this.open;
-            localStorage.setItem('institutionOpen', this.open);
-        }
-    }" 
-    x-init="localStorage.setItem('institutionOpen', open)"
-    class="px-6 mt-4 mb-2">
-    
-    <button @click="toggle()" class="w-full flex items-center justify-between text-xs text-gray-300 uppercase tracking-wider hover:text-white transition group">
-        <span class="flex items-center gap-2">
-            <i class="ti ti-building-community text-indigo-400 text-sm group-hover:text-indigo-300 transition"></i>
-            <span class="font-medium">Institution</span>
-        </span>
-        <i class="ti ti-chevron-down text-gray-400 text-xs transition-transform duration-200 group-hover:text-white" :class="{'rotate-180': open}"></i>
-    </button>
-    
-    <div x-show="open" x-collapse.duration.300ms class="mt-2 space-y-1">
-        <!-- My Institution -->
-        <a href="{{ route('my.institution') }}" 
-           class="nav-item {{ request()->routeIs('my.institution') ? 'active' : '' }} hover:bg-white/5">
-            <i class="ti ti-building text-indigo-400 text-xl"></i>
-            <span class="text-gray-300">My Institution</span>
-        
-        </a>
-        
-        <!-- Discover Institutions -->
-        <a href="{{ route('discover.institutions') }}" 
-           class="nav-item {{ request()->routeIs('discover.institutions') ? 'active' : '' }} hover:bg-white/5">
-            <i class="ti ti-building-community text-cyan-400 text-xl"></i>
-            <span class="text-gray-300">Discover</span>
-        </a>
-        
-        <!-- Register Institution -->
-        <a href="{{ route('institution.create-request') }}" 
-           class="nav-item {{ request()->routeIs('institution.create-request') ? 'active' : '' }} hover:bg-white/5">
-            <i class="ti ti-file-plus text-emerald-400 text-xl"></i>
-            <span class="text-gray-300">Register Institution</span>
-        </a>
-    </div>
-</div>
+        <!-- ========================================== -->
+        <!-- INSTITUTION SECTION - PERSISTENT STATE     -->
+        <!-- ========================================== -->
+        <div x-data="{ 
+                open: localStorage.getItem('institutionOpen') === 'true',
+                toggle() {
+                    this.open = !this.open;
+                    localStorage.setItem('institutionOpen', this.open);
+                }
+            }" 
+            x-init="localStorage.setItem('institutionOpen', open)"
+            class="px-6 mt-4 mb-2">
+            
+            <button @click="toggle()" class="w-full flex items-center justify-between text-xs text-gray-300 uppercase tracking-wider hover:text-white transition group">
+                <span class="flex items-center gap-2">
+                    <i class="ti ti-building-community text-indigo-400 text-sm group-hover:text-indigo-300 transition"></i>
+                    <span class="font-medium">Institution</span>
+                </span>
+                <i class="ti ti-chevron-down text-gray-400 text-xs transition-transform duration-200 group-hover:text-white" :class="{'rotate-180': open}"></i>
+            </button>
+            
+            <div x-show="open" x-collapse.duration.300ms class="mt-2 space-y-1">
+                <a href="{{ route('my.institution') }}" 
+                   class="nav-item {{ request()->routeIs('my.institution') ? 'active' : '' }} hover:bg-white/5">
+                    <i class="ti ti-building text-indigo-400 text-xl"></i>
+                    <span class="text-gray-300">My Institution</span>
+                </a>
+                
+                <a href="{{ route('discover.institutions') }}" 
+                   class="nav-item {{ request()->routeIs('discover.institutions') ? 'active' : '' }} hover:bg-white/5">
+                    <i class="ti ti-building-community text-cyan-400 text-xl"></i>
+                    <span class="text-gray-300">Discover</span>
+                </a>
+                
+                <a href="{{ route('institution.create-request') }}" 
+                   class="nav-item {{ request()->routeIs('institution.create-request') ? 'active' : '' }} hover:bg-white/5">
+                    <i class="ti ti-file-plus text-emerald-400 text-xl"></i>
+                    <span class="text-gray-300">Register Institution</span>
+                </a>
+            </div>
+        </div>
+
         <a href="{{ route('community.index') }}" class="nav-item {{ request()->routeIs('community.*') ? 'active' : '' }}">
             <i class="ti ti-users text-green-400 text-xl"></i>
             <span>Community</span>
@@ -138,7 +134,6 @@
             <span>File Converter</span>
         </a>
 
- 
         <a href="{{ route('certificates.index') }}" class="nav-item {{ request()->routeIs('certificates.*') ? 'active' : '' }}">
             <i class="ti ti-certificate text-yellow-400 text-xl"></i>
             <span>Certificates</span>
@@ -154,8 +149,6 @@
             <span>Wallet</span>
         </a>
 
-    
-
         <a href="{{ route('referrals.index') }}" class="nav-item {{ request()->routeIs('referrals.*') ? 'active' : '' }}">
             <i class="ti ti-gift text-pink-400 text-xl"></i>
             <span>Refer & Earn</span>
@@ -167,88 +160,50 @@
             @endif
         </a>
 
-       <!-- ========================================== -->
-<!-- ADMIN/SUPER ADMIN/MEDIA TEAM ACCESS        -->
-<!-- ========================================== -->
-@if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isMediaTeam() || auth()->user()->hasRole('admin') || auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('media_team'))
+        <!-- AUTHOR & SELLER ACCESS -->
+@if(auth()->user()->hasAnyRole(['author', 'seller']))
     <div class="px-3 mt-4 mb-2">
-        <p class="text-xs text-gray-500 uppercase tracking-wider">Admin Access</p>
+        <p class="text-xs text-gray-500 uppercase tracking-wider">Author & Seller Studio</p>
     </div>
     
-    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-        <a href="{{ route('super-admin.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.*') ? 'active' : '' }}">
-            <i class="ti ti-crown text-yellow-400 text-xl"></i>
-            <span>Super Dashboard</span>
-        </a>
-    @endif
-
-    @if(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
-        <a href="{{ route('super-admin.media.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.media.dashboard') ? 'active' : '' }}">
-            <i class="ti ti-palette text-yellow-400 text-xl"></i>
-            <span>Media Dashboard</span>
-        </a>
-    @endif
-
-    @if(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
-            <i class="ti ti-shield text-purple-400 text-xl"></i>
-            <span>Admin Panel</span>
-            <span class="ml-auto text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">Manage</span>
-        </a>
-    @endif
+    <a href="{{ route('author.dashboard') }}" 
+       class="nav-item {{ request()->routeIs('author.dashboard') ? 'active' : '' }}">
+        <i class="ti ti-dashboard text-purple-400 text-xl"></i>
+        <span>Studio Dashboard</span>
+    </a>
+   
 @endif
 
-       <!-- ========================================== -->
-<!-- MARKETPLACE SELLER SECTION                -->
-<!-- ========================================== -->
-@role('author|bookseller')
-    <div class="px-3 mt-4 mb-2">
-        <p class="text-xs text-gray-500 uppercase tracking-wider">
-            <i class="ti ti-shopping-cart"></i> Marketplace Seller
-        </p>
-    </div>
-    
-    <a href="{{ route('seller.dashboard') }}" class="nav-item {{ request()->routeIs('seller.*') ? 'active' : '' }}">
-        <i class="ti ti-dashboard text-purple-400 text-xl"></i>
-        <span>Seller Dashboard</span>
-        @if(auth()->user()->isApprovedAuthor())
-            <span class="ml-auto text-[10px] bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">Author</span>
+        <!-- ========================================== -->
+        <!-- ADMIN/SUPER ADMIN/MEDIA TEAM ACCESS        -->
+        <!-- ========================================== -->
+        @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() || auth()->user()->isMediaTeam() || auth()->user()->hasRole('admin') || auth()->user()->hasRole('super_admin') || auth()->user()->hasRole('media_team'))
+            <div class="px-3 mt-4 mb-2">
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Admin Access</p>
+            </div>
+            
+            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                <a href="{{ route('super-admin.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.*') ? 'active' : '' }}">
+                    <i class="ti ti-crown text-yellow-400 text-xl"></i>
+                    <span>Super Dashboard</span>
+                </a>
+            @endif
+
+            @if(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+                <a href="{{ route('super-admin.media.dashboard') }}" class="nav-item {{ request()->routeIs('super-admin.media.dashboard') ? 'active' : '' }}">
+                    <i class="ti ti-palette text-yellow-400 text-xl"></i>
+                    <span>Media Dashboard</span>
+                </a>
+            @endif
+
+            @if(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
+                    <i class="ti ti-shield text-purple-400 text-xl"></i>
+                    <span>Admin Panel</span>
+                    <span class="ml-auto text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">Manage</span>
+                </a>
+            @endif
         @endif
-        @if(auth()->user()->isApprovedBookseller())
-            <span class="ml-auto text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">Bookseller</span>
-        @endif
-    </a>
-
-    <a href="{{ route('marketplace.listings') }}" class="nav-item {{ request()->routeIs('marketplace.listings') ? 'active' : '' }}">
-        <i class="ti ti-package text-blue-400 text-xl"></i>
-        <span>My Books</span>
-        <span class="ml-auto text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">
-            {{ auth()->user()->marketplaceListings()->count() }}
-        </span>
-    </a>
-
-    <a href="{{ route('marketplace.create') }}" class="nav-item {{ request()->routeIs('marketplace.create') ? 'active' : '' }}">
-        <i class="ti ti-plus text-green-400 text-xl"></i>
-        <span>Upload New Book</span>
-    </a>
-
-    <a href="{{ route('seller.orders') }}" class="nav-item {{ request()->routeIs('seller.orders') ? 'active' : '' }}">
-        <i class="ti ti-shopping-cart text-amber-400 text-xl"></i>
-        <span>Orders</span>
-        @php
-            $pendingOrders = auth()->user()->sellerOrders()->where('status', 'pending')->count();
-        @endphp
-        @if($pendingOrders > 0)
-            <span class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingOrders }}</span>
-        @endif
-    </a>
-
-    <a href="{{ route('seller.earnings') }}" class="nav-item {{ request()->routeIs('seller.earnings') ? 'active' : '' }}">
-        <i class="ti ti-wallet text-emerald-400 text-xl"></i>
-        <span>Earnings</span>
-    </a>
-@endrole
-
 
         <!-- INSTITUTION ADMIN ACCESS -->
         @if(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
@@ -259,17 +214,6 @@
                 <i class="ti ti-building text-blue-400 text-xl"></i>
                 <span>Institution Panel</span>
                 <span class="ml-auto text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">Manage</span>
-            </a>
-        @endif
-
-        <!-- AUTHOR ACCESS -->
-        @if(auth()->user()->role === 'author' || auth()->user()->hasRole('author'))
-            <div class="px-3 mt-4 mb-2">
-                <p class="text-xs text-gray-500 uppercase tracking-wider">Author Studio</p>
-            </div>
-            <a href="{{ route('author.dashboard') }}" class="nav-item {{ request()->routeIs('author.dashboard') ? 'active' : '' }}">
-                <i class="ti ti-edit text-purple-400 text-xl"></i>
-                <span>Author Dashboard</span>
             </a>
         @endif
 
@@ -345,38 +289,6 @@
         flex-shrink: 0;
     }
     
-    /* ========================================== */
-    /* INSTITUTION SECTION STYLES                */
-    /* ========================================== */
-    .institution-btn {
-        color: #d1d5db; /* gray-300 */
-        transition: all 0.2s ease;
-    }
-    .institution-btn:hover {
-        color: #ffffff; /* white */
-    }
-    .institution-icon {
-        color: #818cf8; /* indigo-400 */
-        transition: all 0.2s ease;
-    }
-    .institution-icon:hover {
-        color: #a5b4fc; /* indigo-300 */
-    }
-    .institution-text {
-        color: #d1d5db; /* gray-300 */
-        font-weight: 500;
-    }
-    .institution-chevron {
-        color: #9ca3af; /* gray-400 */
-        transition: transform 0.2s ease, color 0.2s ease;
-    }
-    .institution-chevron:hover {
-        color: #ffffff; /* white */
-    }
-    .rotate-180 {
-        transform: rotate(180deg);
-    }
-    
     @media (max-width: 1024px) {
         #sidebar {
             transform: translateX(-100%);
@@ -386,16 +298,3 @@
         }
     }
 </style>
-<script>
-    function toggleInstitution() {
-        const dropdown = document.getElementById('institution-dropdown');
-        const chevron = document.getElementById('institution-chevron');
-        
-        if (dropdown) {
-            dropdown.classList.toggle('hidden');
-        }
-        if (chevron) {
-            chevron.classList.toggle('rotate-180');
-        }
-    }
-</script>

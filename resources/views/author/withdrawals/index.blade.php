@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.author')
 
 @section('title', 'Withdrawal History')
+@section('page-title', 'Withdrawal History')
 
 @section('content')
 
@@ -66,54 +67,56 @@
                 Withdrawal History
             </h2>
         </div>
-        <table class="min-w-full divide-y divide-slate-200">
-            <thead class="bg-orange-50/40">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Amount</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Method</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Date</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Reference</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200">
-                @foreach($withdrawals as $withdrawal)
-                <tr class="hover:bg-orange-50/50 transition">
-                    <td class="px-6 py-4 font-semibold text-slate-800">
-                        TSh {{ number_format($withdrawal->amount, 2) }}
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="capitalize text-slate-600">{{ $withdrawal->method }}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                        @if($withdrawal->status === 'pending')
-                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                ⏳ Pending
-                            </span>
-                        @elseif($withdrawal->status === 'completed')
-                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-                                ✅ Completed
-                            </span>
-                        @elseif($withdrawal->status === 'cancelled')
-                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
-                                ❌ Cancelled
-                            </span>
-                        @else
-                            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                                {{ ucfirst($withdrawal->status) }}
-                            </span>
-                        @endif
-                    </td>
-                    <td class="px-6 py-4 text-sm text-slate-600">
-                        {{ $withdrawal->created_at->format('M d, Y h:i A') }}
-                    </td>
-                    <td class="px-6 py-4 text-sm text-slate-500">
-                        {{ $withdrawal->transaction_id ?? 'N/A' }}
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-orange-50/40">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Method</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase border-b-2 border-slate-200">Reference</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    @foreach($withdrawals as $withdrawal)
+                    <tr class="hover:bg-orange-50/50 transition">
+                        <td class="px-6 py-4 font-semibold text-slate-800">
+                            TSh {{ number_format($withdrawal->amount, 2) }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="capitalize text-slate-600">{{ $withdrawal->method }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            @if($withdrawal->status === 'pending')
+                                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border border-yellow-200">
+                                    ⏳ Pending
+                                </span>
+                            @elseif($withdrawal->status === 'completed')
+                                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                    ✅ Completed
+                                </span>
+                            @elseif($withdrawal->status === 'cancelled')
+                                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                                    ❌ Cancelled
+                                </span>
+                            @else
+                                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                    {{ ucfirst($withdrawal->status) }}
+                                </span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600">
+                            {{ $withdrawal->created_at->format('M d, Y h:i A') }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-500">
+                            {{ $withdrawal->transaction_id ?? 'N/A' }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="mt-6">{{ $withdrawals->links() }}</div>
     
@@ -133,4 +136,45 @@
     </div>
     @endif
 </div>
+
+@push('styles')
+<style>
+    .bg-emerald-100 {
+        background-color: #d1fae5;
+    }
+    .text-emerald-700 {
+        color: #047857;
+    }
+    .border-emerald-200 {
+        border-color: #a7f3d0;
+    }
+    .bg-yellow-100 {
+        background-color: #fef3c7;
+    }
+    .text-yellow-700 {
+        color: #b45309;
+    }
+    .border-yellow-200 {
+        border-color: #fde68a;
+    }
+    .bg-red-100 {
+        background-color: #fee2e2;
+    }
+    .text-red-700 {
+        color: #b91c1c;
+    }
+    .border-red-200 {
+        border-color: #fca5a5;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Optional: Add any JavaScript for the withdrawals index page
+        // For example, you could add a filter or search functionality
+    });
+</script>
+@endpush
 @endsection

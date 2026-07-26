@@ -33,44 +33,65 @@ class ApplicationController extends Controller
     }
     
     // Store application
-    public function store(Request $request)
-    {
-        $request->validate([
-            'type' => 'required|in:author,bookseller,publisher,researcher',
-            'message' => 'nullable|string',
-            'business_name' => 'nullable|string|max:255',
-            'business_address' => 'nullable|string',
-            'tax_id' => 'nullable|string|max:100',
-            'phone' => 'nullable|string|max:20',
-            'id_document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'certificate_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'business_license' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'tax_certificate' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'type' => 'required|in:author,bookseller,publisher,researcher',
+        'full_name' => 'required|string|max:255',
+        'email' => 'required|email|max:255',
+        'country' => 'required|string|max:100',
+        'country_code' => 'nullable|string|max:10',
+        'phone' => 'required|string|max:20|regex:/^[\+\d\s\-\(\)]+$/',
+        'biography' => 'required|string|min:50|max:5000',
+        'passport_photo' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+        'supporting_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
+    ]);
+    
+    try {
+        // Upload Passport Photo
+        $passportPhoto = $request->file('passport_photo')->store('applications/passports', 'public');
         
-        // Upload documents
-        $idDocument = $request->file('id_document')->store('applications/documents', 'public');
-        $certificateDocument = $request->hasFile('certificate_document') ? $request->file('certificate_document')->store('applications/documents', 'public') : null;
-        $businessLicense = $request->hasFile('business_license') ? $request->file('business_license')->store('applications/documents', 'public') : null;
-        $taxCertificate = $request->hasFile('tax_certificate') ? $request->file('tax_certificate')->store('applications/documents', 'public') : null;
+        // Upload Supporting Document - Optional
+        $supportingDocument = $request->hasFile('supporting_document') 
+            ? $request->file('supporting_document')->store('applications/documents', 'public') 
+            : null;
         
-        Application::create([
+        // Combine country code and phone if needed
+        $fullPhone = $request->phone;
+        if ($request->country_code && !str_starts_with($request->phone, $request->country_code)) {
+            $fullPhone = $request->country_code . ltrim($request->phone, '+');
+        }
+        
+        // Create application
+        $application = Application::create([
             'user_id' => auth()->id(),
             'type' => $request->type,
-            'message' => $request->message,
-            'business_name' => $request->business_name,
-            'business_address' => $request->business_address,
-            'tax_id' => $request->tax_id,
-            'phone' => $request->phone,
-            'id_document' => $idDocument,
-            'certificate_document' => $certificateDocument,
-            'business_license' => $businessLicense,
-            'tax_certificate' => $taxCertificate,
+            'full_name' => $request->full_name,
+            'email' => $request->email,
+            'country' => $request->country,
+            'country_code' => $request->country_code,
+            'phone' => $fullPhone,
+            'message' => $request->biography,
+            'biography' => $request->biography,
+            'passport_photo' => $passportPhoto,
+            'supporting_document' => $supportingDocument,
             'status' => 'pending',
         ]);
         
-        return redirect()->route('dashboard')->with('success', 'Your application has been submitted for review!');
+        return redirect()->route('dashboard')
+            ->with('success', 'Your application has been submitted for review! We will contact you at ' . $fullPhone . ' if we need more information.');
+            
+    } catch (\Exception $e) {
+        // Delete uploaded files if something goes wrong
+        if (isset($passportPhoto) && Storage::disk('public')->exists($passportPhoto)) {
+            Storage::disk('public')->delete($passportPhoto);
+        }
+        
+        return redirect()->back()
+            ->withInput()
+            ->with('error', 'Failed to submit application. Please try again. Error: ' . $e->getMessage());
     }
+}
     
     // Admin: View all applications
     public function index(Request $request)
@@ -117,6 +138,12 @@ class ApplicationController extends Controller
         $user->role = $application->type;
         $user->save();
         
+        // Optional: Update user's phone number if not set
+        if (empty($user->phone)) {
+            $user->phone = $application->phone;
+            $user->save();
+        }
+        
         return redirect()->back()->with('success', ucfirst($application->type) . ' application approved! User role updated.');
     }
     
@@ -140,7 +167,7 @@ class ApplicationController extends Controller
     // Download document
     public function download(Application $application, $document)
     {
-        $allowedDocuments = ['id_document', 'certificate_document', 'business_license', 'tax_certificate'];
+        $allowedDocuments = ['passport_photo', 'supporting_document', 'business_license', 'tax_certificate'];
         
         if (!in_array($document, $allowedDocuments)) {
             abort(404);

@@ -1,10 +1,13 @@
-@extends('layouts.app')
+@extends('layouts.author')
+
+@section('title', $listing->title)
+@section('page-title', 'Listing Details')
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
     <div class="mb-6">
-        <a href="{{ route('marketplace.index') }}" class="text-jlibrary-600 hover:text-jlibrary-700">
-            <i class="ti ti-arrow-left"></i> Back to Marketplace
+        <a href="{{ route('seller.listings') }}" class="text-jlibrary-600 hover:text-jlibrary-700">
+            <i class="ti ti-arrow-left"></i> Back to My Listings
         </a>
     </div>
     
@@ -22,19 +25,20 @@
                 
                 <div class="p-6">
                     <div class="text-3xl font-bold text-jlibrary-600 mb-4">
-                        ${{ number_format($listing->price, 2) }}
+                        TSh {{ number_format($listing->price, 2) }}
                     </div>
                     
                     @auth
                         @if($isSeller)
                             <div class="mb-4 p-3 bg-gray-100 rounded-lg text-center">
                                 <p class="text-sm text-gray-600">This is your listing</p>
-                                <div class="flex gap-2 mt-2">
+                                <div class="flex gap-2 mt-2 justify-center">
+                                    <a href="{{ route('marketplace.edit', $listing) }}" class="text-blue-600 text-sm">Edit</a>
                                     <form method="POST" action="{{ route('marketplace.destroy', $listing) }}" 
                                           onsubmit="return confirm('Delete this listing?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 text-sm">Delete Listing</button>
+                                        <button type="submit" class="text-red-600 text-sm">Delete</button>
                                     </form>
                                 </div>
                             </div>
@@ -51,8 +55,8 @@
                     @endauth
                     
                     <div class="mt-4 text-center text-sm text-gray-500">
-                        <p><i class="ti ti-eye"></i> {{ number_format($listing->views) }} views</p>
-                        <p><i class="ti ti-download"></i> {{ number_format($listing->downloads) }} downloads</p>
+                        <p><i class="ti ti-eye"></i> {{ number_format($listing->views ?? 0) }} views</p>
+                        <p><i class="ti ti-download"></i> {{ number_format($listing->downloads ?? 0) }} downloads</p>
                     </div>
                 </div>
             </div>

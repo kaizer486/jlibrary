@@ -236,55 +236,37 @@
             <!-- LEFT COLUMN (2/3) -->
             <div class="lg:col-span-2 space-y-6">
                 
-                <!-- Become a Creator -->
-                @if(!auth()->user()->isApprovedAuthor() && !auth()->user()->isApprovedBookseller())
-                    @if(auth()->user()->hasPendingApplication())
-                        <div class="rounded-2xl p-5 border-2 border-amber-200/80 shadow-md" style="
-                            background: #FEFCE8;
-                            border-radius: 20px;
-                        ">
-                            <div class="flex items-center gap-3">
-                                <i class="ti ti-alert-circle text-2xl" style="color: #F59E0B;"></i>
-                                <div>
-                                    <p class="font-semibold" style="color: #92400E;">Application Pending Review</p>
-                                    <p class="text-sm" style="color: #B45309;">Your application is being reviewed by our team. You'll be notified once approved.</p>
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <div class="rounded-2xl p-5 border-2 border-orange-200/80 shadow-md" style="
-                            background: #FFF7ED;
-                            border-radius: 20px;
-                        ">
-                            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <i class="ti ti-rocket text-xl" style="color: #EA580C;"></i>
-                                        <h3 class="text-xl font-bold" style="color: #1E293B;">Become a Creator</h3>
-                                    </div>
-                                    <p class="text-sm font-medium" style="color: #64748B;">Share your knowledge and earn money by becoming an author or bookseller</p>
-                                </div>
-                                <div class="flex gap-3 mt-3 md:mt-0">
-                                    <a href="{{ route('applications.create', 'author') }}" class="text-white font-medium px-4 py-2 transition-all duration-300 hover:-translate-y-1 flex items-center gap-1 border-2 border-orange-400/30" style="
-                                        background: linear-gradient(135deg, #db570a, #e87a2a);
-                                        box-shadow: 0 4px 12px rgba(219,87,10,0.15);
-                                        border-radius: 14px;
-                                    ">
-                                        <i class="ti ti-edit"></i> Author
-                                    </a>
-                                    <a href="{{ route('applications.create', 'bookseller') }}" class="text-white font-medium px-4 py-2 transition-all duration-300 hover:-translate-y-1 flex items-center gap-1 border-2 border-orange-400/30" style="
-                                        background: linear-gradient(135deg, #db570a, #e87a2a);
-                                        box-shadow: 0 4px 12px rgba(219,87,10,0.15);
-                                        border-radius: 14px;
-                                    ">
-                                        <i class="ti ti-shopping-cart"></i> Bookseller
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                @endif
-
+               <!-- Become a Creator -->
+@if(!auth()->user()->isApprovedAuthor() && !auth()->user()->isApprovedBookseller())
+    @if(auth()->user()->hasPendingApplication())
+        <div class="rounded-2xl p-5 border-2 border-amber-200/80 shadow-md" style="background: #FEFCE8; border-radius: 20px;">
+            <div class="flex items-center gap-3">
+                <i class="ti ti-alert-circle text-2xl" style="color: #F59E0B;"></i>
+                <div>
+                    <p class="font-semibold" style="color: #92400E;">Application Pending Review</p>
+                    <p class="text-sm" style="color: #B45309;">Your Creator application is being reviewed. You'll be notified once approved.</p>
+                </div>
+            </div>
+        </div>
+    @else
+        <div class="rounded-2xl p-5 border-2 border-orange-200/80 shadow-md" style="background: #FFF7ED; border-radius: 20px;">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="ti ti-rocket text-xl" style="color: #EA580C;"></i>
+                        <h3 class="text-xl font-bold" style="color: #1E293B;">Become a Creator</h3>
+                    </div>
+                    <p class="text-sm font-medium" style="color: #64748B;">Publish books, sell products, and earn from your content</p>
+                </div>
+                <div class="flex gap-3 mt-3 md:mt-0">
+                    <a href="{{ route('applications.create', 'creator') }}" class="text-white font-medium px-5 py-2.5 transition-all duration-300 hover:-translate-y-1 flex items-center gap-2 border-2 border-orange-400/30" style="background: linear-gradient(135deg, #db570a, #e87a2a); box-shadow: 0 4px 12px rgba(219,87,10,0.15); border-radius: 14px;">
+                        <i class="ti ti-crown"></i> Apply as Creator
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+@endif
                 <!-- Continue Learning -->
                 <div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="
                     background: white;
@@ -522,30 +504,111 @@
             </div>
         </div>
 
+       <!-- ========================================== -->
+<!-- BROWSE LIBRARY TAGS                        -->
+<!-- ========================================== -->
+<div class="rounded-2xl p-6 border-2 border-slate-200/80 shadow-md" style="
+    background: white;
+    border-radius: 20px;
+">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold flex items-center gap-2" style="color: #1E293B;">
+            <i class="ti ti-search" style="color: #db570a;"></i>
+            Browse Library
+        </h2>
+        <a href="{{ route('library.index') }}" class="text-sm font-medium hover:underline" style="color: #db570a;">View All Books →</a>
+    </div>
+    
+    @php
+        // Get counts for each section
+        $trendingCount = App\Models\Book::where('is_trending', true)
+            ->where('status', 'approved')
+            ->count();
+        
+        $recentCount = App\Models\Book::where('status', 'approved')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        
+        $featuredCount = App\Models\Book::where('is_featured', true)
+            ->where('status', 'approved')
+            ->count();
+        
+        $freeCount = App\Models\Book::where('status', 'approved')
+            ->where('is_paid', false)
+            ->count();
+        
+        // Get popular categories with book counts
+        $popularCategories = App\Models\Book::where('status', 'approved')
+            ->select('category', \DB::raw('count(*) as total'))
+            ->whereNotNull('category')
+            ->groupBy('category')
+            ->orderBy('total', 'desc')
+            ->limit(6)
+            ->get();
+    @endphp
+    
+    <div class="flex flex-wrap gap-2">
+        
         <!-- ========================================== -->
-        <!-- BROWSE LIBRARY TAGS                        -->
+        <!-- TRENDING - Clickable Badge Only            -->
         <!-- ========================================== -->
-        <div class="rounded-2xl p-6 border-2 border-slate-200/80 shadow-md" style="
-            background: white;
-            border-radius: 20px;
-        ">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold flex items-center gap-2" style="color: #1E293B;">
-                    <i class="ti ti-search" style="color: #db570a;"></i>
-                    Browse Library
-                </h2>
-                <a href="{{ route('library.index') }}" class="text-sm font-medium hover:underline" style="color: #db570a;">View Library →</a>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-purple-200/60" style="background: #F3E8FF; color: #7E22CE; border-radius: 999px;">Popular This Week</span>
-                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-red-200/60" style="background: #FEF2F2; color: #DC2626; border-radius: 999px;">Trending Now</span>
-                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-orange-200/60" style="background: #FFF7ED; color: #EA580C; border-radius: 999px;">Data Science</span>
-                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-emerald-200/60" style="background: #F0FDF4; color: #16A34A; border-radius: 999px;">Deep Learning</span>
-                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-blue-200/60" style="background: #EFF6FF; color: #2563EB; border-radius: 999px;">SQL for Beginners</span>
-                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-indigo-200/60" style="background: #F5F3FF; color: #7C3AED; border-radius: 999px;">Mobile App Dev</span>
-                <span class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-slate-200/60" style="background: #F1F5F9; color: #475569; border-radius: 999px;">Computer Science</span>
-            </div>
-        </div>
+        @if($trendingCount > 0)
+            <a href="{{ route('library.index', ['trending' => 'true']) }}" 
+               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-red-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+               style="background: #FEF2F2; color: #DC2626; border-radius: 999px; text-decoration: none;">
+                <i class="ti ti-flame"></i> Trending
+                <span class="text-xs text-red-400 bg-red-50 px-1.5 py-0.5 rounded-full">({{ $trendingCount }})</span>
+            </a>
+        @endif
+        
+        <!-- ========================================== -->
+        <!-- NEW ARRIVALS - Clickable Badge Only        -->
+        <!-- ========================================== -->
+        @if($recentCount > 0)
+            <a href="{{ route('library.index', ['recent' => 'true']) }}" 
+               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-emerald-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+               style="background: #F0FDF4; color: #16A34A; border-radius: 999px; text-decoration: none;">
+                <i class="ti ti-clock"></i> New Arrivals
+                <span class="text-xs text-emerald-400 bg-emerald-50 px-1.5 py-0.5 rounded-full">({{ $recentCount }})</span>
+            </a>
+        @endif
+        
+        <!-- ========================================== -->
+        <!-- FEATURED - Clickable Badge Only            -->
+        <!-- ========================================== -->
+        @if($featuredCount > 0)
+            <a href="{{ route('library.index', ['featured' => 'true']) }}" 
+               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-purple-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+               style="background: #F3E8FF; color: #7E22CE; border-radius: 999px; text-decoration: none;">
+                <i class="ti ti-star text-yellow-500 text-xs"></i> Featured
+                <span class="text-xs text-purple-400 bg-purple-50 px-1.5 py-0.5 rounded-full">({{ $featuredCount }})</span>
+            </a>
+        @endif
+        
+        <!-- ========================================== -->
+        <!-- FREE BOOKS - Clickable Badge Only          -->
+        <!-- ========================================== -->
+        @if($freeCount > 0)
+            <a href="{{ route('library.index', ['price_type' => 'free']) }}" 
+               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-blue-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+               style="background: #EFF6FF; color: #2563EB; border-radius: 999px; text-decoration: none;">
+                <i class="ti ti-gift"></i> Free Books
+                <span class="text-xs text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded-full">({{ $freeCount }})</span>
+            </a>
+        @endif
+        
+      
+        
+        <!-- ========================================== -->
+        <!-- VIEW ALL CATEGORIES                        -->
+        <!-- ========================================== -->
+        <a href="{{ route('library.index') }}" 
+           class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-dashed border-orange-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+           style="background: #FFF7ED; color: #EA580C; border-radius: 999px; text-decoration: none;">
+            <i class="ti ti-plus"></i> More Categories
+        </a>
+    </div>
+</div>
 
     </div>
 </div>

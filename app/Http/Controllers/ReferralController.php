@@ -9,12 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ReferralController extends Controller
 {
-    // Remove the constructor - middleware will be in routes instead
-    // public function __construct()
-    // {
-    //     $this->middleware('auth');
-    // }
-
     public function index()
     {
         $user = Auth::user();
@@ -62,13 +56,13 @@ class ReferralController extends Controller
             return;
         }
         
-        // Create referral record
+        // Create referral record with COINS instead of money
         Referral::create([
             'referrer_id' => $referrer->id,
             'referred_id' => $referredId,
             'referral_code' => $referrerCode,
-            'referrer_earned' => 5000,
-            'referred_earned' => 2000,
+            'referrer_earned' => 100, // 100 coins for referrer
+            'referred_earned' => 50,  // 50 coins for referred
             'status' => 'pending'
         ]);
         
@@ -87,7 +81,7 @@ class ReferralController extends Controller
     {
         $referral = Referral::findOrFail($id);
         
-        // Only referrer can mark as complete (when referred user makes first purchase)
+        // Only referrer can mark as complete
         if ($referral->referrer_id != Auth::id()) {
             abort(403);
         }
@@ -95,41 +89,41 @@ class ReferralController extends Controller
         $referral->status = 'completed';
         $referral->save();
         
-        // Add earnings to referrer using floatval to avoid type issues
-        $referrerEarned = floatval($referral->referrer_earned ?? 0);
-        $referredEarned = floatval($referral->referred_earned ?? 0);
+        // Add COINS earnings to referrer
+        $referrerCoins = floatval($referral->referrer_earned ?? 100);
+        $referredCoins = floatval($referral->referred_earned ?? 50);
         
-        // Add earnings to referrer
+        // Add coins to referrer
         $referrer = User::find($referral->referrer_id);
         if ($referrer) {
             $currentEarnings = floatval($referrer->referral_earnings ?? 0);
-            $currentBalance = floatval($referrer->wallet_balance ?? 0);
+            $currentCoins = floatval($referrer->coins ?? 0);
             
-            $referrer->referral_earnings = $currentEarnings + $referrerEarned;
-            $referrer->wallet_balance = $currentBalance + $referrerEarned;
+            $referrer->referral_earnings = $currentEarnings + $referrerCoins;
+            $referrer->coins = $currentCoins + $referrerCoins;
             $referrer->save();
         }
         
-        // Add earnings to referred user
+        // Add coins to referred user
         $referred = User::find($referral->referred_id);
         if ($referred) {
             $currentReferredEarnings = floatval($referred->referral_earnings ?? 0);
-            $currentReferredBalance = floatval($referred->wallet_balance ?? 0);
+            $currentReferredCoins = floatval($referred->coins ?? 0);
             
-            $referred->referral_earnings = $currentReferredEarnings + $referredEarned;
-            $referred->wallet_balance = $currentReferredBalance + $referredEarned;
+            $referred->referral_earnings = $currentReferredEarnings + $referredCoins;
+            $referred->coins = $currentReferredCoins + $referredCoins;
             $referred->save();
         }
         
-        $amount = number_format($referrerEarned, 2);
+        $amount = number_format($referrerCoins, 0);
         
         if (request()->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "Referral completed! TSh {$amount} added to your wallet."
+                'message' => "Referral completed! 🪙 {$amount} coins added to your wallet."
             ]);
         }
         
-        return redirect()->back()->with('success', "Referral completed! TSh {$amount} added to your wallet.");
+        return redirect()->back()->with('success', "Referral completed! 🪙 {$amount} coins added to your wallet.");
     }
 }

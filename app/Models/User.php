@@ -192,12 +192,15 @@ class User extends Authenticatable
         'reminder_1_sent_at',
         'reminder_expired_sent_at',
            // ==========================================
-    // SELLER APPROVAL FIELDS - ADD THIS
+    // SELLER APPROVAL FIELDS 
     // ==========================================
     'author_approved_at',
     'bookseller_approved_at',
     'author_approved_by',
     'bookseller_approved_by',
+
+    'coins',
+    'referral_earnings',
     ];
 
     protected $hidden = [
@@ -570,8 +573,15 @@ public function getRoleBadgeClass(): string
         };
     }
 
-    // ========== INSTITUTION RELATIONSHIPS ==========
-// ========== INSTITUTION RELATIONSHIPS ==========
+    public function referrals()
+{
+    return $this->hasMany(Referral::class, 'referrer_id');
+}
+
+public function referrer()
+{
+    return $this->belongsTo(User::class, 'referred_by');
+}
 
 public function institution(): BelongsTo
 {
@@ -798,6 +808,53 @@ public function getSubscriptionDaysLeft(): int
     
     return 0;
 }
+
+/**
+ * Get orders placed by this user
+ */
+public function orders()
+{
+    return $this->hasMany(Order::class);
+}
+
+/**
+ * Get order items for books uploaded by this author
+ */
+public function authorOrderItems()
+{
+    return $this->hasManyThrough(
+        OrderItem::class,
+        Book::class,
+        'uploaded_by', // Foreign key on books table
+        'book_id', // Foreign key on order_items table
+        'id', // Local key on users table
+        'id' // Local key on books table
+    );
+}
+
+/**
+ * Get orders for books uploaded by this author
+ */
+public function authorOrders()
+{
+    $bookIds = $this->books()->pluck('id');
+    return Order::whereHas('items', function($query) use ($bookIds) {
+        $query->whereIn('book_id', $bookIds);
+    });
+}
+
+// Add this relationship
+public function royalties()
+{
+    return $this->hasMany(Royalty::class, 'author_id');
+}
+
+// Add this relationship for withdrawals
+public function withdrawalRequests()
+{
+    return $this->hasMany(WithdrawalRequest::class, 'user_id');
+}
+
 
 
 public function subscriptions()
@@ -1449,10 +1506,6 @@ public function getPendingSellerOrdersAttribute(): int
     // REFERRAL METHODS
     // ==========================================
     
-    public function referrals()
-    {
-        return $this->hasMany(Referral::class, 'referrer_id');
-    }
     
     public function referredBy()
     {
