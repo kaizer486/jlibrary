@@ -443,7 +443,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // ---- Applications (Author, etc.) ----
-    Route::get('/apply/{type}', [App\Http\Controllers\ApplicationController::class, 'create'])->name('applications.create');
+  Route::get('/apply/{type}', [App\Http\Controllers\ApplicationController::class, 'create'])->name('applications.create');
     Route::post('/applications', [App\Http\Controllers\ApplicationController::class, 'store'])->name('applications.store');
 
     // ---- Institution Members Directory ----

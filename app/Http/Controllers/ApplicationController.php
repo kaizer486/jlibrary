@@ -11,26 +11,20 @@ class ApplicationController extends Controller
 {
     // Show application form
     public function create($type)
-    {
-        $validTypes = ['author', 'bookseller', 'publisher', 'researcher'];
-        
-        if (!in_array($type, $validTypes)) {
-            abort(404);
-        }
-        
-        // Check if already has pending application
-        if (auth()->user()->hasPendingApplication($type)) {
-            return redirect()->route('dashboard')->with('error', 'You already have a pending application for ' . ucfirst($type));
-        }
-        
-        // Check if already approved
-        $method = 'isApproved' . ucfirst($type);
-        if (method_exists(auth()->user(), $method) && auth()->user()->$method()) {
-            return redirect()->route('dashboard')->with('error', 'You are already an approved ' . ucfirst($type));
-        }
-        
-        return view('applications.create', compact('type'));
+{
+    // Map 'creator' to 'author' for backward compatibility
+    if ($type === 'creator') {
+        $type = 'author'; // or handle it as a new combined type
     }
+    
+    // Validate type
+    $validTypes = ['author', 'bookseller', 'creator'];
+    if (!in_array($type, $validTypes)) {
+        abort(404);
+    }
+    
+    return view('applications.create', compact('type'));
+}
     
     // Store application
    public function store(Request $request)
