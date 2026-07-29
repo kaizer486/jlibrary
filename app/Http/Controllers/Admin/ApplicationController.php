@@ -57,39 +57,28 @@ class ApplicationController extends Controller
         return view('admin.applications.show', compact('application'));
     }
 
-    public function approve(Application $application)
-    {
-        $application->update([
-            'status' => 'approved',
-            'reviewed_at' => now(),
-            'reviewed_by' => auth()->id(),
-        ]);
-        
-        // Update user role based on application type
-        $user = $application->user;
-        if ($user) {
-            switch ($application->type) {
-                case 'author':
-                    $user->role = 'author';
-                    break;
-                case 'bookseller':
-                    $user->role = 'bookseller';
-                    break;
-                case 'publisher':
-                    $user->role = 'publisher';
-                    break;
-                case 'researcher':
-                    $user->role = 'researcher';
-                    break;
-            }
+   public function approve(Application $application)
+{
+    $application->update([
+        'status' => 'approved',
+        'reviewed_at' => now(),
+        'reviewed_by' => auth()->id(),
+    ]);
+
+    $user = $application->user;
+    if ($user) {
+        $type = $application->type;
+
+        if (in_array($type, ['author', 'bookseller', 'publisher', 'researcher'])) {
+            $user->role = $type;
+            $user->assignRole($type);
             $user->save();
         }
-        
-        return redirect()->route('admin.applications.index')
-            ->with('success', 'Application approved successfully!');
     }
 
-    public function reject(Request $request, Application $application)
+    return redirect()->route('admin.applications.index')
+        ->with('success', 'Application approved successfully!');
+}    public function reject(Request $request, Application $application)
     {
         $request->validate([
             'admin_notes' => 'required|string|min:5',

@@ -2,6 +2,32 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto py-8">
+
+<!-- ========================================== -->
+    <!--  ERROR DISPLAY SECTION              -->
+    <!-- ========================================== -->
+    @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+            <strong class="font-bold">⚠️ Validation Errors:</strong>
+            <ul class="mt-2 list-disc list-inside">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if(session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6">
+            {{ session('error') }}
+        </div>
+    @endif
     <div class="mb-6">
         <a href="{{ route('dashboard') }}" class="text-purple-600 hover:text-purple-700">
             <i class="ti ti-arrow-left"></i> Back to Dashboard
@@ -275,7 +301,7 @@
                         Biography / About You <span class="text-red-500"></span>
                     </label>
                     <textarea name="biography" rows="5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Tell us about yourself, your experience, and motivation..."></textarea>
-                    <p class="text-xs text-gray-400 mt-1">Provide a detailed description of your background and qualifications (Minimum 50 characters)</p>
+                    <p class="text-xs text-gray-400 mt-1">Provide a detailed description of your background and qualifications (Minimum 20 characters)</p>
                 </div>
                 
                 <!-- Documents Section -->

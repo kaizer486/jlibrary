@@ -109,48 +109,28 @@
                     </h2>
                 </div>
                 <div class="p-6">
-                    <div class="grid md:grid-cols-2 gap-4">
-                        @if($application->id_document)
-                        <a href="{{ route('super-admin.applications.download', [$application, 'id_document']) }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <i class="ti ti-id text-2xl text-blue-600"></i>
-                            <div>
-                                <p class="font-medium">National ID / Passport</p>
-                                <p class="text-xs text-gray-500">Click to download</p>
-                            </div>
-                        </a>
-                        @endif
-                        
-                        @if($application->certificate_document)
-                        <a href="{{ route('super-admin.applications.download', [$application, 'certificate_document']) }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <i class="ti ti-certificate text-2xl text-green-600"></i>
-                            <div>
-                                <p class="font-medium">Education Certificate</p>
-                                <p class="text-xs text-gray-500">Click to download</p>
-                            </div>
-                        </a>
-                        @endif
-                        
-                        @if($application->business_license)
-                        <a href="{{ route('super-admin.applications.download', [$application, 'business_license']) }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <i class="ti ti-license text-2xl text-purple-600"></i>
-                            <div>
-                                <p class="font-medium">Business License</p>
-                                <p class="text-xs text-gray-500">Click to download</p>
-                            </div>
-                        </a>
-                        @endif
-                        
-                        @if($application->tax_certificate)
-                        <a href="{{ route('super-admin.applications.download', [$application, 'tax_certificate']) }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <i class="ti ti-file-text text-2xl text-red-600"></i>
-                            <div>
-                                <p class="font-medium">Tax Certificate</p>
-                                <p class="text-xs text-gray-500">Click to download</p>
-                            </div>
-                        </a>
-                        @endif
-                    </div>
-                </div>
+    <div class="grid md:grid-cols-2 gap-4">
+        @if($application->passport_photo)
+        <a href="{{ route('super-admin.applications.download', [$application, 'passport_photo']) }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+            <i class="ti ti-id text-2xl text-blue-600"></i>
+            <div>
+                <p class="font-medium">Passport Photo</p>
+                <p class="text-xs text-gray-500">Click to download</p>
+            </div>
+        </a>
+        @endif
+
+        @if($application->supporting_document)
+        <a href="{{ route('super-admin.applications.download', [$application, 'supporting_document']) }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+            <i class="ti ti-file-text text-2xl text-green-600"></i>
+            <div>
+                <p class="font-medium">Supporting Document</p>
+                <p class="text-xs text-gray-500">Click to download</p>
+            </div>
+        </a>
+        @endif
+    </div>
+</div>
             </div>
 
             <!-- Admin Actions -->

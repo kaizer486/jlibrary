@@ -49,6 +49,7 @@ use App\Http\Controllers\QuizController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\InstitutionCreationController;
 use App\Http\Controllers\JoinRequestController;
+use App\Http\Controllers\PublicController;
 
 // Marketplace & Seller
 use App\Http\Controllers\MarketplaceController;
@@ -207,6 +208,7 @@ Route::prefix('institution')->name('institution.public.')->group(function () {
     Route::get('/{institutionId}/shelf/{shelfId}', [PublicController::class, 'shelfShow'])->name('shelf.show');
 });
 
+
 // Public library
 Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
 Route::get('/library/{id}', [LibraryController::class, 'show'])->name('library.show');
@@ -256,6 +258,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/transaction/{transactionId}', [InvoiceController::class, 'transactionInvoice'])->name('transaction');
         Route::get('/subscription/{subscriptionPaymentId}', [InvoiceController::class, 'subscriptionInvoice'])->name('subscription');
     });
+
+    // ---- Applications (Author, etc.) ----
+  Route::get('/apply/{type}', [App\Http\Controllers\ApplicationController::class, 'create'])->name('applications.create');
+    Route::post('/applications', [App\Http\Controllers\ApplicationController::class, 'store'])->name('applications.store');
 
     // ---- Institutions (User Side) ----
     Route::get('/my-institution', [InstitutionController::class, 'myInstitution'])->name('my.institution');
@@ -441,10 +447,6 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{document}', [DocumentController::class, 'destroy'])->name('destroy');
         Route::get('/{document}/chat', [DocumentController::class, 'chat'])->name('chat');
     });
-
-    // ---- Applications (Author, etc.) ----
-  Route::get('/apply/{type}', [App\Http\Controllers\ApplicationController::class, 'create'])->name('applications.create');
-    Route::post('/applications', [App\Http\Controllers\ApplicationController::class, 'store'])->name('applications.store');
 
     // ---- Institution Members Directory ----
     Route::get('/institution/members/directory', [InstitutionMemberController::class, 'directory'])->name('institution.members.directory');

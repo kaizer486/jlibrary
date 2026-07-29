@@ -51,39 +51,37 @@ class ApplicationController extends Controller
     }
     
 
-    public function approve(Application $application)
+   public function approve(Application $application)
 {
     $application->update([
         'status' => 'approved',
         'reviewed_by' => auth()->id(),
         'reviewed_at' => now(),
     ]);
-    
-    // Update user role using Spatie
+
     $user = $application->user;
     $type = $application->type;
-    
-    // Assign the appropriate role
+
+    // Keep the plain role column in sync with the Spatie role
+    $user->role = $type;
+    $user->assignRole($type);
+
     if ($type === 'author') {
-        $user->assignRole('author');
         $user->author_approved_at = now();
         $user->author_approved_by = auth()->id();
     } elseif ($type === 'bookseller') {
-        $user->assignRole('bookseller');
         $user->bookseller_approved_at = now();
         $user->bookseller_approved_by = auth()->id();
     } elseif ($type === 'publisher') {
-        $user->assignRole('publisher');
         $user->publisher_approved_at = now();
         $user->publisher_approved_by = auth()->id();
     } elseif ($type === 'researcher') {
-        $user->assignRole('researcher');
         $user->researcher_approved_at = now();
         $user->researcher_approved_by = auth()->id();
     }
-    
+
     $user->save();
-    
+
     return redirect()->back()->with('success', 'Application approved! User is now a ' . ucfirst($type) . '.');
 }
     
@@ -105,7 +103,7 @@ class ApplicationController extends Controller
     
     public function download(Application $application, $document)
     {
-        $allowedDocuments = ['id_document', 'certificate_document', 'business_license', 'tax_certificate'];
+       $allowedDocuments = ['passport_photo', 'supporting_document'];
         
         if (!in_array($document, $allowedDocuments)) {
             abort(404);
