@@ -235,15 +235,23 @@ class BookshopBook extends Model
         
         return $this;
     }
-    /**
- * Check if user has access to this book
- */
+public function isPaidItem(): bool
+{
+    return $this->price > 0;
+}
+
+public function completedPayments()
+{
+    return $this->morphMany(\App\Models\Payment::class, 'payable');
+}
+
 public function userHasAccess($userId)
 {
-    if (!$this->is_paid) {
+    if (!$this->isPaidItem()) {
         return true;
     }
-    return $this->payments()
+
+    return $this->completedPayments()
         ->where('user_id', $userId)
         ->where('status', 'completed')
         ->exists();

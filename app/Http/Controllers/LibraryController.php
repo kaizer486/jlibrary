@@ -260,7 +260,7 @@ class LibraryController extends Controller
             $progress = null;
             
             if (auth()->check()) {
-                $hasAccess = !$book->is_paid || $book->userHasAccess(auth()->id());
+                $hasAccess =!$book->isPaidItem() || $book->userHasAccess(auth()->id());
                 $progress = auth()->user()->books()->where('book_id', $book->id)->first();
             }
             
@@ -292,7 +292,7 @@ class LibraryController extends Controller
         }
         
         // For free books, always allow access
-        if (!$book->is_paid) {
+        if (!$book->isPaidItem()) {
             // Auto-add free book to user's library if not already there
             $userBook = $user->books()->where('book_id', $book->id)->first();
             
@@ -397,7 +397,7 @@ class LibraryController extends Controller
         }
         
         // Check access for paid books
-        if ($book->is_paid && method_exists($book, 'userHasAccess') && !$book->userHasAccess($user->id)) {
+        if ($book->isPaidItem() && method_exists($book, 'userHasAccess') && !$book->userHasAccess($user->id)) {
             return redirect()->route('institution.public.show', ['institutionId' => $book->institution_id ?? 1, 'book' => $book->id])
                 ->with('error', 'Please purchase this book to download it.');
         }
@@ -479,7 +479,7 @@ class LibraryController extends Controller
         }
         
         // For free books, any logged-in user can read
-        if (!$book->is_paid) {
+        if (!$book->isPaidItem()) {
             return $this->returnPdfFile($book);
         }
         

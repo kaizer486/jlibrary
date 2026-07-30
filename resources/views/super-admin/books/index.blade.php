@@ -149,7 +149,7 @@
 </td>
                     <td class="px-6 py-4 text-sm">
                         @if($book->is_paid)
-                            <span class="font-semibold text-blue-600">${{ number_format($book->price, 2) }}</span>
+                            <span class="font-semibold text-blue-600">TSh {{ number_format($book->price, 0) }}</span>
                         @else
                             <span class="text-green-600 font-semibold">FREE</span>
                         @endif

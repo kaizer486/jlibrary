@@ -40,20 +40,27 @@ class Payment extends Model
 {
     protected $table = 'payments';
 
-   protected $fillable = [
+protected $fillable = [
     'user_id',
     'payable_type',
     'payable_id',
     'amount',
+    'currency',
     'status',
-    'reference',     
-    'method',         
-    'transaction_id', 
+    'reference',
+    'method',
+    'transaction_id',
+    'idempotency_key',
+    'order_tracking_id',
+    'gateway_response',
+    'webhook_processed_at',
 ];
-    protected $casts = [
-        'amount' => 'decimal:2',
-    ];
 
+protected $casts = [
+    'amount' => 'decimal:2',
+    'gateway_response' => 'array',
+    'webhook_processed_at' => 'datetime',
+];
     // Relationship to user
     public function user(): BelongsTo
     {

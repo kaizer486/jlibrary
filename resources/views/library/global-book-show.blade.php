@@ -32,7 +32,7 @@
                 <div class="p-6">
                     @if($book->is_paid)
                         <div class="mb-4">
-                            <div class="text-2xl font-bold text-jlibrary-600">${{ number_format($book->price, 2) }}</div>
+                            <div class="text-2xl font-bold text-jlibrary-600">TSh {{ number_format($book->price, 0) }}</div>
                             <p class="text-gray-500 text-sm">One-time purchase. Lifetime access.</p>
                         </div>
                     @endif
@@ -50,10 +50,10 @@
                                     <i class="ti ti-download"></i> Download PDF
                                 </a>
                             @else
-                                <button onclick="showPurchaseModal({{ $book->id }}, {{ $book->price }}, '{{ addslashes($book->title) }}')" 
-                                        class="block text-center bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition w-full">
-                                    <i class="ti ti-shopping-cart"></i> Purchase for ${{ number_format($book->price, 2) }}
-                                </button>
+                               <a href="{{ route('book.purchase', $book->id) }}" 
+   class="block text-center bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition w-full">
+    <i class="ti ti-shopping-cart"></i> Purchase for TSh {{ number_format($book->price, 0) }}
+</a>
                             @endif
                             
                             @if($progress && $progress->pivot->status != 'completed')

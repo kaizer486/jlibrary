@@ -57,6 +57,7 @@ return [
     'consumer_key' => env('PESAPAL_CONSUMER_KEY'),
     'consumer_secret' => env('PESAPAL_CONSUMER_SECRET'),
     'environment' => env('PESAPAL_ENVIRONMENT', 'sandbox'),
+     'book_ipn_url' => env('PESAPAL_BOOK_IPN_URL', '/book-purchase/pesapal/ipn'),
 ],
 
 'mpesa' => [

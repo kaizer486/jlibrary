@@ -477,10 +477,6 @@ Route::middleware(['auth'])->group(function () {
         ]);
     })->name('api.wallet.balance');
 
-    // ---- Payment Instructions ----
-    Route::get('/payment/instructions/{paymentId}', [BookPurchaseController::class, 'showPaymentInstructions'])->name('payment.instructions');
-    Route::post('/payment/confirm', [BookPurchaseController::class, 'confirmPayment'])->name('payment.confirm');
-
     // ---- Shelf Sync ----
     Route::post('/shelves/sync-counts', [InstitutionShelfController::class, 'syncCounts'])->name('institution.shelves.sync-counts');
 });
@@ -501,20 +497,21 @@ Route::middleware(['auth', 'librarian'])->prefix('librarian')->group(function ()
     Route::post('/borrow-requests/{id}/reject', [BorrowRequestController::class, 'reject'])->name('librarian.borrow-requests.reject');
 });
 
-
 // ==========================================
 // SECTION 6: BOOK PURCHASES
 // ==========================================
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/book/purchase/{bookId}', [BookPurchaseController::class, 'purchase'])->name('book.purchase');
-    Route::post('/book/purchase/wallet/{bookId}', [BookPurchaseController::class, 'purchaseWithWallet'])->name('book.purchase.wallet');
     Route::post('/book/purchase/process', [BookPurchaseController::class, 'processPurchase'])->name('book.purchase.process');
     Route::get('/book/purchase/success/{paymentId}', [BookPurchaseController::class, 'purchaseSuccess'])->name('book.purchase.success');
     Route::get('/book/purchase/history', [BookPurchaseController::class, 'purchaseHistory'])->name('book.purchase.history');
     Route::get('/book/download/{bookId}', [BookPurchaseController::class, 'downloadBook'])->name('book.download');
 });
 
+
+Route::get('/book-purchase/pesapal/callback/{paymentId}', [BookPurchaseController::class, 'pesapalCallback'])->name('book.purchase.pesapal.callback');
+Route::get('/book-purchase/pesapal/ipn', [BookPurchaseController::class, 'pesapalIpn'])->name('book.purchase.pesapal.ipn');
 
 // ==========================================
 // SECTION 7: INSTITUTION LIBRARY (Public + Auth)

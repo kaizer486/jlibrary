@@ -48,7 +48,7 @@
                                 <div class="mb-3">
                                     @if(isset($book->is_paid) && $book->is_paid)
                                         <span class="inline-block bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-lg">
-                                            ${{ number_format($book->price ?? 0, 2) }}
+                                           TSh {{ number_format($book->price ?? 0, 0) }}
                                         </span>
                                     @else
                                         <span class="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-lg">

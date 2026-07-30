@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Payment;
 use App\Models\Certificate;  
 use App\Models\Transaction;
+use App\Models\BookshopBook;
 use App\Traits\HasXpRewards;
 use App\Models\QuizAttempt;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -967,14 +968,20 @@ public function getSubscriptionStatusLabel(): string
                     ->where('status', 'completed');
     }
 
-    public function hasPurchasedBook($bookId)
-    {
-        return $this->payments()
-            ->where('payable_type', Book::class)
-            ->where('payable_id', $bookId)
-            ->where('status', 'completed')
-            ->exists();
+   public function hasPurchasedBook($bookId, $payableType = null): bool
+{
+    $query = $this->payments()
+        ->where('payable_id', $bookId)
+        ->where('status', 'completed');
+
+    if ($payableType) {
+        $query->where('payable_type', $payableType);
+    } else {
+        $query->whereIn('payable_type', [Book::class, BookshopBook::class]);
     }
+
+    return $query->exists();
+}
     
     public function purchaseBookWithWallet($book, $paymentMethod = 'wallet')
     {

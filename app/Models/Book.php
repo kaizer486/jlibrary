@@ -272,10 +272,35 @@ class Book extends Model
                     ->withPivot('progress', 'status', 'completed_at')
                     ->withTimestamps();
     }
+public function isPaidItem(): bool
+{
+    return (bool) $this->is_paid && $this->price > 0;
+}
 
-    // ==========================================
-    // AVAILABILITY HELPERS
-    // ==========================================
+public function completedPayments()
+{
+    return $this->morphMany(\App\Models\Payment::class, 'payable');
+}
+
+public function userHasAccess($userId)
+{
+    if (!$this->isPaidItem()) {
+        return true;
+    }
+
+    return $this->completedPayments()
+        ->where('user_id', $userId)
+        ->where('status', 'completed')
+        ->exists();
+}
+
+public function getFormattedPriceAttribute()
+{
+    if ($this->isPaidItem()) {
+        return 'TSh ' . number_format($this->price, 0);
+    }
+    return 'FREE';
+}
 
     /**
      * Update book availability based on status and copies.
@@ -767,39 +792,7 @@ public function hasInstitution(): bool
         return $this->reviews()->where('user_id', $userId)->first();
     }
 
-    /**
-     * Check if user has access to this book (for paid books)
-     */
-    public function userHasAccess($userId)
-    {
-        // If book is free, everyone has access
-        if (!$this->is_paid) {
-            return true;
-        }
 
-        // Check if user has purchased this book
-        return $this->payments()
-            ->where('user_id', $userId)
-            ->where('status', 'completed')
-            ->exists();
-    }
+    
 
-    /**
-     * Get formatted price with currency
-     */
-    public function getFormattedPriceAttribute()
-    {
-        if ($this->is_paid) {
-            return '$' . number_format($this->price, 2);
-        }
-        return 'FREE';
-    }
-
-    public function getPriceInTshAttribute()
-    {
-        if ($this->is_paid) {
-            return 'TSh ' . number_format($this->price * 2500, 0);
-        }
-        return 'FREE';
-    }
 }

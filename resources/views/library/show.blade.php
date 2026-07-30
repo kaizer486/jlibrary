@@ -27,7 +27,7 @@
                 <div class="p-6">
                     @if($book->is_paid)
                         <div class="mb-4">
-                            <div class="text-2xl font-bold text-jlibrary-600">${{ number_format($book->price, 2) }}</div>
+                            <div class="text-2xl font-bold text-jlibrary-600">TSh {{ number_format($book->price, 0) }}</div>
                             <p class="text-gray-500 text-sm">One-time purchase. Lifetime access.</p>
                         </div>
                     @endif

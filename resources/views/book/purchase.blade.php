@@ -33,29 +33,21 @@
             @csrf
             <input type="hidden" name="book_id" value="{{ $book->id }}">
             
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Select Payment Method</label>
-                <div class="grid grid-cols-2 gap-3">
-                    @if($walletBalance >= $book->price)
-                        <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition bg-green-50 border-green-300">
-                            <input type="radio" name="payment_method" value="wallet" checked>
-                            <span class="ml-2 font-semibold text-green-700">💰 Wallet (TSh {{ number_format($walletBalance, 2) }})</span>
-                        </label>
-                    @endif
-                    <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition">
-                        <input type="radio" name="payment_method" value="mpesa" {{ $walletBalance < $book->price ? 'checked' : '' }}>
-                        <span class="ml-2">📱 M-Pesa</span>
-                    </label>
-                    <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition">
-                        <input type="radio" name="payment_method" value="tigopesa">
-                        <span class="ml-2">📱 TigoPesa</span>
-                    </label>
-                    <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition">
-                        <input type="radio" name="payment_method" value="halopesa">
-                        <span class="ml-2">📱 HaloPesa</span>
-                    </label>
-                </div>
-            </div>
+          <div class="mb-4">
+    <label class="block text-sm font-medium text-gray-700 mb-2">Select Payment Method</label>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        @if($walletBalance >= $book->price)
+            <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition bg-green-50 border-green-300">
+                <input type="radio" name="payment_method" value="wallet" checked>
+                <span class="ml-2 font-semibold text-green-700">💰 Wallet (TSh {{ number_format($walletBalance, 2) }})</span>
+            </label>
+        @endif
+        <label class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition">
+            <input type="radio" name="payment_method" value="pesapal" {{ $walletBalance < $book->price ? 'checked' : '' }}>
+            <span class="ml-2">📱 Mobile Money / Card (via Pesapal)</span>
+        </label>
+    </div>
+</div>
 
             <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-lg transition">
                 <i class="ti ti-shopping-cart"></i> Complete Purchase - TSh {{ number_format($book->price, 2) }}
