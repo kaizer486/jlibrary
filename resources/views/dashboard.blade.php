@@ -6,7 +6,7 @@
 <!-- ========================================== -->
 <div class="min-h-screen" style="background: #e9e8e6; padding-top: 0; margin-top: 0;">
     <div class="container mx-auto px-4 py-0 max-w-7xl" style="padding-top: 0; margin-top: 0;">
-        
+
         <!-- ========================================== -->
         <!-- WELCOME BANNER - Warm Orange/Amber Style   -->
         <!-- ========================================== -->
@@ -54,7 +54,7 @@
                 background: rgba(255, 255, 255, 0.8);
                 backdrop-filter: blur(16px);
                 -webkit-backdrop-filter: blur(16px);
-                border-radius: 20px; 
+                border-radius: 20px;
                 padding: 20px 24px;
                 border: 2px solid rgba(255, 255, 255, 0.8);
                 box-shadow: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
@@ -65,10 +65,10 @@
             ">
                 <div class="relative z-10">
                     <p style="
-                        font-size: 14px; 
-                        text-transform: uppercase; 
-                        letter-spacing: 3px; 
-                        font-weight: 600; 
+                        font-size: 14px;
+                        text-transform: uppercase;
+                        letter-spacing: 3px;
+                        font-weight: 600;
                         color: #db570a;
                         margin-bottom: 6px;
                         font-family: 'Poppins', sans-serif;
@@ -76,7 +76,7 @@
                     ">
                         Daily Quote
                     </p>
-                    
+
                     <p class="text-base md:text-lg font-medium leading-relaxed" style="
                         font-family: 'Poppins', sans-serif;
                         color: #0f172a;
@@ -86,10 +86,10 @@
                     ">
                         "{{ $quote->quote_text }}"
                     </p>
-                    
+
                     <p class="text-sm font-medium mt-3" style="
-                        color: #1e293b !important; 
-                        font-family: 'Inter', sans-serif; 
+                        color: #1e293b !important;
+                        font-family: 'Inter', sans-serif;
                         font-weight: 500;
                     ">
                         — {{ $quote->author ?? 'Unknown' }}
@@ -101,7 +101,7 @@
                 background: rgba(255, 255, 255, 0.8);
                 backdrop-filter: blur(16px);
                 -webkit-backdrop-filter: blur(16px);
-                border-radius: 20px; 
+                border-radius: 20px;
                 padding: 24px 28px;
                 border: 2px solid rgba(255, 255, 255, 0.8);
                 box-shadow: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
@@ -111,21 +111,21 @@
             ">
                 <div class="relative z-10">
                     <p style="
-                        font-size: 14px; 
-                        text-transform: uppercase; 
-                        letter-spacing: 3px; 
-                        font-weight: 600; 
+                        font-size: 14px;
+                        text-transform: uppercase;
+                        letter-spacing: 3px;
+                        font-weight: 600;
                         color: #db570a;
                         margin-bottom: 6px;
                         font-family: 'Inter', sans-serif;
                     ">
                         Daily Quote
                     </p>
-                    
+
                     <div style="margin-bottom: 4px;">
                         <i class="ti ti-quote" style="color: #db570a; font-size: 28px; opacity: 0.2;"></i>
                     </div>
-                    
+
                     <p class="text-base md:text-lg font-medium leading-relaxed" style="
                         font-family: 'Georgia', 'Times New Roman', serif;
                         color: #0f172a;
@@ -135,10 +135,10 @@
                     ">
                         "The only way to do great work is to love what you do."
                     </p>
-                    
+
                     <p class="text-sm font-medium mt-3" style="
-                        color: #1e293b !important; 
-                        font-family: 'Inter', sans-serif; 
+                        color: #1e293b !important;
+                        font-family: 'Inter', sans-serif;
                         font-weight: 500;
                     ">
                         — Steve Jobs
@@ -232,10 +232,10 @@
         <!-- MAIN TWO COLUMN LAYOUT                     -->
         <!-- ========================================== -->
         <div class="grid lg:grid-cols-3 gap-6 mb-6">
-            
+
             <!-- LEFT COLUMN (2/3) -->
             <div class="lg:col-span-2 space-y-6">
-                
+
                <!-- Become a Creator -->
 @if(!auth()->user()->isApprovedAuthor() && !auth()->user()->isApprovedBookseller())
     @if(auth()->user()->hasPendingApplication())
@@ -267,131 +267,95 @@
         </div>
     @endif
 @endif
-                <!-- Continue Learning -->
-                <div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="
-                    background: white;
-                    border-radius: 20px;
-                ">
-            <!-- Continue Learning -->
-<div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="background: white; border-radius: 20px;">
-    <div class="px-5 py-3 flex items-center justify-between" style="border-bottom: 2px solid #e9e8e6;">
-        <h2 class="text-base font-bold flex items-center gap-2" style="color: #1E293B;">
-            <i class="ti ti-book-2" style="color: #db570a;"></i>
-            Continue Learning
-        </h2>
-        <a href="{{ route('library.index') }}?status=reading" class="text-xs font-medium hover:underline" style="color: #db570a;">View All →</a>
-    </div>
-    
-    <div class="p-4">
-        @php
-            $readingBooks = Auth::user()->books()
-                ->wherePivot('status', 'reading')
-                ->orderBy('user_books.updated_at', 'desc')
-                ->get();
-        @endphp
-        
-        @if($readingBooks->count() > 0)
-            <div class="relative">
-                <!-- Scrollable row -->
-                <div class="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory hide-scrollbar" 
-                     style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
-                    
-                    @foreach($readingBooks as $book)
-                    <div class="min-w-[160px] max-w-[160px] flex-shrink-0 snap-start">
-                        <div class="rounded-xl p-3 transition-all hover:scale-105 hover:shadow-lg border border-slate-200/60 h-[180px] flex flex-col" 
-                             style="background: rgba(255, 255, 255, 0.8);">
-                            
-                            <!-- Book cover or icon -->
-                            <div class="w-full h-20 rounded-lg flex items-center justify-center mb-2 overflow-hidden" 
-                                 style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
-                                @if($book->cover_image)
-                                    <img src="{{ url('media/' . $book->cover_image) }}" 
-                                         alt="{{ $book->title }}" 
-                                         class="w-full h-full object-cover rounded-lg">
-                                @else
-                                    <i class="ti ti-book text-2xl" style="color: #db570a;"></i>
+
+                <!-- ========================================== -->
+                <!-- Continue Learning (single, mobile-safe)   -->
+                <!-- ========================================== -->
+                <div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="background: white; border-radius: 20px;">
+                    <div class="px-5 py-3 flex items-center justify-between" style="border-bottom: 2px solid #e9e8e6;">
+                        <h2 class="text-base font-bold flex items-center gap-2" style="color: #1E293B;">
+                            <i class="ti ti-book-2" style="color: #db570a;"></i>
+                            Continue Learning
+                        </h2>
+                        <a href="{{ route('library.index') }}?status=reading" class="text-xs font-medium hover:underline" style="color: #db570a;">View All →</a>
+                    </div>
+
+                    <div class="p-4">
+                        @php
+                            $readingBooks = Auth::user()->books()
+                                ->wherePivot('status', 'reading')
+                                ->orderBy('user_books.updated_at', 'desc')
+                                ->get();
+                        @endphp
+
+                        @if($readingBooks->count() > 0)
+                            <div class="relative">
+                                <!-- Scrollable row: edge-to-edge on mobile via negative margin + matching padding -->
+                                <div id="continue-learning-scroll"
+                                     class="continue-learning-scroll flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory hide-scrollbar -mx-4 px-4"
+                                     style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scroll-padding-left: 1rem;">
+
+                                    @foreach($readingBooks as $book)
+                                    <div class="w-[38vw] min-w-[130px] max-w-[160px] sm:min-w-[160px] sm:max-w-[160px] flex-shrink-0 snap-start">
+                                        <div class="rounded-xl p-3 transition-all hover:scale-105 hover:shadow-lg border border-slate-200/60 h-[180px] flex flex-col"
+                                             style="background: rgba(255, 255, 255, 0.8);">
+
+                                            <!-- Book cover or icon -->
+                                            <div class="w-full h-20 rounded-lg flex items-center justify-center mb-2 overflow-hidden"
+                                                 style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
+                                                @if($book->cover_image)
+                                                    <img src="{{ url('media/' . $book->cover_image) }}"
+                                                         alt="{{ $book->title }}"
+                                                         class="w-full h-full object-cover rounded-lg">
+                                                @else
+                                                    <i class="ti ti-book text-2xl" style="color: #db570a;"></i>
+                                                @endif
+                                            </div>
+
+                                            <p class="font-semibold text-xs truncate" style="color: #1E293B;" title="{{ $book->title }}">
+                                                {{ Str::limit($book->title, 18) }}
+                                            </p>
+
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <div class="flex-1 rounded-full" style="background: #E2E8F0; height: 4px;">
+                                                    <div class="rounded-full" style="
+                                                        background: linear-gradient(90deg, #db570a, #e87a2a);
+                                                        height: 4px;
+                                                        width: {{ $book->pivot->progress_percent ?? 0 }}%;
+                                                    "></div>
+                                                </div>
+                                                <span class="text-[10px] font-medium whitespace-nowrap" style="color: #64748B;">
+                                                    {{ $book->pivot->progress_percent ?? 0 }}%
+                                                </span>
+                                            </div>
+
+                                            <a href="{{ route('library.read', ['book' => $book->id]) }}"
+                                               class="text-white text-[11px] font-medium px-3 py-1.5 mt-2 text-center transition-all duration-300 hover:-translate-y-0.5"
+                                               style="background: linear-gradient(135deg, #db570a, #e87a2a); border-radius: 8px;">
+                                                Continue
+                                            </a>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+
+                                <!-- Scroll indicators (hidden on touch devices, shown on pointer:fine i.e. desktop) -->
+                                @if($readingBooks->count() > 4)
+                                    <div class="continue-learning-arrows justify-center gap-1 mt-2 hidden">
+                                        <button type="button" data-scroll-dir="left" class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition">
+                                            <i class="ti ti-chevron-left text-xs"></i>
+                                        </button>
+                                        <button type="button" data-scroll-dir="right" class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition">
+                                            <i class="ti ti-chevron-right text-xs"></i>
+                                        </button>
+                                    </div>
                                 @endif
                             </div>
-                            
-                            <p class="font-semibold text-xs truncate" style="color: #1E293B;" title="{{ $book->title }}">
-                                {{ Str::limit($book->title, 18) }}
-                            </p>
-                            
-                            <div class="flex items-center gap-2 mt-1">
-                                <div class="flex-1 rounded-full" style="background: #E2E8F0; height: 4px;">
-                                    <div class="rounded-full" style="
-                                        background: linear-gradient(90deg, #db570a, #e87a2a);
-                                        height: 4px;
-                                        width: {{ $book->pivot->progress_percent ?? 0 }}%;
-                                    "></div>
-                                </div>
-                                <span class="text-[10px] font-medium whitespace-nowrap" style="color: #64748B;">
-                                    {{ $book->pivot->progress_percent ?? 0 }}%
-                                </span>
-                            </div>
-                            
-                            <a href="{{ route('library.read', ['book' => $book->id]) }}" 
-                               class="text-white text-[11px] font-medium px-3 py-1.5 mt-2 text-center transition-all duration-300 hover:-translate-y-0.5" 
-                               style="background: linear-gradient(135deg, #db570a, #e87a2a); border-radius: 8px;">
-                                Continue
-                            </a>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                
-                <!-- Scroll indicators (optional) -->
-                @if($readingBooks->count() > 4)
-                    <div class="flex justify-center gap-1 mt-2">
-                        <button onclick="scrollBooks('left')" class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition">
-                            <i class="ti ti-chevron-left text-xs"></i>
-                        </button>
-                        <button onclick="scrollBooks('right')" class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition">
-                            <i class="ti ti-chevron-right text-xs"></i>
-                        </button>
-                    </div>
-                @endif
-            </div>
-        @else
-            <p class="text-sm font-medium text-center py-3" style="color: #64748B;">
-                No books in progress. 
-                <a href="{{ route('library.index') }}" class="font-semibold hover:underline" style="color: #db570a;">Browse library →</a>
-            </p>
-        @endif
-    </div>
-</div>
-
-<style>
-    .hide-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-    .hide-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-</style>
-
-<script>
-    function scrollBooks(direction) {
-        const container = document.querySelector('.overflow-x-auto');
-        const scrollAmount = 180; // Width of one book card + gap
-        if (direction === 'left') {
-            container.scrollLeft -= scrollAmount;
-        } else {
-            container.scrollLeft += scrollAmount;
-        }
-    }
-</script>
-                    <div class="p-6">
-                        @php
-                            $readingBooks = Auth::user()->books()->wherePivot('status', 'reading')->take(3)->get();
-                        @endphp
-                        @if($readingBooks->count() > 0)
-                            <div class="space-y-4">
-                               
-                            </div>
                         @else
-                            <p class="text-sm font-medium text-center py-4" style="color: #64748B;">No books in progress. <a href="{{ route('library.index') }}" class="font-semibold hover:underline" style="color: #db570a;">Browse library →</a></p>
+                            <p class="text-sm font-medium text-center py-3" style="color: #64748B;">
+                                No books in progress.
+                                <a href="{{ route('library.index') }}" class="font-semibold hover:underline" style="color: #db570a;">Browse library →</a>
+                            </p>
                         @endif
                     </div>
                 </div>
@@ -500,7 +464,7 @@
 
             <!-- RIGHT COLUMN (1/3) -->
             <div class="space-y-6">
-                
+
                 <!-- Latest Updates -->
                 <div class="rounded-2xl p-6 border-2 border-slate-200/80 shadow-md" style="
                     background: white;
@@ -597,25 +561,25 @@
         </h2>
         <a href="{{ route('library.index') }}" class="text-sm font-medium hover:underline" style="color: #db570a;">View All Books →</a>
     </div>
-    
+
     @php
         // Get counts for each section
         $trendingCount = App\Models\Book::where('is_trending', true)
             ->where('status', 'approved')
             ->count();
-        
+
         $recentCount = App\Models\Book::where('status', 'approved')
             ->where('created_at', '>=', now()->subDays(30))
             ->count();
-        
+
         $featuredCount = App\Models\Book::where('is_featured', true)
             ->where('status', 'approved')
             ->count();
-        
+
         $freeCount = App\Models\Book::where('status', 'approved')
             ->where('is_paid', false)
             ->count();
-        
+
         // Get popular categories with book counts
         $popularCategories = App\Models\Book::where('status', 'approved')
             ->select('category', \DB::raw('count(*) as total'))
@@ -625,64 +589,52 @@
             ->limit(6)
             ->get();
     @endphp
-    
+
     <div class="flex flex-wrap gap-2">
-        
-        <!-- ========================================== -->
-        <!-- TRENDING - Clickable Badge Only            -->
-        <!-- ========================================== -->
+
+        <!-- TRENDING -->
         @if($trendingCount > 0)
-            <a href="{{ route('library.index', ['trending' => 'true']) }}" 
-               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-red-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+            <a href="{{ route('library.index', ['trending' => 'true']) }}"
+               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-red-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1"
                style="background: #FEF2F2; color: #DC2626; border-radius: 999px; text-decoration: none;">
                 <i class="ti ti-flame"></i> Trending
                 <span class="text-xs text-red-400 bg-red-50 px-1.5 py-0.5 rounded-full">({{ $trendingCount }})</span>
             </a>
         @endif
-        
-        <!-- ========================================== -->
-        <!-- NEW ARRIVALS - Clickable Badge Only        -->
-        <!-- ========================================== -->
+
+        <!-- NEW ARRIVALS -->
         @if($recentCount > 0)
-            <a href="{{ route('library.index', ['recent' => 'true']) }}" 
-               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-emerald-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+            <a href="{{ route('library.index', ['recent' => 'true']) }}"
+               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-emerald-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1"
                style="background: #F0FDF4; color: #16A34A; border-radius: 999px; text-decoration: none;">
                 <i class="ti ti-clock"></i> New Arrivals
                 <span class="text-xs text-emerald-400 bg-emerald-50 px-1.5 py-0.5 rounded-full">({{ $recentCount }})</span>
             </a>
         @endif
-        
-        <!-- ========================================== -->
-        <!-- FEATURED - Clickable Badge Only            -->
-        <!-- ========================================== -->
+
+        <!-- FEATURED -->
         @if($featuredCount > 0)
-            <a href="{{ route('library.index', ['featured' => 'true']) }}" 
-               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-purple-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+            <a href="{{ route('library.index', ['featured' => 'true']) }}"
+               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-purple-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1"
                style="background: #F3E8FF; color: #7E22CE; border-radius: 999px; text-decoration: none;">
                 <i class="ti ti-star text-yellow-500 text-xs"></i> Featured
                 <span class="text-xs text-purple-400 bg-purple-50 px-1.5 py-0.5 rounded-full">({{ $featuredCount }})</span>
             </a>
         @endif
-        
-        <!-- ========================================== -->
-        <!-- FREE BOOKS - Clickable Badge Only          -->
-        <!-- ========================================== -->
+
+        <!-- FREE BOOKS -->
         @if($freeCount > 0)
-            <a href="{{ route('library.index', ['price_type' => 'free']) }}" 
-               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-blue-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+            <a href="{{ route('library.index', ['price_type' => 'free']) }}"
+               class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-blue-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1"
                style="background: #EFF6FF; color: #2563EB; border-radius: 999px; text-decoration: none;">
                 <i class="ti ti-gift"></i> Free Books
                 <span class="text-xs text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded-full">({{ $freeCount }})</span>
             </a>
         @endif
-        
-      
-        
-        <!-- ========================================== -->
-        <!-- VIEW ALL CATEGORIES                        -->
-        <!-- ========================================== -->
-        <a href="{{ route('library.index') }}" 
-           class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-dashed border-orange-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1" 
+
+        <!-- VIEW ALL CATEGORIES -->
+        <a href="{{ route('library.index') }}"
+           class="px-4 py-1.5 text-sm font-medium rounded-full border-2 border-dashed border-orange-200/60 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex items-center gap-1"
            style="background: #FFF7ED; color: #EA580C; border-radius: 999px; text-decoration: none;">
             <i class="ti ti-plus"></i> More Categories
         </a>
@@ -708,5 +660,45 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #FCD34D;
     }
+
+    /* Continue Learning horizontal scroll */
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .continue-learning-scroll {
+        overscroll-behavior-x: contain;
+    }
+    /* Only show prev/next arrows on devices with a real pointer (desktop),
+       since touch devices already swipe natively and the buttons just add
+       clutter / broken tap targets on small screens */
+    @media (pointer: fine) {
+        .continue-learning-arrows {
+            display: flex;
+        }
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.continue-learning-arrows').forEach(function (nav) {
+            var container = nav.closest('.relative')?.querySelector('.continue-learning-scroll');
+            if (!container) return;
+
+            nav.querySelectorAll('[data-scroll-dir]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var card = container.querySelector(':scope > div');
+                    var scrollAmount = card ? card.offsetWidth + 12 : 180; // card width + gap
+                    container.scrollBy({
+                        left: btn.dataset.scrollDir === 'left' ? -scrollAmount : scrollAmount,
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    });
+</script>
 @endsection
