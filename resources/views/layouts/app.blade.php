@@ -41,10 +41,26 @@
         * {
             font-family: 'Inter', sans-serif;
         }
-        
+
+        /* ========================================== */
+        /* GLOBAL HORIZONTAL-SCROLL GUARD             */
+        /* This belongs here, not on individual pages: */
+        /* it's what stops ANY page's content (or the  */
+        /* off-canvas sidebar below) from ever being    */
+        /* able to drag the whole document sideways.    */
+        /* ========================================== */
+        html {
+            overflow-x: hidden;
+            overscroll-behavior-x: none;
+        }
+
         body {
             background: #f3f4f6;
             min-height: 100vh;
+            overflow-x: hidden;
+            overscroll-behavior-x: none;
+            position: relative;
+            width: 100%;
         }
         
         /* ========================================== */
@@ -64,10 +80,18 @@
         
         @media (max-width: 1024px) {
             #sidebar {
+                /* translateX(-100%) alone can still be counted toward the
+                   page's scrollable width on some mobile browsers even
+                   though it's fixed. Pulling it fully out of the layout
+                   viewport with a matching negative left, on top of the
+                   transform, keeps it from ever contributing to that
+                   calculation. */
+                left: -280px;
                 transform: translateX(-100%);
             }
             
             #sidebar.open {
+                left: 0;
                 transform: translateX(0);
             }
         }
@@ -307,7 +331,7 @@
     <!-- ========================================== -->
     <!-- MAIN CONTENT                              -->
     <!-- ========================================== -->
-    <main class="{{ Auth::check() ? 'lg:ml-[280px]' : '' }} min-h-screen">
+    <main class="{{ Auth::check() ? 'lg:ml-[280px]' : '' }} min-h-screen" style="overflow-x: hidden; max-width: 100%;">
         @auth
             <!-- Top Bar -->
             <div class="bg-white shadow-sm sticky top-0 z-50">
