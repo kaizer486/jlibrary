@@ -234,6 +234,7 @@ Route::post('/webhooks/stripe', [PaymentWebhookController::class, 'handleStripeW
 Route::post('/webhooks/pesapal', [PaymentWebhookController::class, 'handlePesapalCallback']);
 Route::get('/payment/pesapal/callback', [MultiPaymentController::class, 'pesapalCallback'])->name('payment.pesapal.callback');
 
+
 // Institution subscription webhooks
 Route::post('/webhooks/mpesa/callback', [InstitutionSubscriptionController::class, 'mpesaCallback'])->name('mpesa.callback');
 Route::post('/webhooks/tigopesa/callback', [InstitutionSubscriptionController::class, 'tigopesaCallback'])->name('tigopesa.callback');
@@ -512,6 +513,7 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/book-purchase/pesapal/callback/{paymentId}', [BookPurchaseController::class, 'pesapalCallback'])->name('book.purchase.pesapal.callback');
 Route::get('/book-purchase/pesapal/ipn', [BookPurchaseController::class, 'pesapalIpn'])->name('book.purchase.pesapal.ipn');
+Route::get('/book-purchase/pesapal/status/{paymentId}', [BookPurchaseController::class, 'checkPesapalStatus'])->name('book.purchase.pesapal.status');
 
 // ==========================================
 // SECTION 7: INSTITUTION LIBRARY (Public + Auth)

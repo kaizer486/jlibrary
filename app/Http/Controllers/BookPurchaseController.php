@@ -37,7 +37,8 @@ class BookPurchaseController extends Controller
         if ($user && $user->hasPurchasedBook($book->id)) {
             return redirect()->route('library.index')->with('info', 'You already own this book.');
         }
-if (!$book->isPaidItem()) {
+
+        if (!$book->isPaidItem()) {
             if (!$user) return redirect()->route('login')->with('info', 'Please login to access this free book.');
             $this->addToLibrary($user, $book);
             return redirect()->route('library.index')->with('success', 'Free book added to your library!');
@@ -46,6 +47,25 @@ if (!$book->isPaidItem()) {
         $walletBalance = $user ? $user->wallet_balance : 0;
 
         return view('book.purchase', compact('book', 'walletBalance'));
+    }
+
+    /** Poll endpoint used by the confirming page while waiting on Pesapal. */
+    public function checkPesapalStatus($paymentId)
+    {
+        $payment = Payment::where('user_id', Auth::id())->findOrFail($paymentId);
+
+        // Give it one more chance to finalize right now, in case IPN/callback landed just after last check
+        if ($payment->status !== 'completed' && $payment->order_tracking_id) {
+            $this->finalize($payment, $payment->order_tracking_id);
+            $payment->refresh();
+        }
+
+        return response()->json([
+            'status' => $payment->status,
+            'redirect' => $payment->status === 'completed'
+                ? route('book.purchase.success', $payment->id)
+                : null,
+        ]);
     }
 
     /** Entry point from the purchase form. */
@@ -63,7 +83,7 @@ if (!$book->isPaidItem()) {
         if ($user->hasPurchasedBook($book->id)) {
             return redirect()->back()->with('error', 'You already own this book.');
         }
-        if (!$book->is_paid || $book->price <= 0) {
+        if (!$book->isPaidItem()) {
             $this->addToLibrary($user, $book);
             return redirect()->route('library.index')->with('success', 'Free book added to your library!');
         }
@@ -91,6 +111,7 @@ if (!$book->isPaidItem()) {
                 'payable_type' => get_class($book),
                 'payable_id' => $book->id,
                 'amount' => $book->price,
+                'currency' => 'TZS',
                 'status' => 'completed',
                 'method' => 'wallet',
                 'reference' => 'PUR_' . time() . '_' . $lockedUser->id . '_' . $book->id,
@@ -134,9 +155,11 @@ if (!$book->isPaidItem()) {
             'payable_type' => get_class($book),
             'payable_id' => $book->id,
             'amount' => $book->price,
+            'currency' => 'TZS',
             'status' => 'pending',
             'method' => 'pesapal',
             'reference' => $reference,
+            'idempotency_key' => $reference,
         ]);
 
         $result = $this->pesapal->submitOrder([
@@ -168,8 +191,7 @@ if (!$book->isPaidItem()) {
             return redirect()->route('book.purchase.success', $payment->id);
         }
 
-        return redirect()->route('book.purchase', $payment->payable_id)
-            ->with('error', 'Payment not yet confirmed. If you completed it, wait a moment and check your library.');
+        return view('book.purchase-confirming', ['payment' => $payment]);
     }
 
     /** Server-to-server IPN — dedicated to book purchases, isolated from other Pesapal flows. */
@@ -202,15 +224,14 @@ if (!$book->isPaidItem()) {
 
         DB::transaction(function () use ($payment, $status) {
             $locked = Payment::where('id', $payment->id)->lockForUpdate()->first();
-            if ($locked->status === 'completed') return;
 
-           if ($locked->status === 'completed' || $locked->webhook_processed_at !== null) return;
+            if ($locked->status === 'completed' || $locked->webhook_processed_at !== null) return;
 
-$locked->update([
-    'status' => 'completed',
-    'gateway_response' => $status,
-    'webhook_processed_at' => now(),
-]);
+            $locked->update([
+                'status' => 'completed',
+                'gateway_response' => $status,
+                'webhook_processed_at' => now(),
+            ]);
 
             $book = $this->findBook($locked->payable_id);
             $user = User::find($locked->user_id);
@@ -267,7 +288,7 @@ $locked->update([
         $book = $this->findBook($bookId);
         if (!$book) abort(404, 'Book not found.');
 
-        $isFree = $book->price <= 0;
+        $isFree = !$book->isPaidItem();
         if (!$isFree && !$user->hasPurchasedBook($book->id)) {
             return redirect()->back()->with('error', 'You need to purchase this book to download it.');
         }
