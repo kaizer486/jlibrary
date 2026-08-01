@@ -1,5 +1,5 @@
 <!-- Sidebar -->
-<aside id="sidebar" class="fixed left-0 top-0 z-[1000] h-screen w-[280px] bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white transition-all duration-300 shadow-2xl overflow-y-auto border-r border-white/10">
+<aside id="sidebar" class="fixed left-0 top-0 z-[1000] h-screen w-[280px] bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white transition-all duration-300 shadow-2xl overflow-y-auto overflow-x-hidden border-r border-white/10" style="overscroll-behavior: contain; max-width: 280px;">
     <!-- Logo -->
     <div class="flex items-center justify-between p-4 border-b border-white/10">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
@@ -14,7 +14,7 @@
     <!-- User Info -->
     <div class="p-4 border-b border-white/10">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
                 @if(Auth::user()->avatar)
                     <img src="{{ url('media/' . Auth::user()->avatar) }}" class="w-full h-full object-cover" alt="Avatar">
                 @else
@@ -23,7 +23,7 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="font-semibold text-sm text-white truncate">{{ Auth::user()->full_name }}</p>
-                <p class="text-xs text-gray-400">
+                <p class="text-xs text-gray-400 truncate">
                     @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
                         👑 Super Administrator
                     @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
@@ -96,11 +96,11 @@
             class="px-6 mt-4 mb-2">
             
             <button @click="toggle()" class="w-full flex items-center justify-between text-xs text-gray-300 uppercase tracking-wider hover:text-white transition group">
-                <span class="flex items-center gap-2">
-                    <i class="ti ti-building-community text-indigo-400 text-sm group-hover:text-indigo-300 transition"></i>
-                    <span class="font-medium">Institution</span>
+                <span class="flex items-center gap-2 min-w-0">
+                    <i class="ti ti-building-community text-indigo-400 text-sm group-hover:text-indigo-300 transition flex-shrink-0"></i>
+                    <span class="font-medium truncate">Institution</span>
                 </span>
-                <i class="ti ti-chevron-down text-gray-400 text-xs transition-transform duration-200 group-hover:text-white" :class="{'rotate-180': open}"></i>
+                <i class="ti ti-chevron-down text-gray-400 text-xs transition-transform duration-200 group-hover:text-white flex-shrink-0" :class="{'rotate-180': open}"></i>
             </button>
             
             <div x-show="open" x-collapse.duration.300ms class="mt-2 space-y-1">
@@ -156,7 +156,7 @@
                 $pendingReferrals = Auth::check() ? App\Models\Referral::where('referrer_id', Auth::id())->where('status', 'pending')->count() : 0;
             @endphp
             @if($pendingReferrals > 0)
-                <span class="ml-auto bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingReferrals }}</span>
+                <span class="ml-auto bg-green-500 text-white text-xs px-2 py-0.5 rounded-full flex-shrink-0">{{ $pendingReferrals }}</span>
             @endif
         </a>
 
@@ -200,7 +200,7 @@
                 <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.*') ? 'active' : '' }}">
                     <i class="ti ti-shield text-purple-400 text-xl"></i>
                     <span>Admin Panel</span>
-                    <span class="ml-auto text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">Manage</span>
+                    <span class="ml-auto text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full flex-shrink-0">Manage</span>
                 </a>
             @endif
         @endif
@@ -213,7 +213,7 @@
             <a href="{{ route('institution.dashboard') }}" class="nav-item {{ request()->routeIs('institution.dashboard') ? 'active' : '' }}">
                 <i class="ti ti-building text-blue-400 text-xl"></i>
                 <span>Institution Panel</span>
-                <span class="ml-auto text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">Manage</span>
+                <span class="ml-auto text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full flex-shrink-0">Manage</span>
             </a>
         @endif
 
@@ -266,6 +266,7 @@
         transition: all 0.2s ease;
         color: #9ca3af;
         text-decoration: none;
+        max-width: 100%;
     }
     .nav-item:hover {
         background-color: #374151;
@@ -285,12 +286,26 @@
         width: 1.25rem;
         flex-shrink: 0;
     }
-    
+    /* Any label/badge inside a nav item truncates instead of forcing the
+       280px-wide sidebar (and, via scroll chaining, the page) wider. */
+    .nav-item span:not(.ml-auto) {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .nav-item span.ml-auto {
+        flex-shrink: 0;
+    }
+
     @media (max-width: 1024px) {
         #sidebar {
+            left: -280px;
             transform: translateX(-100%);
         }
         #sidebar.open {
+            left: 0;
             transform: translateX(0);
         }
     }
