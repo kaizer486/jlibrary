@@ -234,7 +234,7 @@
         <div class="grid lg:grid-cols-3 gap-6 mb-6">
 
             <!-- LEFT COLUMN (2/3) -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-6 min-w-0">
 
                <!-- Become a Creator -->
 @if(!auth()->user()->isApprovedAuthor() && !auth()->user()->isApprovedBookseller())
@@ -271,7 +271,7 @@
                 <!-- ========================================== -->
                 <!-- Continue Learning (single, mobile-safe)   -->
                 <!-- ========================================== -->
-                <div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="background: white; border-radius: 20px;">
+                <div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md min-w-0" style="background: white; border-radius: 20px;">
                     <div class="px-5 py-3 flex items-center justify-between" style="border-bottom: 2px solid #e9e8e6;">
                         <h2 class="text-base font-bold flex items-center gap-2" style="color: #1E293B;">
                             <i class="ti ti-book-2" style="color: #db570a;"></i>
@@ -280,7 +280,7 @@
                         <a href="{{ route('library.index') }}?status=reading" class="text-xs font-medium hover:underline" style="color: #db570a;">View All →</a>
                     </div>
 
-                    <div class="p-4">
+                    <div class="p-4 min-w-0">
                         @php
                             $readingBooks = Auth::user()->books()
                                 ->wherePivot('status', 'reading')
@@ -289,11 +289,11 @@
                         @endphp
 
                         @if($readingBooks->count() > 0)
-                            <div class="relative">
-                                <!-- Scrollable row: edge-to-edge on mobile via negative margin + matching padding -->
+                            <div class="relative min-w-0">
+                                <!-- Scrollable row: stays fully inside the card's own padding, no bleed -->
                                 <div id="continue-learning-scroll"
-                                     class="continue-learning-scroll flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory hide-scrollbar -mx-4 px-4"
-                                     style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scroll-padding-left: 1rem;">
+                                     class="continue-learning-scroll flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory hide-scrollbar"
+                                     style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scroll-padding-left: 1rem; touch-action: pan-x; overscroll-behavior-x: contain; max-width: 100%;">
 
                                     @foreach($readingBooks as $book)
                                     <div class="w-[38vw] min-w-[130px] max-w-[160px] sm:min-w-[160px] sm:max-w-[160px] flex-shrink-0 snap-start">
@@ -671,6 +671,15 @@
     }
     .continue-learning-scroll {
         overscroll-behavior-x: contain;
+        overscroll-behavior-y: contain;
+        touch-action: pan-x;
+    }
+    /* Safety net: nothing on this page should ever cause a horizontal
+       page-level scrollbar. If any element upstream miscalculates its
+       width, this clips it instead of letting the whole page shift. */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100%;
     }
     /* Only show prev/next arrows on devices with a real pointer (desktop),
        since touch devices already swipe natively and the buttons just add
