@@ -81,23 +81,7 @@
 
             <!-- Row 3: Institution & Price -->
             <div class="grid md:grid-cols-2 gap-6 mt-5">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Select Institution
-                    </label>
-                    <select name="institution_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-orange-500">
-                        <option value="">-- Select Institution --</option>
-                        @isset($institutions)
-                            @foreach($institutions as $inst)
-                                <option value="{{ $inst->id }}" {{ old('institution_id') == $inst->id ? 'selected' : '' }}>
-                                    {{ $inst->name }} ({{ $inst->type_label ?? 'Institution' }})
-                                </option>
-                            @endforeach
-                        @endisset
-                    </select>
-                    <p class="text-xs text-gray-400 mt-1">Assign your book to an institution</p>
-                </div>
-
+               
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Price

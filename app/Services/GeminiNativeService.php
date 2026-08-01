@@ -15,7 +15,7 @@ class GeminiNativeService
     public function __construct()
     {
         $this->apiKey = env('GEMINI_API_KEY');
-        $this->model = env('GEMINI_MODEL', 'gemini-2.0-flash-lite');
+        $this->model = env('GEMINI_MODEL', 'gemini-3.5-flash');
         $this->baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
         $this->timeout = 120;
     }
@@ -57,9 +57,9 @@ class GeminiNativeService
                     'parts' => [['text' => $systemPrompt]]
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.8,
+                    
                     'maxOutputTokens' => 2048,
-                    'topP' => 0.95,
+                    
                 ]
             ];
             

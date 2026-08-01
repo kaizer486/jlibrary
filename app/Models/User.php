@@ -954,12 +954,12 @@ public function getSubscriptionStatusLabel(): string
     // BOOK RELATIONSHIPS
     // ==========================================
     
-    public function books()
-    {
-        return $this->belongsToMany(Book::class, 'user_books')
-                    ->withPivot('progress_percent', 'current_page', 'status')
-                    ->withTimestamps();
-    }
+ public function books()
+{
+    return $this->belongsToMany(Book::class, 'user_books')
+                ->withPivot('progress_percent', 'current_page', 'status', 'purchased_at')
+                ->withTimestamps();
+}
     
     public function purchasedBooks()
     {

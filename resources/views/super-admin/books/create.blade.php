@@ -99,7 +99,7 @@
                         Price
                     </label>
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Tsh</span>
                         <input type="number" name="price" step="0.01" value="{{ old('price', 0) }}" 
                                class="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-xl">
                     </div>

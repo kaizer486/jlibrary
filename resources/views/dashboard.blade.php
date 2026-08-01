@@ -272,44 +272,123 @@
                     background: white;
                     border-radius: 20px;
                 ">
-                    <div class="px-6 py-4 flex items-center justify-between" style="border-bottom: 2px solid #e9e8e6;">
-                        <h2 class="text-xl font-bold flex items-center gap-2" style="color: #1E293B;">
-                            <i class="ti ti-book-2" style="color: #db570a;"></i>
-                            Continue Learning
-                        </h2>
-                        <a href="{{ route('library.my-library') }}" class="text-sm font-medium hover:underline" style="color: #db570a;">View All →</a>
+            <!-- Continue Learning -->
+<div class="rounded-2xl overflow-hidden border-2 border-slate-200/80 shadow-md" style="background: white; border-radius: 20px;">
+    <div class="px-5 py-3 flex items-center justify-between" style="border-bottom: 2px solid #e9e8e6;">
+        <h2 class="text-base font-bold flex items-center gap-2" style="color: #1E293B;">
+            <i class="ti ti-book-2" style="color: #db570a;"></i>
+            Continue Learning
+        </h2>
+        <a href="{{ route('library.index') }}?status=reading" class="text-xs font-medium hover:underline" style="color: #db570a;">View All →</a>
+    </div>
+    
+    <div class="p-4">
+        @php
+            $readingBooks = Auth::user()->books()
+                ->wherePivot('status', 'reading')
+                ->orderBy('user_books.updated_at', 'desc')
+                ->get();
+        @endphp
+        
+        @if($readingBooks->count() > 0)
+            <div class="relative">
+                <!-- Scrollable row -->
+                <div class="flex gap-3 overflow-x-auto pb-3 snap-x snap-mandatory hide-scrollbar" 
+                     style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
+                    
+                    @foreach($readingBooks as $book)
+                    <div class="min-w-[160px] max-w-[160px] flex-shrink-0 snap-start">
+                        <div class="rounded-xl p-3 transition-all hover:scale-105 hover:shadow-lg border border-slate-200/60 h-[180px] flex flex-col" 
+                             style="background: rgba(255, 255, 255, 0.8);">
+                            
+                            <!-- Book cover or icon -->
+                            <div class="w-full h-20 rounded-lg flex items-center justify-center mb-2 overflow-hidden" 
+                                 style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
+                                @if($book->cover_image)
+                                    <img src="{{ url('media/' . $book->cover_image) }}" 
+                                         alt="{{ $book->title }}" 
+                                         class="w-full h-full object-cover rounded-lg">
+                                @else
+                                    <i class="ti ti-book text-2xl" style="color: #db570a;"></i>
+                                @endif
+                            </div>
+                            
+                            <p class="font-semibold text-xs truncate" style="color: #1E293B;" title="{{ $book->title }}">
+                                {{ Str::limit($book->title, 18) }}
+                            </p>
+                            
+                            <div class="flex items-center gap-2 mt-1">
+                                <div class="flex-1 rounded-full" style="background: #E2E8F0; height: 4px;">
+                                    <div class="rounded-full" style="
+                                        background: linear-gradient(90deg, #db570a, #e87a2a);
+                                        height: 4px;
+                                        width: {{ $book->pivot->progress_percent ?? 0 }}%;
+                                    "></div>
+                                </div>
+                                <span class="text-[10px] font-medium whitespace-nowrap" style="color: #64748B;">
+                                    {{ $book->pivot->progress_percent ?? 0 }}%
+                                </span>
+                            </div>
+                            
+                            <a href="{{ route('library.read', ['book' => $book->id]) }}" 
+                               class="text-white text-[11px] font-medium px-3 py-1.5 mt-2 text-center transition-all duration-300 hover:-translate-y-0.5" 
+                               style="background: linear-gradient(135deg, #db570a, #e87a2a); border-radius: 8px;">
+                                Continue
+                            </a>
+                        </div>
                     </div>
+                    @endforeach
+                </div>
+                
+                <!-- Scroll indicators (optional) -->
+                @if($readingBooks->count() > 4)
+                    <div class="flex justify-center gap-1 mt-2">
+                        <button onclick="scrollBooks('left')" class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition">
+                            <i class="ti ti-chevron-left text-xs"></i>
+                        </button>
+                        <button onclick="scrollBooks('right')" class="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition">
+                            <i class="ti ti-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                @endif
+            </div>
+        @else
+            <p class="text-sm font-medium text-center py-3" style="color: #64748B;">
+                No books in progress. 
+                <a href="{{ route('library.index') }}" class="font-semibold hover:underline" style="color: #db570a;">Browse library →</a>
+            </p>
+        @endif
+    </div>
+</div>
+
+<style>
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+<script>
+    function scrollBooks(direction) {
+        const container = document.querySelector('.overflow-x-auto');
+        const scrollAmount = 180; // Width of one book card + gap
+        if (direction === 'left') {
+            container.scrollLeft -= scrollAmount;
+        } else {
+            container.scrollLeft += scrollAmount;
+        }
+    }
+</script>
                     <div class="p-6">
                         @php
                             $readingBooks = Auth::user()->books()->wherePivot('status', 'reading')->take(3)->get();
                         @endphp
                         @if($readingBooks->count() > 0)
                             <div class="space-y-4">
-                                @foreach($readingBooks as $book)
-                                <div class="rounded-xl p-4 transition-all hover:bg-orange-50/50 border border-slate-200/60" style="background: rgba(255, 255, 255, 0.4); border-radius: 16px;">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex-1">
-                                            <p class="font-semibold text-sm" style="color: #1E293B;">{{ $book->title }}</p>
-                                            <div class="flex items-center gap-2 mt-2">
-                                                <div class="flex-1 max-w-xs rounded-full" style="background: #E2E8F0; height: 8px; border-radius: 999px;">
-                                                    <div class="rounded-full" style="
-                                                        background: linear-gradient(90deg, #db570a, #e87a2a);
-                                                        height: 8px;
-                                                        border-radius: 999px;
-                                                        width: {{ $book->pivot->progress_percent ?? 0 }}%;
-                                                    "></div>
-                                                </div>
-                                                <span class="text-xs font-medium" style="color: #64748B;">{{ $book->pivot->progress_percent ?? 0 }}%</span>
-                                            </div>
-                                        </div>
-                                        <a href="{{ route('library.read', $book) }}" class="text-white text-xs font-medium px-4 py-2 transition-all duration-300 hover:-translate-y-1 border-2 border-orange-400/30" style="
-                                            background: linear-gradient(135deg, #db570a, #e87a2a);
-                                            box-shadow: 0 4px 12px rgba(219,87,10,0.15);
-                                            border-radius: 14px;
-                                        ">Continue</a>
-                                    </div>
-                                </div>
-                                @endforeach
+                               
                             </div>
                         @else
                             <p class="text-sm font-medium text-center py-4" style="color: #64748B;">No books in progress. <a href="{{ route('library.index') }}" class="font-semibold hover:underline" style="color: #db570a;">Browse library →</a></p>
