@@ -23,18 +23,31 @@ class PublicController extends Controller
     /**
      * Show a single book from institution
      */
-    public function show($institutionId, $bookId)
-    {
-        $institution = Institution::findOrFail($institutionId);
-        $book = Book::where('id', $bookId)
-            ->whereHas('institutions', function($query) use ($institutionId) {
-                $query->where('institution_id', $institutionId);
-            })
-            ->firstOrFail();
-        
-        return view('public.institution-book', compact('institution', 'book'));
+  public function show($institutionId, $bookId)
+{
+    $institution = Institution::findOrFail($institutionId);
+    $book = Book::where('id', $bookId)
+        ->where('institution_id', $institutionId)
+        ->firstOrFail();
+
+    $hasAccess = false;
+    $progress = null;
+
+    if (auth()->check()) {
+        if (!$book->isPaidItem()) {
+            $hasAccess = true;
+        } else {
+            $hasAccess = $book->userHasAccess(auth()->id());
+        }
+
+        // Load reading progress if any
+        $progress = \App\Models\UserBook::where('user_id', auth()->id())
+            ->where('book_id', $book->id)
+            ->first();
     }
-    
+
+    return view('library.show', compact('institution', 'book', 'hasAccess', 'progress'));
+}
     /**
      * Show shelf books
      */

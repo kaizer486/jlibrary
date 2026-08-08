@@ -7,24 +7,21 @@ use App\Models\Rating;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RatingReviewController extends Controller
 {
-    
     /**
-     * Submit or update a rating for a book
+     * Submit or update a rating for a book (standalone).
      */
     public function rate(Request $request, Book $book)
     {
         $request->validate([
-            'rating' => 'required|integer|min:1|max:5'
+            'rating' => 'required|integer|min:1|max:5',
         ]);
 
-        $rating = Rating::updateOrCreate(
-            [
-                'user_id' => Auth::id(),
-                'book_id' => $book->id
-            ],
+        Rating::updateOrCreate(
+            ['user_id' => Auth::id(), 'book_id' => $book->id],
             ['rating' => $request->rating]
         );
 
@@ -34,7 +31,7 @@ class RatingReviewController extends Controller
                 'average' => $book->averageRating(),
                 'count' => $book->ratingCount(),
                 'user_rating' => $request->rating,
-                'message' => 'Thank you for rating this book!'
+                'message' => 'Thank you for rating this book!',
             ]);
         }
 
@@ -42,56 +39,111 @@ class RatingReviewController extends Controller
     }
 
     /**
-     * Submit a review for a book
+     * Submit or update a rating + review together.
      */
     public function review(Request $request, Book $book)
     {
-        $request->validate([
-            'review' => 'required|string|min:10|max:1000'
-        ]);
+        // Fix: HTML forms send empty strings, but we want true null for optional reviews
+        if ($request->has('review') && trim($request->input('review')) === '') {
+            $request->merge(['review' => null]);
+        }
 
-        $existingReview = Review::where('user_id', Auth::id())
-            ->where('book_id', $book->id)
-            ->first();
+       $request->validate([
+    'rating' => 'required|integer|min:1|max:5',
+    'review' => 'nullable|string|max:1000',
+]);
 
-        if ($existingReview) {
-            $existingReview->update([
-                'review' => $request->review,
-                'is_approved' => false
-            ]);
-            $message = 'Review updated! Waiting for approval.';
-        } else {
+        $message = DB::transaction(function () use ($request, $book) {
+            // Keep standalone ratings table in sync
+            Rating::updateOrCreate(
+                ['user_id' => Auth::id(), 'book_id' => $book->id],
+                ['rating' => $request->rating]
+            );
+
+            $existingReview = Review::where('user_id', Auth::id())
+                ->where('book_id', $book->id)
+                ->first();
+
+            if ($existingReview) {
+                $existingReview->update([
+                    'rating' => $request->rating,
+                    'review' => $request->review,
+                    'is_approved' => true,
+                ]);
+
+                return 'Review updated successfully!';
+            }
+
             Review::create([
                 'user_id' => Auth::id(),
                 'book_id' => $book->id,
+                'rating' => $request->rating,
                 'review' => $request->review,
-                'is_approved' => false
+                'is_approved' => true,
+                'helpful_count' => 0,
             ]);
-            $message = 'Review submitted! It will appear after approval.';
+
+            return 'Review submitted successfully!';
+        });
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'average' => $book->averageRating(),
+                'count' => $book->ratingCount(),
+            ]);
         }
 
         return redirect()->back()->with('success', $message);
     }
 
     /**
-     * Mark a review as helpful
+     * Toggle helpful mark on a review.
      */
-    public function helpful(Review $review)
+    public function helpful(Request $request, Review $review)
     {
-        $review->increment('helpful_count');
-        
-        if (request()->wantsJson()) {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please login to mark reviews as helpful.',
+            ], 401);
+        }
+
+        $existing = $review->helpfulUsers()
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if ($existing) {
+            $review->helpfulUsers()->detach($user->id);
+            $review->decrement('helpful_count');
+            $liked = false;
+            $message = 'Removed helpful mark.';
+        } else {
+            $review->helpfulUsers()->attach($user->id);
+            $review->increment('helpful_count');
+            $liked = true;
+            $message = 'Marked as helpful!';
+        }
+
+        $helpfulCount = $review->helpful_count;
+
+        if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
-                'helpful_count' => $review->helpful_count
+                'helpful_count' => $helpfulCount,
+                'liked' => $liked,
+                'message' => $message,
             ]);
         }
-        
+
         return redirect()->back();
     }
 
     /**
-     * Delete user's rating
+     * Delete user's rating only.
      */
     public function deleteRating(Book $book)
     {
@@ -103,14 +155,27 @@ class RatingReviewController extends Controller
     }
 
     /**
-     * Delete user's review
+     * Delete user's rating + review together.
      */
-    public function deleteReview(Book $book)
+    public function deleteReview(Request $request, Book $book)
     {
-        Review::where('user_id', Auth::id())
-            ->where('book_id', $book->id)
-            ->delete();
+        DB::transaction(function () use ($book) {
+            Review::where('user_id', Auth::id())
+                ->where('book_id', $book->id)
+                ->delete();
 
-        return redirect()->back()->with('success', 'Review deleted.');
+            Rating::where('user_id', Auth::id())
+                ->where('book_id', $book->id)
+                ->delete();
+        });
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Rating and review removed.',
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Rating and review removed.');
     }
 }

@@ -1051,6 +1051,16 @@ public function getSubscriptionStatusLabel(): string
                     ->withPivot('progress_percent', 'current_page', 'status', 'purchased_at');
     }
 
+
+    /**
+ * Reviews this user found helpful
+ */
+public function helpfulReviews()
+{
+    return $this->belongsToMany(Review::class, 'review_helpful', 'user_id', 'review_id')
+                ->withTimestamps();
+}
+
     // ==========================================
     // COMMUNITY RELATIONSHIPS
     // ==========================================
@@ -1479,6 +1489,39 @@ public function getPendingSellerOrdersAttribute(): int
     {
         return $this->books()->wherePivot('status', 'completed')->count();
     }
+
+     public function hasReachedDailyDownloadLimit(): bool
+    {
+        $todayCount = DownloadLog::where('user_id', $this->id)
+            ->whereDate('downloaded_at', today())
+            ->count();
+
+        return $todayCount >= 5;
+    }
+
+    /**
+     * Get remaining downloads for today
+     */
+    public function remainingDownloadsToday(): int
+    {
+        $todayCount = DownloadLog::where('user_id', $this->id)
+            ->whereDate('downloaded_at', today())
+            ->count();
+
+        return max(0, 5 - $todayCount);
+    }
+
+    /**
+     * Log a download
+     */
+ public function logDownload($book): void
+{
+    DownloadLog::create([
+        'user_id' => $this->id,
+        'book_id' => $book->id,
+        'downloaded_at' => now(),
+    ]);
+}
 
     // ==========================================
     // STATISTICS METHODS

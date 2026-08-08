@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * @property int $id
@@ -31,7 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Review extends Model
 {
-    protected $fillable = ['user_id', 'book_id', 'review', 'is_approved', 'helpful_count'];
+   protected $fillable = ['user_id', 'book_id', 'rating', 'review', 'is_approved', 'helpful_count'];
 
     protected $casts = [
         'is_approved' => 'boolean',
@@ -50,5 +51,23 @@ class Review extends Model
     public function markHelpful()
     {
         $this->increment('helpful_count');
+    }
+
+    /**
+     * Users who found this review helpful
+     */
+    public function helpfulUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'review_helpful', 'review_id', 'user_id')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Check if a specific user found this review helpful
+     */
+    public function isHelpfulByUser($userId): bool
+    {
+        if (!$userId) return false;
+        return $this->helpfulUsers()->where('user_id', $userId)->exists();
     }
 }

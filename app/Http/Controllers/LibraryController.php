@@ -7,6 +7,7 @@ use App\Models\BookshopBook;
 use App\Models\UserBook;
 use App\Models\Payment;
 use App\Models\Institution;
+use App\Models\DownloadLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -281,7 +282,7 @@ class LibraryController extends Controller
     {
         $user = auth()->user();
         
-        // Try to find the book in BOTH tables
+        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -380,42 +381,50 @@ class LibraryController extends Controller
     }
     
     /**
-     * Download book
-     */
-    public function download($bookId)
-    {
-        $user = auth()->user();
-        
-        // Try to find the book
-        $book = Book::find($bookId);
-        if (!$book) {
-            $book = BookshopBook::find($bookId);
-        }
-        
-        if (!$book) {
-            abort(404, 'Book not found.');
-        }
-        
-        // Check access for paid books
-        if ($book->isPaidItem() && method_exists($book, 'userHasAccess') && !$book->userHasAccess($user->id)) {
-            return redirect()->route('institution.public.show', ['institutionId' => $book->institution_id ?? 1, 'book' => $book->id])
-                ->with('error', 'Please purchase this book to download it.');
-        }
-        
-        // Increment download count
-        if (isset($book->downloads)) {
-            $book->increment('downloads');
-        }
-        
-        // Get file path
-        $filePath = storage_path('app/public/' . $book->file_path);
-        
-        if (!file_exists($filePath)) {
-            abort(404, 'Book file not found.');
-        }
-        
-        return response()->download($filePath, $book->title . '.pdf');
+ * Download book with daily limit (5 total downloads per day)
+ */
+public function download($bookId)
+{
+    $user = auth()->user();
+    
+    // Check daily download limit FIRST (strict: 5 total, any books)
+    if ($user->hasReachedDailyDownloadLimit()) {
+        return redirect()->back()->with('error', 'Daily download limit reached. You can download up to 5 books per day. Please try again tomorrow.');
     }
+    
+    // Try to find the book
+    $book = Book::find($bookId);
+    if (!$book) {
+        $book = BookshopBook::find($bookId);
+    }
+    
+    if (!$book) {
+        abort(404, 'Book not found.');
+    }
+    
+    // Check access for paid books
+    if ($book->isPaidItem() && method_exists($book, 'userHasAccess') && !$book->userHasAccess($user->id)) {
+        return redirect()->route('institution.public.show', ['institutionId' => $book->institution_id ?? 1, 'book' => $book->id])
+            ->with('error', 'Please purchase this book to download it.');
+    }
+    
+    // Log the download (counts toward daily limit)
+    $user->logDownload($book);
+    
+    // Increment book download count
+    if (isset($book->downloads)) {
+        $book->increment('downloads');
+    }
+    
+    // Get file path
+    $filePath = storage_path('app/public/' . $book->file_path);
+    
+    if (!file_exists($filePath)) {
+        abort(404, 'Book file not found.');
+    }
+    
+    return response()->download($filePath, $book->title . '.pdf');
+}
     
     /**
      * My Library (user's books)

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Book extends Model
 {
@@ -29,6 +30,7 @@ class Book extends Model
         'language',
         'total_pages',
         'published_date',
+        'slug',
 
         // Media
         'cover_image',
@@ -292,6 +294,39 @@ public function userHasAccess($userId)
         ->where('user_id', $userId)
         ->where('status', 'completed')
         ->exists();
+}
+
+protected static function boot()
+{
+    parent::boot();
+
+    static::creating(function ($book) {
+        if (empty($book->slug)) {
+            $book->slug = static::generateUniqueSlug($book->title);
+        }
+    });
+}
+
+public static function generateUniqueSlug($title)
+{
+    $slug = Str::slug($title);
+    $original = $slug;
+    $count = 1;
+
+    while (static::where('slug', $slug)->exists()) {
+        $slug = $original . '-' . $count;
+        $count++;
+    }
+
+    return $slug;
+}
+
+/**
+ * Use slug in route model binding instead of id
+ */
+public function getRouteKeyName(): string
+{
+    return 'slug';
 }
 
 public function getFormattedPriceAttribute()
@@ -711,87 +746,72 @@ public function hasInstitution(): bool
     return !empty($this->institution_id) && $this->institution !== null;
 }
 
-    /**
-     * Get the average rating for this book
-     */
-    public function averageRating()
-    {
-        return $this->ratings()->avg('rating') ?? 0;
-    }
+    /* ── Unified Rating / Review helpers ── */
 
     /**
-     * Get the average rating as a float (alias for averageRating)
+     * Average rating from the reviews table (single source of truth).
      */
-    public function getAverageRatingAttribute()
+    public function averageRating(): float
+    {
+        return round((float) $this->reviews()->avg('rating') ?? 0, 1);
+    }
+
+    public function getAverageRatingAttribute(): float
     {
         return $this->averageRating();
     }
 
     /**
-     * Get the total number of ratings
+     * How many reviews have a non-null rating.
      */
-    public function ratingCount()
+    public function ratingCount(): int
     {
-        return $this->ratings()->count();
+        return $this->reviews()->whereNotNull('rating')->count();
     }
 
-    /**
-     * Get the total number of ratings (alias)
-     */
-    public function getRatingCountAttribute()
+    public function getRatingCountAttribute(): int
     {
         return $this->ratingCount();
     }
 
     /**
-     * Check if a user has rated this book
+     * TRUE only if the user has left a review WITH a rating number.
+     * If they only have text (or nothing), the form will still show.
      */
-    public function hasUserRated($userId = null)
+    public function hasUserReviewed(?int $userId = null): bool
     {
         $userId = $userId ?? auth()->id();
-        if (!$userId) {
-            return false;
-        }
-        return $this->ratings()->where('user_id', $userId)->exists();
+        if (!$userId) return false;
+
+        return $this->reviews()
+            ->where('user_id', $userId)
+            ->whereNotNull('rating')
+            ->exists();
     }
 
-    /**
-     * Get a user's rating for this book
-     */
-    public function userRating($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        if (!$userId) {
-            return null;
-        }
-        $rating = $this->ratings()->where('user_id', $userId)->first();
-        return $rating ? $rating->rating : null;
-    }
+ public function userRating(?int $userId = null): ?int
+{
+    $userId = $userId ?? auth()->id();
+    if (!$userId) return null;
+    
+    $review = $this->reviews()
+        ->where('user_id', $userId)
+        ->whereNotNull('rating')
+        ->first();
+        
+    return $review ? (int) $review->rating : null;
+}
 
     /**
-     * Check if a user has reviewed this book
+     * The user's review text (if any).
      */
-    public function hasUserReviewed($userId = null)
+    public function userReview(?int $userId = null): ?Review
     {
         $userId = $userId ?? auth()->id();
-        if (!$userId) {
-            return false;
-        }
-        return $this->reviews()->where('user_id', $userId)->exists();
-    }
+        if (!$userId) return null;
 
-    /**
-     * Get a user's review for this book
-     */
-    public function userReview($userId = null)
-    {
-        $userId = $userId ?? auth()->id();
-        if (!$userId) {
-            return null;
-        }
         return $this->reviews()->where('user_id', $userId)->first();
     }
-
 
     
 
