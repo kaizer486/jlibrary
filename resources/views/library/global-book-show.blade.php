@@ -148,7 +148,7 @@
                         <div class="bg-gray-50 rounded-xl p-5 mb-6" id="review-form-container">
                             <h4 class="font-semibold text-gray-800 mb-3">Rate & review this book</h4>
                                                     
-                            <form action="{{ route('books.review', $book) }}" method="POST" id="reviewForm">
+                           <form action="{{ route('books.review', ['book' => $book->id]) }}" method="POST" id="reviewForm">
                                 @csrf
 
                                <!-- ⭐ STAR RATING BUTTONS - NO HOVER -->
