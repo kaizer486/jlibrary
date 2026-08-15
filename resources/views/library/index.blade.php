@@ -111,9 +111,15 @@
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-1 md:gap-2 lg:gap-3">
             @foreach($books as $book)
                 @php
-                    $bookUrl = $book->institution_id 
-                        ? url('/institution/' . $book->institution_id . '/library/' . $book->id)
-                        : route('library.show', $book->id);
+                    // FIXED: Use proper named routes instead of manual URL construction
+                    if ($book->institution_id) {
+                        $bookUrl = route('institution.public.show', [
+                            'institutionId' => $book->institution_id,
+                            'book' => $book->id
+                        ]);
+                    } else {
+                        $bookUrl = route('library.show', $book->id);
+                    }
                 @endphp
                 
                 <div class="bg-white rounded-md md:rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group border border-gray-200 hover:border-jlibrary-400 max-w-[90px] md:max-w-[180px] lg:max-w-[200px] xl:max-w-[220px] mx-auto w-full">
@@ -134,7 +140,7 @@
                                 </span>
                             </div>
                             
-                            <!-- Institution Badge - Simplified for mobile -->
+                            <!-- Institution Badge -->
                             <div class="absolute bottom-0.5 left-0.5 bg-black/70 text-white px-0.5 md:px-1.5 py-0.5 rounded text-[5px] md:text-[9px] max-w-[20px] md:max-w-[65px] truncate">
                                 @if($book->institution_id && $book->institution)
                                     <i class="ti ti-building text-[5px] md:text-[9px]"></i> 
@@ -144,14 +150,14 @@
                                 @endif
                             </div>
                             
-                            <!-- Bookmark Button - Smaller on mobile -->
+                            <!-- Bookmark Button -->
                             <div class="absolute top-0.5 right-0.5 z-10 scale-75 md:scale-100">
                                 <x-bookmark-button :item="$book" type="book" size="xs" />
                             </div>
                         </div>
                     </a>
                     
-                    <!-- Book Info - Compact -->
+                    <!-- Book Info -->
                     <div class="p-0.5 md:p-2 text-center">
                         <a href="{{ $bookUrl }}" class="block">
                             <h3 class="font-semibold text-[6px] md:text-xs text-gray-800 mb-0 line-clamp-1 hover:text-jlibrary-600 transition">{{ Str::limit($book->title, 8) }}</h3>

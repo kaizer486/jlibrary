@@ -39,7 +39,7 @@
         
         <!-- Search -->
         <div class="mt-6">
-            <form method="GET" class="flex flex-wrap gap-3">
+            <form method="GET" action="{{ route('institution.public.index', $institution->id) }}" class="flex flex-wrap gap-3">
                 <div class="flex-1 min-w-[200px]">
                     <input type="text" name="search" placeholder="Search for books..."
                            value="{{ request('search') }}"

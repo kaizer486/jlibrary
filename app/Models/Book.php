@@ -321,12 +321,9 @@ public static function generateUniqueSlug($title)
     return $slug;
 }
 
-/**
- * Use slug in route model binding instead of id
- */
 public function getRouteKeyName(): string
 {
-    return 'slug';
+    return 'id';
 }
 
 public function getFormattedPriceAttribute()

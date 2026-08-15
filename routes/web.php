@@ -201,13 +201,47 @@ if (app()->environment('local')) {
     });
 }
 
-// Public institution library
-Route::prefix('institution')->name('institution.public.')->group(function () {
-    Route::get('/{institutionId}/library', [PublicController::class, 'index'])->name('index');
-    Route::get('/{institutionId}/library/{book}', [PublicController::class, 'show'])->name('show');
-    Route::get('/{institutionId}/shelf/{shelfId}', [PublicController::class, 'shelfShow'])->name('shelf.show');
-});
+// ==========================================
+// SECTION 2.1: PUBLIC INSTITUTION LIBRARY ROUTES
+// ==========================================
 
+Route::prefix('institution')->name('institution.public.')->group(function () {
+    // Main library view
+    Route::get('/{institutionId}/library', [PublicController::class, 'index'])->name('index');
+    
+    // Book view - uses ID (numeric)
+    Route::get('/{institutionId}/library/{book:id}', [PublicController::class, 'show'])->name('show');
+    
+    // Book view by slug (SEO friendly URLs)
+    Route::get('/{institutionId}/library/slug/{slug}', [PublicController::class, 'showBySlug'])->name('show.slug');
+    
+    // Book view by ISBN
+    Route::get('/{institutionId}/library/isbn/{isbn}', [PublicController::class, 'showByIsbn'])->name('show.isbn');
+    
+    // Read book (NEW)
+    Route::get('/{institutionId}/library/{book}/read', [PublicController::class, 'read'])->name('read');
+    
+    // Download book (NEW - with explicit ID binding)
+    Route::get('/{institutionId}/library/{book}/download', [PublicController::class, 'download'])->name('download');
+    
+    // Update reading progress (NEW)
+    Route::post('/{institutionId}/library/{book}/progress', [PublicController::class, 'updateProgress'])->name('progress');
+    
+    // Shelf books
+    Route::get('/{institutionId}/shelf/{shelfId}', [PublicController::class, 'shelfShow'])->name('shelf.show');
+    
+    // Category filter
+    Route::get('/{institutionId}/category/{category}', [PublicController::class, 'category'])->name('category');
+    
+    // Featured books
+    Route::get('/{institutionId}/featured', [PublicController::class, 'featured'])->name('featured');
+    
+    // Trending books
+    Route::get('/{institutionId}/trending', [PublicController::class, 'trending'])->name('trending');
+    
+    // Search
+    Route::get('/{institutionId}/search', [PublicController::class, 'search'])->name('search');
+});
 
 // Public library
 Route::get('/library', [LibraryController::class, 'index'])->name('library.index');

@@ -35,15 +35,26 @@
 
                     <div class="space-y-3">
                         @auth
-                           @if($hasAccess ?? false)
-                                <a href="{{ route('library.read', $book->id) }}"
-                                   class="block text-center bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
-                                    <i class="ti ti-eye"></i> Read Now
-                                </a>
-                                <a href="{{ route('library.download', $book->id) }}"
-                                   class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition">
-                                    <i class="ti ti-download"></i> Download PDF
-                                </a>
+                            @if($hasAccess)
+                                @if($book->institution_id)
+                                    <a href="{{ route('institution.public.read', ['institutionId' => $book->institution_id, 'book' => $book->id]) }}"
+                                       class="block text-center bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
+                                        <i class="ti ti-eye"></i> Read Now
+                                    </a>
+                                    <a href="{{ route('institution.public.download', ['institutionId' => $book->institution_id, 'book' => $book->id]) }}"
+                                       class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition">
+                                        <i class="ti ti-download"></i> Download PDF
+                                    </a>
+                                @else
+                                    <a href="{{ route('library.read', $book->id) }}"
+                                       class="block text-center bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
+                                        <i class="ti ti-eye"></i> Read Now
+                                    </a>
+                                    <a href="{{ route('library.download', $book->id) }}"
+                                       class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition">
+                                        <i class="ti ti-download"></i> Download PDF
+                                    </a>
+                                @endif
                             @else
                                 <button onclick="showPurchaseModal({{ $book->id }}, {{ $book->price }}, '{{ addslashes($book->title) }}')"
                                         class="block text-center bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition w-full">
@@ -65,7 +76,7 @@
                         @endauth
                     </div>
 
-                    @if(($progress ?? null) && $progress->progress_percent > 0)
+                    @if($progress && $progress->progress_percent > 0)
                         <div class="mt-6 pt-4 border-t">
                             <div class="flex justify-between text-sm text-gray-600 mb-1">
                                 <span>Reading Progress</span>
@@ -95,7 +106,7 @@
                 </div>
             </div>
 
-            <!-- ⭐ RATINGS SECTION -->
+            <!-- Ratings Section -->
             <div class="flex items-center flex-wrap gap-4 mb-6">
                 <div class="flex items-center gap-2">
                     <div class="flex items-center" id="average-stars">
@@ -118,6 +129,7 @@
 
             <div class="flex items-center gap-4 text-sm text-gray-500 mb-6">
                 <span><i class="ti ti-file-text"></i> {{ $book->total_pages }} pages</span>
+                <span><i class="ti ti-eye"></i> {{ number_format($book->views_count) }} views</span>
                 <span><i class="ti ti-download"></i> {{ number_format($book->downloads) }} downloads</span>
             </div>
 
@@ -131,9 +143,7 @@
                 <p class="text-gray-700">{{ $book->author }} is a renowned author in this field.</p>
             </div>
 
-            <!-- ============================================ -->
-            <!-- ⭐ REVIEWS SECTION                            -->
-            <!-- ============================================ -->
+            <!-- Reviews Section -->
             <div class="mt-8" id="reviews-section">
                 <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="ti ti-message-circle-2"></i>
@@ -147,22 +157,24 @@
                     @if(!$book->hasUserReviewed())
                         <div class="bg-gray-50 rounded-xl p-5 mb-6" id="review-form-container">
                             <h4 class="font-semibold text-gray-800 mb-3">Rate & review this book</h4>
-                            <form action="{{ route('books.review', $book) }}" method="POST" id="reviewForm">
+
+                            <form action="{{ route('books.review', ['book' => $book->id]) }}" method="POST" id="reviewForm">
                                 @csrf
 
-                                <!-- ⭐ FIXED STAR RATING -->
-                              <div class="flex items-center gap-1 mb-1" id="new-rating-stars">
-    @for($i = 1; $i <= 5; $i++)
-        <button type="button"
-                style="cursor:pointer;outline:none;background:transparent;border:0;padding:0;line-height:1;-webkit-tap-highlight-color:transparent;"
-                aria-label="Rate {{ $i }} stars"
-                onmouseenter="starHover({{ $i }})"
-                onmouseleave="starReset()"
-                onclick="starClick({{ $i }})">
-            <i id="star-{{ $i }}" class="ti ti-star text-3xl text-gray-300 transition-all duration-150"></i>
-        </button>
-    @endfor
-</div>
+                                <!-- Star Rating -->
+                                <div class="flex items-center gap-1 mb-1" id="new-rating-stars">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <button type="button"
+                                                aria-label="Rate {{ $i }} stars"
+                                                onclick="starClick({{ $i }})">
+                                            <svg id="star-{{ $i }}" viewBox="0 0 24 24" width="30" height="30"
+                                                 fill="#d1d5db" xmlns="http://www.w3.org/2000/svg"
+                                                 style="transition: transform 0.15s ease, fill 0.15s ease;">
+                                                <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279L12 19.771l-7.416 3.642 1.48-8.279L0 9.306l8.332-1.151z"/>
+                                            </svg>
+                                        </button>
+                                    @endfor
+                                </div>
                                 <p class="text-xs text-gray-400 mb-3" id="rating-hint">Tap a star to rate</p>
                                 <input type="hidden" name="rating" id="rating-input" value="">
 
@@ -247,7 +259,7 @@
     </div>
 </div>
 
-<!-- ========== PURCHASE MODAL ========== -->
+<!-- Purchase Modal -->
 <div id="purchaseModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full mx-auto overflow-hidden shadow-2xl animate-modal-pop">
         <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 text-white">
@@ -267,7 +279,7 @@
     </div>
 </div>
 
-<!-- ========== SUCCESS MODAL ========== -->
+<!-- Success Modal -->
 <div id="successModal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl max-w-md w-full mx-auto overflow-hidden shadow-2xl text-center animate-modal-pop">
         <div class="p-6">
@@ -299,30 +311,34 @@
 .animate-modal-pop { animation: modalPop 0.2s ease-out; }
 
 .helpful-btn { cursor: pointer; transition: all 0.2s ease; }
-.helpful-btn:hover { background: #f3f4f6; }
 .helpful-btn.liked { color: #7c3aed !important; background: #ede9fe; }
 .helpful-btn.liked i { font-weight: 900; }
 
-/* ⭐ Star rating cursor & interaction */
-.star-btn {
+#new-rating-stars {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 3rem;
+}
+
+#new-rating-stars button {
+    width: 2.75rem;
+    height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     outline: none;
-    -webkit-tap-highlight-color: transparent;
-}
-.star-btn:focus-visible {
-    outline: 2px solid #a78bfa;
-    outline-offset: 2px;
-    border-radius: 4px;
-}
-.star-btn i {
-    display: inline-block;
-    pointer-events: none; /* clicks pass through <i> to the <button> */
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
 }
 </style>
 
 @push('scripts')
 <script>
-/* ⭐ INLINE STAR RATING — no DOMContentLoaded needed */
+// Star Rating
 let selRating = 0;
 const rInput = document.getElementById('rating-input');
 const rHint  = document.getElementById('rating-hint');
@@ -331,42 +347,33 @@ function starPaint(val) {
     for (let i = 1; i <= 5; i++) {
         const el = document.getElementById('star-' + i);
         if (!el) continue;
-        if (i <= val) {
-            el.classList.remove('ti-star','text-gray-300');
-            el.classList.add('ti-star-filled','text-yellow-400');
-        } else {
-            el.classList.remove('ti-star-filled','text-yellow-400');
-            el.classList.add('ti-star','text-gray-300');
-        }
+        el.setAttribute('fill', i <= val ? '#fbbf24' : '#d1d5db');
+        el.style.transform = 'scale(1)';
     }
 }
-function starHover(n) { starPaint(n); }
-function starReset()  { starPaint(selRating); }
+
 function starClick(n) {
     selRating = n;
     if (rInput) rInput.value = n;
     starPaint(n);
     if (rHint) {
         rHint.textContent = n + ' star' + (n > 1 ? 's' : '') + ' selected';
-        rHint.classList.add('text-yellow-600');
+        rHint.style.color = '#d97706';
     }
     const el = document.getElementById('star-' + n);
     if (el) {
-        el.style.transform = 'scale(1.3)';
-        setTimeout(() => el.style.transform = '', 120);
+        el.style.transform = 'scale(1.35)';
+        setTimeout(() => { if (el) el.style.transform = 'scale(1)'; }, 180);
     }
 }
 
-/* ============================================
-   REVIEW FORM AJAX SUBMIT
-   ============================================ */
+// Review Form Submit
 (function() {
     const reviewForm = document.getElementById('reviewForm');
     if (!reviewForm) return;
 
     reviewForm.addEventListener('submit', function(e) {
         e.preventDefault();
-
         const ratingValue = rInput ? rInput.value : '';
         if (!ratingValue || parseInt(ratingValue, 10) < 1) {
             alert('Please tap a star to rate this book first.');
@@ -389,9 +396,10 @@ function starClick(n) {
             },
             body: formData
         })
-        .then(response => {
-            if (!response.ok) throw new Error('Server error');
-            return response.json();
+        .then(async response => {
+            const text = await response.text();
+            try { return JSON.parse(text); }
+            catch (e) { throw new Error('Server returned: ' + text.substring(0, 200)); }
         })
         .then(data => {
             if (data.success) {
@@ -404,17 +412,14 @@ function starClick(n) {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            alert('Error: ' + error.message);
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         });
     });
 })();
 
-/* ============================================
-   SHARE FUNCTION
-   ============================================ */
+// Share Function
 function shareBook() {
     const shareData = {
         title: '{{ addslashes($book->title) }}',
@@ -438,9 +443,7 @@ function shareBook() {
     }
 }
 
-/* ============================================
-   TOAST NOTIFICATION
-   ============================================ */
+// Toast Notification
 function showToast(message) {
     const existing = document.querySelector('.kimi-toast');
     if (existing) existing.remove();
@@ -455,9 +458,7 @@ function showToast(message) {
     }, 3000);
 }
 
-/* ============================================
-   HELPFUL / LIKE FUNCTION
-   ============================================ */
+// Helpful/Like Function
 function toggleHelpful(reviewId, button) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (!csrfToken) {
@@ -505,9 +506,7 @@ function toggleHelpful(reviewId, button) {
     });
 }
 
-/* ============================================
-   PURCHASE MODAL FUNCTIONS
-   ============================================ */
+// Purchase Modal Functions
 let currentBook = null;
 let successRedirectUrl = null;
 let successDownloadUrl = null;

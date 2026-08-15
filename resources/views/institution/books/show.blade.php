@@ -155,7 +155,7 @@
                 </div>
             @endif
 
-            <!-- Read/Download Button -->
+            <!-- Read/Download Button - FIXED: Using route instead of direct URL -->
             @if(isset($book->file_path) && $book->file_path)
                 @php
                     $canAccess = false;
@@ -175,7 +175,7 @@
                 @endphp
 
                 @if($canAccess)
-                    <a href="{{ url('media/' . $book->file_path) }}" target="_blank" 
+                    <a href="{{ route('institution.public.download', ['institutionId' => $institution->id, 'book' => $book->id]) }}" target="_blank" 
                        class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02]" 
                        style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);">
                         <i class="ti ti-file-pdf text-xl"></i> Read / Download
@@ -275,7 +275,8 @@
                                 <i class="ti ti-check"></i> Already owned
                             </div>
                             @if(isset($book->file_path) && $book->file_path)
-                                <a href="{{ route('book.download', $book->id) }}" 
+                                <!-- FIXED: Use institution public download route -->
+                                <a href="{{ route('institution.public.download', ['institutionId' => $institution->id, 'book' => $book->id]) }}" 
                                    class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-[1.02] mt-2" 
                                    style="background: #2563eb; color: white;">
                                     <i class="ti ti-download"></i> Download

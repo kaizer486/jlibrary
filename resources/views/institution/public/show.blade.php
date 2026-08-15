@@ -4,1004 +4,679 @@
 
 @section('content')
 
-{{-- ========================================== --}}
-{{-- PRICE LOGIC - DEFINED FIRST                --}}
-{{-- ========================================== --}}
-@php
-    $isBookstore = isset($institution) && $institution->type === 'bookstore';
-    $hasPrice = false;
-    $displayPrice = 0;
-    
-    if ($isBookstore) {
-        if (isset($book->price) && $book->price > 0) {
-            $hasPrice = true;
-            $displayPrice = $book->price;
-        }
-    } else {
-        if (isset($book->is_paid) && $book->is_paid && isset($book->price) && $book->price > 0) {
-            $hasPrice = true;
-            $displayPrice = $book->price;
-        }
-    }
-@endphp
-
 <!-- ========================================== -->
-<!-- INSTITUTION CONTEXT HEADER                 -->
+<!-- HERO SECTION                               -->
 <!-- ========================================== -->
-<div class="mb-6 p-4 rounded-xl" style="background: linear-gradient(135deg, #db570a, #e87a2a, #f59e4c); box-shadow: 0 4px 20px rgba(219, 87, 10, 0.3);">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-            <div class="flex items-center gap-2">
-                <div class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <i class="ti ti-building text-white text-xl"></i>
-                </div>
-                <div>
-                    <span class="text-white font-bold text-lg">{{ $institution->name }}</span>
-                    <span class="text-xs px-2 py-0.5 rounded-full bg-white/30 text-white font-semibold ml-2">
-                        {{ ucfirst($institution->type) }}
-                    </span>
-                </div>
-            </div>
-            <p class="text-white/90 text-sm mt-1 flex items-center gap-1 ml-12">
-                <i class="ti ti-shopping-cart"></i> Purchase available
-            </p>
-        </div>
-        <div>
-            <a href="{{ route('institution.public.index', $institution->id) }}" 
-               class="text-white hover:text-white/90 transition inline-flex items-center gap-2 text-sm bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/30 border border-white/20">
-                <i class="ti ti-arrow-left"></i> Back to {{ $institution->name }}
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- ========================================== -->
-<!-- SUCCESS / ERROR MESSAGES                   -->
-<!-- ========================================== -->
-@if(session('success'))
-    <div class="mb-4 p-4 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-emerald-400 flex items-start gap-3 backdrop-blur-sm">
-        <i class="ti ti-check-circle text-xl mt-0.5"></i>
-        <div>
-            <p class="font-semibold">Success!</p>
-            <p class="text-sm text-emerald-400/80">{{ session('success') }}</p>
-        </div>
-    </div>
-@endif
-
-@if(session('error'))
-    <div class="mb-4 p-4 bg-red-500/20 border border-red-500/30 rounded-xl text-red-400 flex items-start gap-3 backdrop-blur-sm">
-        <i class="ti ti-alert-circle text-xl mt-0.5"></i>
-        <div>
-            <p class="font-semibold">Error!</p>
-            <p class="text-sm text-red-400/80">{{ session('error') }}</p>
-        </div>
-    </div>
-@endif
-
-<!-- ========================================== -->
-<!-- BOOK DETAILS - MAIN CONTENT               -->
-<!-- ========================================== -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    
-    <!-- ========================================== -->
-    <!-- LEFT COLUMN - COVER & QUICK ACTIONS        -->
-    <!-- ========================================== -->
-    <div class="lg:col-span-1 space-y-4">
-        
-        <!-- Cover Image -->
-        <div class="overflow-hidden rounded-2xl relative group" style="background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
-            @if($book->cover_image)
-               <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-auto group-hover:scale-105 transition duration-700 ease-in-out">
-            @else
-                <div class="w-full aspect-[2/3] flex items-center justify-center" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
-                    <i class="ti ti-book text-8xl" style="color: rgba(219, 87, 10, 0.3);"></i>
-                </div>
-            @endif
-            
-            <!-- Status Badge Overlay -->
-            <div class="absolute top-4 right-4">
-                <span class="px-3 py-1 rounded-full text-xs font-medium backdrop-blur-sm" style="background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2);">
-                    @if($hasPrice && $displayPrice > 0)
-                        💰 Paid
-                    @else
-                        🆓 Free
-                    @endif
-                </span>
-            </div>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-3 gap-2 p-3 rounded-2xl" style="background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3);">
-            <div class="text-center">
-                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ number_format($book->downloads ?? 0) }}</p>
-                <p class="text-xs" style="color: #6b7280;">Downloads</p>
-            </div>
-            <div class="text-center">
-                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ number_format($book->views_count ?? 0) }}</p>
-                <p class="text-xs" style="color: #6b7280;">Views</p>
-            </div>
-            <div class="text-center">
-                <p class="text-lg font-bold" style="color: #1e3a5f;">{{ $book->total_pages ?? 0 }}</p>
-                <p class="text-xs" style="color: #6b7280;">Pages</p>
-            </div>
-        </div>
-        
-        <!-- Price & Purchase Card -->
-        <div class="p-4 rounded-2xl" style="background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
-            
-            <!-- Price -->
-            @if($hasPrice && $displayPrice > 0)
-                <div class="mb-3 p-3 rounded-xl text-center" style="background: linear-gradient(135deg, rgba(219, 87, 10, 0.08), rgba(245, 158, 76, 0.08)); border: 2px solid rgba(219, 87, 10, 0.15);">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #92400e;">Price</p>
-                    <p class="text-3xl font-bold" style="color: #db570a;">TSh {{ number_format($displayPrice, 2) }}</p>
-                    <p class="text-xs mt-1" style="color: #92400e;">One-time purchase. Lifetime access.</p>
-                    @if($isBookstore && isset($book->stock_quantity) && $book->stock_quantity > 0)
-                        <p class="text-xs mt-1 flex items-center justify-center gap-1" style="color: #065f46;">
-                            <i class="ti ti-package"></i> {{ $book->stock_quantity }} in stock
-                        </p>
-                    @endif
-                </div>
-            @else
-                <div class="mb-3 p-3 rounded-xl text-center" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(52, 211, 153, 0.08)); border: 2px solid rgba(16, 185, 129, 0.15);">
-                    <p class="text-xs font-semibold uppercase tracking-wider" style="color: #065f46;">Price</p>
-                    <p class="text-3xl font-bold" style="color: #065f46;">🆓 FREE</p>
-                    <p class="text-xs mt-1" style="color: #065f46;">
-                        @if($isBookstore)
-                            Free to download
-                        @else
-                            Free to read and download
-                        @endif
-                    </p>
-                </div>
-            @endif
-
-            <!-- Read/Download Button -->
-            @if(isset($book->file_path) && $book->file_path)
-                @php
-                    $canAccess = false;
-                    if($institution->type === 'bookstore') {
-                        $canAccess = true;
-                    } elseif($institution->type === 'public') {
-                        if(!$book->is_paid) {
-                            $canAccess = true;
-                        } elseif(auth()->check() && auth()->user()->isMemberOf($institution)) {
-                            $canAccess = true;
-                        }
-                    } elseif($institution->type === 'school' || $institution->type === 'university') {
-                        if(auth()->check() && auth()->user()->isMemberOf($institution)) {
-                            $canAccess = true;
-                        }
-                    }
-                @endphp
-
-                @if($canAccess)
-                    <a href="{{ url('media/' . $book->file_path) }}" target="_blank" 
-                       class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02]" 
-                       style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);">
-                        <i class="ti ti-file-pdf text-xl"></i> Read / Download
-                    </a>
-                @else
-                    <div class="w-full px-4 py-3 rounded-xl text-center text-sm flex items-center justify-center gap-2" style="background: rgba(0,0,0,0.04); color: #6b7280; border: 1px dashed rgba(0,0,0,0.1);">
-                        <i class="ti ti-lock"></i> 
-                        @if(!auth()->check())
-                            Login to access
-                        @elseif(!auth()->user()->isMemberOf($institution))
-                            @if($institution->type === 'public')
-                                Join {{ $institution->name }}
-                            @else
-                                Request membership
-                            @endif
-                        @else
-                            No permission
-                        @endif
-                    </div>
-                @endif
-            @else
-                <div class="w-full px-4 py-3 rounded-xl text-center text-sm flex items-center justify-center gap-2" style="background: rgba(0,0,0,0.04); color: #6b7280; border: 1px dashed rgba(0,0,0,0.1);">
-                    <i class="ti ti-file"></i> No digital version
-                </div>
-            @endif
-
-            <!-- Borrow (Library Only) -->
-            @if($institution->type !== 'bookstore')
-                <div class="mt-3 pt-3 border-t" style="border-color: rgba(0,0,0,0.06);">
-                    @auth
-                        @php
-                            $isMember = auth()->user()->isMemberOf($institution);
-                            $hasPendingRequest = false;
-                            $hasActiveBorrowing = false;
-                            if($isMember) {
-                                try {
-                                    $hasPendingRequest = \App\Models\BorrowRequest::where('book_id', $book->id)
-                                        ->where('user_id', auth()->id())
-                                        ->where('status', 'pending')
-                                        ->exists();
-                                    $hasActiveBorrowing = \App\Models\Borrowing::where('book_id', $book->id)
-                                        ->where('user_id', auth()->id())
-                                        ->where('status', 'borrowed')
-                                        ->exists();
-                                } catch (\Exception $e) {
-                                    $hasPendingRequest = false;
-                                    $hasActiveBorrowing = false;
-                                }
-                            }
-                        @endphp
-
-                        @if($isMember)
-                            @if($hasActiveBorrowing)
-                                <div class="w-full text-center py-2.5 rounded-xl text-sm border flex items-center justify-center gap-2" style="background: rgba(59, 130, 246, 0.06); color: #2563eb; border-color: rgba(59, 130, 246, 0.15);">
-                                    <i class="ti ti-book"></i> Already borrowed
-                                </div>
-                            @elseif($hasPendingRequest)
-                                <div class="w-full text-center py-2.5 rounded-xl text-sm border flex items-center justify-center gap-2" style="background: rgba(245, 158, 11, 0.06); color: #d97706; border-color: rgba(245, 158, 11, 0.15);">
-                                    <i class="ti ti-clock"></i> Request pending
-                                </div>
-                            @elseif($book->status === 'available' || $book->status === 'active')
-                                <a href="{{ route('borrow.request.form', ['book_id' => $book->id, 'institution_id' => $institution->id]) }}" 
-                                   class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-[1.02]" 
-                                   style="background: #2563eb; color: white;">
-                                    <i class="ti ti-bookmark"></i> Request to Borrow
-                                </a>
-                            @else
-                                <div class="w-full text-center py-2.5 rounded-xl text-sm border flex items-center justify-center gap-2" style="background: rgba(220, 38, 38, 0.06); color: #dc2626; border-color: rgba(220, 38, 38, 0.15);">
-                                    <i class="ti ti-x-circle"></i> Not available
-                                </div>
-                            @endif
-                        @else
-                            <div class="w-full text-center py-2.5 rounded-xl text-sm border flex items-center justify-center gap-2" style="background: rgba(245, 158, 11, 0.06); color: #d97706; border-color: rgba(245, 158, 11, 0.15);">
-                                <i class="ti ti-user-plus"></i> Join to borrow
-                            </div>
-                        @endif
-                    @else
-                        <a href="{{ route('login') }}" 
-                           class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-[1.02]" 
-                           style="background: #2563eb; color: white;">
-                            <i class="ti ti-login"></i> Login to Borrow
-                        </a>
-                    @endauth
-                </div>
-            @endif
-
-            <!-- Purchase -->
-            @if($hasPrice && $displayPrice > 0)
-                <div class="mt-3 pt-3 border-t" style="border-color: rgba(0,0,0,0.06);">
-                    @auth
-                        @php
-                            $hasPurchased = auth()->user()->hasPurchasedBook($book->id);
-                        @endphp
-                        
-                        @if($hasPurchased)
-                            <div class="w-full text-center py-2.5 rounded-xl text-sm border flex items-center justify-center gap-2" style="background: rgba(16, 185, 129, 0.06); color: #065f46; border-color: rgba(16, 185, 129, 0.15);">
-                                <i class="ti ti-check"></i> Already owned
-                            </div>
-                            @if(isset($book->file_path) && $book->file_path)
-                                <a href="{{ route('book.download', $book->id) }}" 
-                                   class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-[1.02] mt-2" 
-                                   style="background: #2563eb; color: white;">
-                                    <i class="ti ti-download"></i> Download
-                                </a>
-                            @endif
-                        @else
-                            <button onclick="openPurchaseModal({{ $book->id }})" 
-                                    id="purchase-btn-{{ $book->id }}"
-                                    class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02]" 
-                                    style="background: linear-gradient(135deg, #db570a, #e87a2a); color: white; box-shadow: 0 4px 16px rgba(219, 87, 10, 0.3);">
-                                <i class="ti ti-shopping-cart text-xl"></i> Buy Now - TSh {{ number_format($displayPrice, 2) }}
-                            </button>
-                            <div id="purchase-status-{{ $book->id }}" class="mt-2 text-center text-sm" style="color: #6b7280;"></div>
-                        @endif
-                    @else
-                        <a href="{{ route('login') }}" 
-                           class="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02]" 
-                           style="background: linear-gradient(135deg, #db570a, #e87a2a); color: white; box-shadow: 0 4px 16px rgba(219, 87, 10, 0.3);">
-                            <i class="ti ti-login"></i> Login to Buy
-                        </a>
-                    @endauth
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- RIGHT COLUMN - BOOK DETAILS               -->
-    <!-- ========================================== -->
-    <div class="lg:col-span-2">
-        <div class="p-6 rounded-2xl" style="background: rgba(255,255,255,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
-            
-            <!-- Title & Author -->
-            <div class="border-b border-gray-100 pb-4 mb-4">
-                <h1 class="text-3xl font-bold" style="color: #1a1a2e;">{{ $book->title }}</h1>
-                <p class="text-lg mt-1 flex items-center flex-wrap gap-2" style="color: #4b5563;">
-                    by <span class="font-semibold" style="color: #1e3a5f;">{{ $book->author ?? 'Unknown' }}</span>
-                    @if(isset($book->publication_year) && $book->publication_year)
-                        <span class="text-sm" style="color: #6b7280;">• {{ $book->publication_year }}</span>
-                    @endif
-                </p>
-                
-                <!-- Badges -->
-                <div class="flex flex-wrap gap-2 mt-3">
-                    @if($book->category)
-                        <span class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" style="background: rgba(124, 58, 237, 0.1); color: #5b21b6; border: 1px solid rgba(124, 58, 237, 0.15);">
-                            <i class="ti ti-tag"></i> {{ $book->category }}
-                        </span>
-                    @endif
-                    <span class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" style="background: rgba(16, 185, 129, 0.1); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.15);">
-                        <i class="ti ti-check"></i> {{ ucfirst($book->status ?? 'Available') }}
-                    </span>
-                    @if(isset($book->isbn) && $book->isbn)
-                        <span class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" style="background: rgba(59, 130, 246, 0.1); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.15);">
-                            <i class="ti ti-barcode"></i> {{ $book->isbn }}
-                        </span>
-                    @endif
-                    @if($isBookstore)
-                        <span class="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1" style="background: rgba(219, 87, 10, 0.1); color: #db570a; border: 1px solid rgba(219, 87, 10, 0.15);">
-                            <i class="ti ti-shopping-cart"></i> Bookstore
-                        </span>
-                    @endif
-                </div>
-            </div>
-            
-            <!-- Book Info Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                @if(isset($book->publisher) && $book->publisher && !empty($book->publisher))
-                    <div class="p-3 rounded-xl text-center" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                        <p class="text-xs" style="color: #6b7280;">Publisher</p>
-                        <p class="text-sm font-medium truncate" style="color: #1a1a2e;">{{ $book->publisher }}</p>
-                    </div>
-                @endif
-                @if(isset($book->publication_year) && $book->publication_year)
-                    <div class="p-3 rounded-xl text-center" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                        <p class="text-xs" style="color: #6b7280;">Year</p>
-                        <p class="text-sm font-medium" style="color: #1a1a2e;">{{ $book->publication_year }}</p>
-                    </div>
-                @endif
-                @if(isset($book->total_pages) && $book->total_pages)
-                    <div class="p-3 rounded-xl text-center" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                        <p class="text-xs" style="color: #6b7280;">Pages</p>
-                        <p class="text-sm font-medium" style="color: #1a1a2e;">{{ $book->total_pages }}</p>
-                    </div>
-                @elseif(isset($book->pages) && $book->pages)
-                    <div class="p-3 rounded-xl text-center" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                        <p class="text-xs" style="color: #6b7280;">Pages</p>
-                        <p class="text-sm font-medium" style="color: #1a1a2e;">{{ $book->pages }}</p>
-                    </div>
-                @endif
-                @if(isset($book->isbn) && $book->isbn)
-                    <div class="p-3 rounded-xl text-center" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                        <p class="text-xs" style="color: #6b7280;">ISBN</p>
-                        <p class="text-sm font-medium" style="color: #1a1a2e;">{{ $book->isbn }}</p>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Additional Details -->
-            <div class="mb-4">
-                <h4 class="text-sm font-semibold mb-2 flex items-center gap-2" style="color: #4b5563;">
-                    <i class="ti ti-info-circle" style="color: #db570a;"></i> Additional Details
-                </h4>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                    @if(isset($book->language) && $book->language)
-                        <div class="p-2 rounded-lg" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                            <span style="color: #6b7280;">Language:</span>
-                            <span class="ml-1 font-medium" style="color: #1a1a2e;">{{ $book->language }}</span>
-                        </div>
-                    @endif
-                    @if(isset($book->edition) && $book->edition)
-                        <div class="p-2 rounded-lg" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                            <span style="color: #6b7280;">Edition:</span>
-                            <span class="ml-1 font-medium" style="color: #1a1a2e;">{{ $book->edition }}</span>
-                        </div>
-                    @endif
-                    @if(isset($book->format) && $book->format)
-                        <div class="p-2 rounded-lg" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                            <span style="color: #6b7280;">Format:</span>
-                            <span class="ml-1 font-medium" style="color: #1a1a2e;">{{ $book->format }}</span>
-                        </div>
-                    @endif
-                </div>
-            </div>
-            
-            <!-- Description -->
-            <div class="mb-4">
-                <h3 class="font-semibold text-lg flex items-center gap-2 mb-2" style="color: #1a1a2e;">
-                    <i class="ti ti-file-description" style="color: #db570a;"></i> About This Book
-                </h3>
-                <div class="p-4 rounded-xl" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-                    <p class="leading-relaxed" style="color: #374151; font-size: 0.95rem;">
-                        {{ $book->description ?? 'No description available for this book.' }}
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Shelf Location -->
-            @if(isset($book->shelf_number) && $book->shelf_number)
-                <div class="p-4 rounded-xl" style="background: rgba(124, 58, 237, 0.04); border: 1px solid rgba(124, 58, 237, 0.08);">
-                    <p class="text-sm font-semibold flex items-center gap-2" style="color: #5b21b6;">
-                        <i class="ti ti-map-pin"></i> Location
-                    </p>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                        @if($book->shelf_number)
-                            <div>
-                                <p class="text-xs" style="color: #6b7280;">Shelf</p>
-                                <p class="font-semibold" style="color: #1a1a2e;">{{ $book->shelf_number }}</p>
-                            </div>
-                        @endif
-                        @if(isset($book->shelf_name) && $book->shelf_name)
-                            <div>
-                                <p class="text-xs" style="color: #6b7280;">Shelf Name</p>
-                                <p class="font-semibold" style="color: #1a1a2e;">{{ $book->shelf_name }}</p>
-                            </div>
-                        @endif
-                        @if(isset($book->floor) && $book->floor)
-                            <div>
-                                <p class="text-xs" style="color: #6b7280;">Floor</p>
-                                <p class="font-semibold" style="color: #1a1a2e;">{{ $book->floor }}</p>
-                            </div>
-                        @endif
-                        @if(isset($book->section) && $book->section)
-                            <div>
-                                <p class="text-xs" style="color: #6b7280;">Section</p>
-                                <p class="font-semibold" style="color: #1a1a2e;">{{ $book->section }}</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
-            
-            <!-- Bookstore Details -->
-            @if($isBookstore)
-                <div class="mt-4 p-4 rounded-xl" style="background: rgba(219, 87, 10, 0.04); border: 1px solid rgba(219, 87, 10, 0.08);">
-                    <h4 class="text-sm font-semibold flex items-center gap-2" style="color: #db570a;">
-                        <i class="ti ti-shopping-cart"></i> Bookstore Details
-                    </h4>
-                    <div class="grid grid-cols-2 gap-2 mt-2">
-                        <div>
-                            <p class="text-xs" style="color: #6b7280;">Price</p>
-                            <p class="font-medium" style="color: #1a1a2e;">TSh {{ number_format($book->price ?? 0, 2) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs" style="color: #6b7280;">Stock</p>
-                            <p class="font-medium" style="color: {{ isset($book->stock_quantity) && $book->stock_quantity <= 0 ? '#dc2626' : (isset($book->stock_quantity) && $book->stock_quantity <= 5 ? '#d97706' : '#059669') }};">
-                                {{ $book->stock_quantity ?? 0 }} available
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-xs" style="color: #6b7280;">Sold</p>
-                            <p class="font-medium" style="color: #1a1a2e;">{{ $book->sold_count ?? 0 }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs" style="color: #6b7280;">Category</p>
-                            <p class="font-medium" style="color: #1a1a2e;">{{ $book->category ?? 'N/A' }}</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <!-- ========================================== -->
-            <!-- RATINGS & REVIEWS                          -->
-            <!-- ========================================== -->
-            <div class="mt-6 pt-4 border-t" style="border-color: rgba(0,0,0,0.06);">
-                <!-- Ratings -->
-                <div class="flex items-center flex-wrap gap-4 mb-4">
-                    <div class="flex items-center gap-2">
-                        @php
-                            $avgRating = 0;
-                            if (!$isBookstore && method_exists($book, 'averageRating')) {
-                                $avgRating = $book->averageRating();
-                            }
-                        @endphp
-                        <x-star-rating :rating="$avgRating" readonly="true" size="lg" />
-                        <span class="text-2xl font-bold text-gray-800">
-                            {{ number_format($avgRating, 1) }}
-                        </span>
-                        <span class="text-gray-500 text-sm">
-                            ({{ $ratingsCount ?? 0 }} ratings)
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Reviews -->
-                <div class="mt-4">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <i class="ti ti-message-circle-2"></i>
-                        Reviews & Comments
-                        <span class="text-sm font-normal text-gray-500">({{ $reviewsCount ?? 0 }} reviews)</span>
-                    </h3>
-                    
-                    @if(!$isBookstore)
-                        @auth
-                            @if(method_exists($book, 'hasUserReviewed') && !$book->hasUserReviewed())
-                                <div class="bg-gray-50 rounded-xl p-5 mb-6">
-                                    <h4 class="font-semibold text-gray-800 mb-3">Write a Review</h4>
-                                    <form action="{{ route('books.review', $book) }}" method="POST">
-                                        @csrf
-                                        <textarea name="review" rows="4" 
-                                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                                  placeholder="Share your thoughts about this book..." required></textarea>
-                                        <button type="submit" class="mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
-                                            Submit Review
-                                        </button>
-                                    </form>
-                                </div>
-                            @elseif(method_exists($book, 'hasUserReviewed'))
-                                <div class="bg-green-50 rounded-xl p-4 mb-6 flex justify-between items-center">
-                                    <div>
-                                        <i class="ti ti-check-circle text-green-500"></i>
-                                        <span class="text-sm text-gray-600">You've reviewed this book</span>
-                                    </div>
-                                    <form action="{{ route('books.review.delete', $book) }}" method="POST">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-sm text-red-500 hover:text-red-700" onclick="return confirm('Delete your review?')">
-                                            Delete Review
-                                        </button>
-                                    </form>
-                                </div>
-                            @endif
-                        @endauth
-                        
-                        <!-- Reviews List -->
-                        <div class="space-y-4">
-                            @forelse($book->reviews ?? [] as $review)
-                                <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                                    <div class="flex justify-between items-start mb-3">
-                                        <div>
-                                            <div class="flex items-center gap-2 mb-1">
-                                                <span class="font-semibold text-gray-800">{{ $review->user->full_name ?? 'Anonymous' }}</span>
-                                                <span class="text-xs text-gray-400">{{ $review->created_at->diffForHumans() }}</span>
-                                            </div>
-                                            @php
-                                                $userRating = method_exists($book, 'userRating') ? $book->userRating($review->user_id) : null;
-                                            @endphp
-                                            @if($userRating)
-                                                <x-star-rating :rating="$userRating" readonly="true" size="sm" />
-                                            @endif
-                                        </div>
-                                        <button onclick="markHelpful({{ $review->id }}, this)" 
-                                                class="text-sm text-gray-400 hover:text-purple-600 transition flex items-center gap-1">
-                                            <i class="ti ti-thumb-up"></i>
-                                            <span class="helpful-count-{{ $review->id }}">{{ $review->helpful_count ?? 0 }}</span>
-                                        </button>
-                                    </div>
-                                    <p class="text-gray-600 leading-relaxed">{{ $review->review }}</p>
-                                </div>
-                            @empty
-                                <div class="bg-gray-50 rounded-xl p-8 text-center">
-                                    <i class="ti ti-message-circle-2 text-4xl text-gray-300 mb-2 block"></i>
-                                    <p class="text-gray-500">No reviews yet. Be the first to review this book!</p>
-                                </div>
-                            @endforelse
-                        </div>
-                    @else
-                        <div class="bg-gray-50 rounded-xl p-8 text-center">
-                            <i class="ti ti-message-circle-2 text-4xl text-gray-300 mb-2 block"></i>
-                            <p class="text-gray-500">Reviews are not available for bookstore items.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ========================================== -->
-<!-- RELATED BOOKS                              -->
-<!-- ========================================== -->
-@if(isset($relatedBooks) && $relatedBooks->count() > 0)
-    <div class="mt-8">
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2" style="color: #1a1a2e;">
-            <i class="ti ti-books" style="color: #db570a;"></i> You May Also Like
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            @foreach($relatedBooks as $related)
-                <a href="{{ route('institution.public.show', [$institution->id, $related->id]) }}" 
-                   class="p-3 hover:shadow-lg transition-all duration-300 group block rounded-2xl hover:-translate-y-1" 
-                   style="background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
-                    <div class="aspect-[2/3] rounded-xl overflow-hidden relative" style="background: rgba(124, 58, 237, 0.06);">
-                        @if($related->cover_image)
-                            <img src="{{ url('media/' . $related->cover_image) }}" alt="{{ $related->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                        @else
-                            <div class="w-full h-full flex items-center justify-center">
-                                <i class="ti ti-book text-3xl" style="color: rgba(124, 58, 237, 0.15);"></i>
-                            </div>
-                        @endif
-                        @if($related->category)
-                            <div class="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg">
-                                {{ Str::limit($related->category, 15) }}
-                            </div>
-                        @endif
-                    </div>
-                    <div class="mt-2">
-                        <p class="text-sm font-semibold truncate group-hover:text-orange-600 transition" style="color: #1a1a2e;">{{ $related->title }}</p>
-                        <p class="text-xs truncate" style="color: #6b7280;">{{ $related->author ?? 'Unknown' }}</p>
-                    </div>
-                </a>
-            @endforeach
-        </div>
-    </div>
-@endif
-
-<!-- ========================================== -->
-<!-- LOCATION                                   -->
-<!-- ========================================== -->
-<div class="p-4 mt-8 rounded-2xl" style="background: rgba(255,255,255,0.6); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
-    <h3 class="font-semibold flex items-center gap-2" style="color: #1a1a2e;">
-        <i class="ti ti-map-pin" style="color: #db570a;"></i> {{ $institution->name }} - Location
-    </h3>
-    <p class="text-sm mt-1" style="color: #4b5563;">
-        {{ $institution->address ?? 'Address not specified' }}
-        @if($institution->city), {{ $institution->city }}@endif
-        @if($institution->region), {{ $institution->region }}@endif
-    </p>
-    <div class="flex flex-wrap gap-4 mt-2 text-sm" style="color: #6b7280;">
-        @if($institution->phone)
-            <span class="flex items-center gap-1"><i class="ti ti-phone"></i> {{ $institution->phone }}</span>
-        @endif
-        @if($institution->email)
-            <span class="flex items-center gap-1"><i class="ti ti-mail"></i> {{ $institution->email }}</span>
-        @endif
-        <span class="flex items-center gap-1"><i class="ti ti-building"></i> {{ ucfirst($institution->type) }} Institution</span>
-    </div>
-</div>
-
-<!-- ========================================== -->
-<!-- PURCHASE MODAL                             -->
-<!-- ========================================== -->
-<div id="purchase-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: white; border-radius: 24px; padding: 32px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.3); animation: modalFadeIn 0.3s ease;">
-        
-        <!-- Modal Header -->
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold" style="color: #1a1a2e;">
-                <i class="ti ti-shopping-cart" style="color: #db570a;"></i> Confirm Purchase
-            </h3>
-            <button onclick="closePurchaseModal()" class="text-gray-400 hover:text-gray-600 text-2xl transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
-                &times;
-            </button>
-        </div>
-        
-        <!-- Book Info -->
-        <div class="flex gap-3 mb-4 p-3 rounded-xl" style="background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05);">
-            @if($book->cover_image)
-                <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-16 h-20 object-cover rounded-lg">
-            @endif
+<div class="library-hero" style="min-height: 200px;">
+    <div class="hero-content">
+        <div class="flex flex-col items-center text-center gap-2">
             <div>
-                <p class="font-semibold" style="color: #1a1a2e;">{{ $book->title }}</p>
-                <p class="text-sm" style="color: #6b7280;">{{ $book->author ?? 'Unknown' }}</p>
-                <p class="text-lg font-bold mt-1" style="color: #db570a;">TSh {{ number_format($displayPrice, 2) }}</p>
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <i class="ti ti-book text-purple-200 text-2xl"></i>
+                    <h1 class="text-2xl md:text-3xl font-bold text-white font-playfair">
+                        {{ $book->title }}
+                    </h1>
+                </div>
+                <p class="text-purple-100/80 text-sm md:text-base">
+                    by {{ $book->author ?? 'Unknown' }}
+                </p>
+                <div class="mt-2 flex flex-wrap gap-3 justify-center text-sm text-white/60">
+                    @if($book->category)
+                        <span><i class="ti ti-category"></i> {{ $book->category }}</span>
+                    @endif
+                    @if($book->shelf_number)
+                        <span><i class="ti ti-shelf"></i> Shelf {{ $book->shelf_number }}</span>
+                    @endif
+                    @if($book->total_pages)
+                        <span><i class="ti ti-file-text"></i> {{ $book->total_pages }} pages</span>
+                    @endif
+                </div>
             </div>
         </div>
-        
-        <!-- Wallet Balance -->
-        <div class="mb-4 p-3 rounded-xl flex items-center justify-between" style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.1);">
-            <span class="text-sm font-medium" style="color: #1e3a5f;">
-                <i class="ti ti-wallet"></i> Wallet Balance
-            </span>
-            <span class="text-sm font-bold" style="color: #1e3a5f;">
-                TSh {{ number_format(auth()->user()->wallet_balance ?? 0, 2) }}
-            </span>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- BACK BUTTON                                -->
+<!-- ========================================== -->
+<div class="max-w-7xl mx-auto px-4 mt-4">
+    <a href="{{ route('institution.public.index', $institution->id) }}" class="inline-flex items-center text-white/60 hover:text-white text-sm transition">
+        <i class="ti ti-arrow-left mr-1"></i> Back to Library
+    </a>
+</div>
+
+<!-- ========================================== -->
+<!-- BOOK DETAILS                               -->
+<!-- ========================================== -->
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="grid md:grid-cols-3 gap-8">
+        <!-- Left Column - Book Cover -->
+        <div class="md:col-span-1">
+            <div class="bg-white/5 rounded-xl overflow-hidden backdrop-blur-sm border border-white/10 sticky top-24">
+                <div class="aspect-[2/3] bg-gradient-to-br from-purple-900/40 to-indigo-900/40 flex items-center justify-center relative">
+                    @if($book->cover_image)
+                        <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
+                    @else
+                        <i class="ti ti-book text-8xl text-white/20"></i>
+                    @endif
+                    
+                    @if($book->is_paid)
+                        <div class="absolute top-3 right-3 badge-paid px-3 py-1 rounded-lg">
+                            TSh {{ number_format($book->price) }}
+                        </div>
+                    @else
+                        <div class="absolute top-3 right-3 badge-free px-3 py-1 rounded-lg">
+                            FREE
+                        </div>
+                    @endif
+                </div>
+
+                <div class="p-6">
+                    <!-- Actions -->
+                    <div class="space-y-3">
+                        @auth
+                            @if($hasAccess ?? false)
+                                <a href="{{ route('institution.public.read', [$institution->id, $book->id]) }}"
+                                   class="block text-center bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-semibold">
+                                    <i class="ti ti-eye"></i> Read Now
+                                </a>
+                                <a href="{{ route('institution.public.download', [$institution->id, $book->id]) }}"
+                                   class="block text-center border border-purple-400/40 text-purple-300 px-4 py-3 rounded-lg hover:bg-purple-600/20 transition font-semibold">
+                                    <i class="ti ti-download"></i> Download PDF
+                                </a>
+                            @elseif($book->is_paid)
+                                <button onclick="showPurchaseModal({{ $book->id }}, {{ $book->price }}, '{{ addslashes($book->title) }}')"
+                                        class="block text-center bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition font-semibold w-full">
+                                    <i class="ti ti-shopping-cart"></i> Purchase for TSh {{ number_format($book->price) }}
+                                </button>
+                            @else
+                                <a href="{{ route('login') }}" class="block text-center bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-semibold">
+                                    <i class="ti ti-login"></i> Login to Read
+                                </a>
+                            @endif
+                        @else
+                            <a href="{{ route('login') }}" class="block text-center bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-semibold">
+                                <i class="ti ti-login"></i> Login to Read
+                            </a>
+                            <a href="{{ route('register') }}" class="block text-center border border-purple-400/40 text-purple-300 px-4 py-3 rounded-lg hover:bg-purple-600/20 transition font-semibold">
+                                <i class="ti ti-user-plus"></i> Create Free Account
+                            </a>
+                        @endauth
+
+                        <button onclick="shareBook()"
+                                class="block text-center bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 px-4 py-3 rounded-lg transition font-semibold w-full">
+                            <i class="ti ti-share mr-2"></i> Share This Book
+                        </button>
+                    </div>
+
+                    @if(isset($progress) && $progress && $progress->progress_percent > 0)
+                        <div class="mt-6 pt-4 border-t border-white/10">
+                            <div class="flex justify-between text-sm text-white/60 mb-1">
+                                <span>Reading Progress</span>
+                                <span>{{ $progress->progress_percent }}%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-2">
+                                <div class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: {{ $progress->progress_percent }}%"></div>
+                            </div>
+                            @if($progress->status == 'completed')
+                                <div class="mt-2 text-emerald-400 text-sm">
+                                    <i class="ti ti-certificate"></i> Completed!
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
-        
-        <!-- Payment Methods -->
-        <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: #6b7280;">Select Payment Method</p>
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            <button onclick="purchaseWithWallet({{ $book->id }})" 
-                    id="wallet-pay-btn"
-                    class="py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
-                    style="background: linear-gradient(135deg, #059669, #10b981); color: white;">
-                <i class="ti ti-wallet"></i> Wallet
-            </button>
-            <button onclick="purchaseWithMpesa({{ $book->id }})" 
-                    class="py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
-                    style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white;">
-                <i class="ti ti-phone"></i> M-Pesa
-            </button>
-            <button onclick="purchaseWithTigoPesa({{ $book->id }})" 
-                    class="py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
-                    style="background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;">
-                <i class="ti ti-phone"></i> TigoPesa
-            </button>
-            <button onclick="purchaseWithHaloPesa({{ $book->id }})" 
-                    class="py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
-                    style="background: linear-gradient(135deg, #d97706, #b45309); color: white;">
-                <i class="ti ti-phone"></i> HaloPesa
-            </button>
-            <button onclick="purchaseWithPesaPal({{ $book->id }})" 
-                    class="py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 col-span-2"
-                    style="background: linear-gradient(135deg, #db570a, #e87a2a); color: white;">
-                <i class="ti ti-credit-card"></i> PesaPal
-            </button>
+
+        <!-- Right Column - Book Details -->
+        <div class="md:col-span-2">
+            <!-- Description -->
+            <div class="bg-white/5 rounded-xl p-6 border border-white/10 backdrop-blur-sm mb-6">
+                <h2 class="text-xl font-semibold text-white mb-3">Description</h2>
+                <p class="text-white/70 leading-relaxed">{{ $book->description ?? 'No description available for this book.' }}</p>
+            </div>
+
+            <!-- Book Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                    <i class="ti ti-eye text-purple-400 text-xl block mb-1"></i>
+                    <span class="text-white/80 text-sm">{{ number_format($book->views_count ?? 0) }}</span>
+                    <p class="text-white/40 text-xs">Views</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                    <i class="ti ti-download text-purple-400 text-xl block mb-1"></i>
+                    <span class="text-white/80 text-sm">{{ number_format($book->downloads ?? 0) }}</span>
+                    <p class="text-white/40 text-xs">Downloads</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                    <i class="ti ti-star text-yellow-400 text-xl block mb-1"></i>
+                    <span class="text-white/80 text-sm">{{ number_format($book->averageRating(), 1) }}</span>
+                    <p class="text-white/40 text-xs">Rating</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                    <i class="ti ti-message-circle text-purple-400 text-xl block mb-1"></i>
+                    <span class="text-white/80 text-sm">{{ $book->reviews()->count() }}</span>
+                    <p class="text-white/40 text-xs">Reviews</p>
+                </div>
+            </div>
+
+            <!-- Book Details -->
+            <div class="bg-white/5 rounded-xl p-6 border border-white/10 backdrop-blur-sm mb-6">
+                <h2 class="text-xl font-semibold text-white mb-3">Book Details</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-white/40">Author</span>
+                        <span class="text-white/80">{{ $book->author ?? 'Unknown' }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-white/40">Category</span>
+                        <span class="text-white/80">{{ $book->category ?? 'N/A' }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-white/40">Pages</span>
+                        <span class="text-white/80">{{ $book->total_pages ?? 'N/A' }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-white/5">
+                        <span class="text-white/40">ISBN</span>
+                        <span class="text-white/80">{{ $book->isbn ?? 'N/A' }}</span>
+                    </div>
+                    @if($book->shelf_number)
+                        <div class="flex justify-between py-2 border-b border-white/5">
+                            <span class="text-white/40">Shelf</span>
+                            <span class="text-white/80">{{ $book->shelf_number }}</span>
+                        </div>
+                    @endif
+                    @if($book->publication_year)
+                        <div class="flex justify-between py-2 border-b border-white/5">
+                            <span class="text-white/40">Year</span>
+                            <span class="text-white/80">{{ $book->publication_year }}</span>
+                        </div>
+                    @endif
+                    @if($book->publisher)
+                        <div class="flex justify-between py-2 border-b border-white/5">
+                            <span class="text-white/40">Publisher</span>
+                            <span class="text-white/80">{{ $book->publisher }}</span>
+                        </div>
+                    @endif
+                    @if($book->language)
+                        <div class="flex justify-between py-2 border-b border-white/5">
+                            <span class="text-white/40">Language</span>
+                            <span class="text-white/80">{{ $book->language }}</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Reviews Section -->
+            <div class="bg-white/5 rounded-xl p-6 border border-white/10 backdrop-blur-sm">
+                <h2 class="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+                    <i class="ti ti-message-circle-2"></i>
+                    Reviews
+                    <span class="text-sm font-normal text-white/40">({{ $book->reviews()->count() }})</span>
+                </h2>
+
+                @auth
+                    @if(!$book->hasUserReviewed())
+                        <div class="bg-white/5 rounded-lg p-4 mb-4">
+                            <h4 class="font-semibold text-white/80 mb-2">Rate this book</h4>
+                            <form action="{{ route('books.review', ['book' => $book->id]) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="book_id" value="{{ $book->id }}">
+                                <div class="flex items-center gap-1 mb-2">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <button type="button" onclick="setRating({{ $i }})" class="text-2xl rating-star" id="star-{{ $i }}">
+                                            <i class="ti ti-star text-white/30"></i>
+                                        </button>
+                                    @endfor
+                                </div>
+                                <input type="hidden" name="rating" id="rating-input" value="">
+                                <textarea name="review" rows="3" placeholder="Share your thoughts..." class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 focus:outline-none focus:border-purple-500"></textarea>
+                                <button type="submit" class="mt-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
+                                    <i class="ti ti-send"></i> Post Review
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 mb-4 flex justify-between items-center">
+                            <div class="flex items-center gap-2 text-emerald-400">
+                                <i class="ti ti-check-circle"></i>
+                                <span>You rated this</span>
+                                <div class="flex items-center gap-0.5">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        @if($i <= $book->userRating())
+                                            <i class="ti ti-star-filled text-yellow-400 text-sm"></i>
+                                        @else
+                                            <i class="ti ti-star text-white/20 text-sm"></i>
+                                        @endif
+                                    @endfor
+                                </div>
+                            </div>
+                            <form action="{{ route('books.review.delete', $book) }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-sm text-red-400 hover:text-red-300" onclick="return confirm('Delete your review?')">
+                                    <i class="ti ti-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+                @endauth
+
+                <!-- Reviews List -->
+                <div class="space-y-4">
+                    @forelse($book->reviews()->with('user')->latest()->take(10)->get() as $review)
+                        <div class="bg-white/5 rounded-lg p-4 border border-white/5">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-semibold text-white/90 text-sm">{{ $review->user->name ?? 'Anonymous' }}</span>
+                                        <span class="text-white/30 text-xs">{{ $review->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    @if($review->rating)
+                                        <div class="flex items-center gap-0.5 mt-1">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                @if($i <= $review->rating)
+                                                    <i class="ti ti-star-filled text-yellow-400 text-xs"></i>
+                                                @else
+                                                    <i class="ti ti-star text-white/20 text-xs"></i>
+                                                @endif
+                                            @endfor
+                                        </div>
+                                    @endif
+                                </div>
+                                <button onclick="toggleHelpful({{ $review->id }}, this)"
+                                        class="text-white/40 hover:text-purple-400 transition text-sm flex items-center gap-1">
+                                    <i class="ti ti-thumb-up"></i>
+                                    <span class="helpful-count-{{ $review->id }}">{{ $review->helpful_count ?? 0 }}</span>
+                                </button>
+                            </div>
+                            @if($review->review)
+                                <p class="text-white/60 text-sm mt-2">{{ $review->review }}</p>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="text-center text-white/30 py-8">
+                            <i class="ti ti-message-circle-2 text-3xl block mb-2"></i>
+                            No reviews yet
+                        </div>
+                    @endforelse
+                </div>
+            </div>
         </div>
-        
-        <!-- Status Message -->
-        <div id="modal-status" class="text-center text-sm" style="color: #6b7280;"></div>
+    </div>
+</div>
+
+<!-- Purchase Modal -->
+<div id="purchaseModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+    <div class="bg-gray-900 rounded-2xl max-w-lg w-full mx-auto overflow-hidden shadow-2xl border border-white/10">
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Complete Purchase</h3>
+                <button onclick="closePurchaseModal()" class="text-white/80 hover:text-white transition">
+                    <i class="ti ti-x text-2xl"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-6" id="purchaseModalContent">
+            <div class="text-center py-8">
+                <i class="ti ti-loader-2 animate-spin text-3xl text-purple-400"></i>
+                <p class="text-white/50 mt-2">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+    <div class="bg-gray-900 rounded-2xl max-w-md w-full mx-auto overflow-hidden shadow-2xl text-center border border-white/10">
+        <div class="p-6">
+            <div class="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="ti ti-circle-check text-4xl text-emerald-400"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Purchase Complete! 🎉</h3>
+            <p class="text-white/60 mb-4">Book added to your library.</p>
+            <div class="flex gap-3">
+                <button onclick="closeSuccessAndRead()" class="flex-1 bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition">
+                    <i class="ti ti-book-open"></i> Read Now
+                </button>
+                <button onclick="closeSuccessAndDownload()" class="flex-1 border border-purple-400/40 text-purple-300 py-3 rounded-xl font-semibold hover:bg-purple-600/20 transition">
+                    <i class="ti ti-download"></i> Download
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <style>
-@keyframes modalFadeIn {
-    from { opacity: 0; transform: scale(0.95) translateY(20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
-}
+.rating-star { cursor: pointer; transition: all 0.2s ease; }
+.rating-star:hover { transform: scale(1.2); }
+.rating-star.active i { color: #fbbf24 !important; }
 </style>
 
-<!-- ========================================== -->
-<!-- JAVASCRIPT                                 -->
-<!-- ========================================== -->
 @push('scripts')
 <script>
-function openPurchaseModal(bookId) {
-    document.getElementById('purchase-modal').style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
+let selectedRating = 0;
 
-function closePurchaseModal() {
-    document.getElementById('purchase-modal').style.display = 'none';
-    document.body.style.overflow = '';
-}
-
-// Close modal on outside click
-document.getElementById('purchase-modal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closePurchaseModal();
+function setRating(val) {
+    selectedRating = val;
+    document.getElementById('rating-input').value = val;
+    for (let i = 1; i <= 5; i++) {
+        const star = document.getElementById('star-' + i);
+        const icon = star.querySelector('i');
+        if (i <= val) {
+            icon.className = 'ti ti-star-filled text-yellow-400';
+        } else {
+            icon.className = 'ti ti-star text-white/30';
+        }
     }
-});
+}
 
-function purchaseWithWallet(bookId) {
-    const status = document.getElementById('modal-status');
-    const btn = document.getElementById('wallet-pay-btn');
-    
-    status.innerHTML = '<i class="ti ti-loader-2 animate-spin"></i> Processing...';
-    btn.disabled = true;
-    btn.style.opacity = '0.7';
-    
-    const url = '/book/purchase/wallet/' + bookId;
-    
-    fetch(url, {
+function toggleHelpful(reviewId, button) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (!csrfToken) return;
+
+    fetch(`/reviews/${reviewId}/helpful`, {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
             'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const countSpan = document.querySelector('.helpful-count-' + reviewId);
+            if (countSpan) countSpan.textContent = data.helpful_count;
+            button.classList.toggle('text-purple-400');
+        }
+    })
+    .catch(() => {});
+}
+
+function shareBook() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ addslashes($book->title) }}',
+            text: 'Check out this book: {{ addslashes($book->title) }} by {{ addslashes($book->author) }}',
+            url: window.location.href
+        }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    }
+}
+
+// Purchase Modal Functions
+let currentBook = null;
+let successRedirectUrl = null;
+let successDownloadUrl = null;
+
+function showPurchaseModal(bookId, bookPrice, bookTitle) {
+    currentBook = { id: bookId, price: bookPrice, title: bookTitle };
+    const modal = document.getElementById('purchaseModal');
+    const content = document.getElementById('purchaseModalContent');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    content.innerHTML = `
+        <div class="text-center py-8">
+            <i class="ti ti-loader-2 animate-spin text-3xl text-purple-400"></i>
+            <p class="text-white/50 mt-2">Loading purchase info...</p>
+        </div>
+    `;
+    fetch('/wallet/balance')
+        .then(res => res.json())
+        .then(walletData => {
+            const walletBalance = walletData.balance || 0;
+            const hasSufficientFunds = walletBalance >= bookPrice;
+            content.innerHTML = `
+                <div class="flex gap-4 mb-6 pb-4 border-b border-white/10">
+                    <div class="w-20 h-24 bg-purple-900/30 rounded-xl flex items-center justify-center border border-purple-500/20">
+                        <i class="ti ti-book text-3xl text-purple-400"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-white text-lg">${escapeHtml(bookTitle)}</h4>
+                        <p class="text-sm text-white/40">Access for lifetime • Downloadable PDF</p>
+                    </div>
+                </div>
+                <div class="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-white/60">Book Price</span>
+                        <span class="font-semibold text-white">TSh ${Number(bookPrice).toLocaleString()}</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-white/60">Wallet Balance</span>
+                        <span class="font-semibold ${hasSufficientFunds ? 'text-emerald-400' : 'text-amber-400'}">
+                            TSh ${Number(walletBalance).toLocaleString()}
+                        </span>
+                    </div>
+                    <div class="border-t border-white/10 pt-2 mt-2">
+                        <div class="flex justify-between">
+                            <span class="font-semibold text-white">${hasSufficientFunds ? 'Total to Pay' : 'Amount Needed'}</span>
+                            <span class="font-bold ${hasSufficientFunds ? 'text-emerald-400' : 'text-red-400'} text-lg">
+                                TSh ${Number(hasSufficientFunds ? bookPrice : bookPrice - walletBalance).toLocaleString()}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                ${hasSufficientFunds ? `
+                    <button onclick="confirmPurchaseWithWallet()"
+                            class="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center gap-2">
+                        <i class="ti ti-shopping-cart-check"></i>
+                        Confirm Purchase (TSh ${Number(bookPrice).toLocaleString()})
+                    </button>
+                ` : `
+                    <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-4">
+                        <div class="flex items-center gap-2 text-amber-400 mb-2">
+                            <i class="ti ti-alert-circle"></i>
+                            <span class="font-semibold">Insufficient Balance</span>
+                        </div>
+                        <p class="text-sm text-amber-400/70">You need TSh ${Number(bookPrice - walletBalance).toLocaleString()} more to complete this purchase.</p>
+                    </div>
+                    <button onclick="topUpAndComplete(${bookPrice - walletBalance})"
+                            class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center gap-2 mb-3">
+                        <i class="ti ti-plus-circle"></i>
+                        Add TSh ${Number(bookPrice - walletBalance).toLocaleString()} & Complete Purchase
+                    </button>
+                    <div class="relative my-3">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-white/10"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-gray-900 text-white/40">OR</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <button onclick="payWithMobileMoney('mpesa', ${bookPrice - walletBalance})"
+                                class="w-full border border-green-500/50 text-green-400 py-2.5 rounded-xl font-medium hover:bg-green-500/10 transition flex items-center justify-center gap-2">
+                            <i class="ti ti-device-mobile"></i> Pay with M-Pesa
+                        </button>
+                        <button onclick="payWithMobileMoney('tigopesa', ${bookPrice - walletBalance})"
+                                class="w-full border border-blue-500/50 text-blue-400 py-2.5 rounded-xl font-medium hover:bg-blue-500/10 transition flex items-center justify-center gap-2">
+                            <i class="ti ti-device-mobile"></i> Pay with TigoPesa
+                        </button>
+                    </div>
+                `}
+                <div class="mt-6 pt-4 border-t border-white/10 text-center">
+                    <div class="flex justify-center gap-4 text-xs text-white/30">
+                        <span>🔒 256-bit SSL</span>
+                        <span>✓ Fraud Protection</span>
+                        <span>📧 Receipt via Email</span>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+function confirmPurchaseWithWallet() {
+    const content = document.getElementById('purchaseModalContent');
+    content.innerHTML = `
+        <div class="text-center py-8">
+            <i class="ti ti-loader-2 animate-spin text-3xl text-purple-400"></i>
+            <p class="text-white/50 mt-2">Processing purchase...</p>
+        </div>
+    `;
+    fetch(`/books/${currentBook.id}/purchase-wallet`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
             'Accept': 'application/json'
         }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            status.innerHTML = '✅ ' + data.message + ' Redirecting...';
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
+            closePurchaseModal();
+            showSuccessModal(data.redirect_url, data.download_url);
         } else {
-            status.innerHTML = '❌ ' + data.message;
-            btn.disabled = false;
-            btn.style.opacity = '1';
+            alert(data.message || 'Purchase failed');
         }
     })
-    .catch((error) => {
-        console.error('Error:', error);
-        status.innerHTML = '❌ Purchase failed. Please try again.';
-        btn.disabled = false;
-        btn.style.opacity = '1';
+    .catch(() => {
+        alert('Network error. Please try again.');
     });
 }
 
-function purchaseWithMpesa(bookId) {
-    window.location.href = '/book/purchase/' + bookId + '?payment_method=mpesa';
+function topUpAndComplete(amount) {
+    closePurchaseModal();
+    window.location.href = `/payment/methods?amount=${amount}&book_id=${currentBook.id}&redirect=library`;
 }
 
-function purchaseWithTigoPesa(bookId) {
-    window.location.href = '/book/purchase/' + bookId + '?payment_method=tigopesa';
+function payWithMobileMoney(gateway, amount) {
+    const content = document.getElementById('purchaseModalContent');
+    content.innerHTML = `
+        <div class="text-center py-4">
+            <div class="mb-4">
+                <i class="ti ti-device-mobile text-5xl text-purple-400"></i>
+            </div>
+            <h4 class="font-bold text-white mb-2">Enter Phone Number</h4>
+            <input type="tel" id="mobile-phone" placeholder="0712 345 678"
+                   class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl mb-4 text-center text-lg text-white">
+            <button onclick="processMobileMoneyPayment('${gateway}', ${amount})"
+                    class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold">
+                Pay TSh ${Number(amount).toLocaleString()}
+            </button>
+            <button onclick="showPurchaseModal(${currentBook.id}, ${currentBook.price}, '${escapeHtml(currentBook.title)}')"
+                    class="w-full mt-2 text-white/40 py-2 rounded-xl">Back</button>
+        </div>
+    `;
 }
 
-function purchaseWithHaloPesa(bookId) {
-    window.location.href = '/book/purchase/' + bookId + '?payment_method=halopesa';
+function processMobileMoneyPayment(gateway, amount) {
+    const phone = document.getElementById('mobile-phone')?.value;
+    if (!phone) {
+        alert('Please enter your phone number');
+        return;
+    }
+    const content = document.getElementById('purchaseModalContent');
+    content.innerHTML = `
+        <div class="text-center py-8">
+            <i class="ti ti-loader-2 animate-spin text-3xl text-purple-400"></i>
+            <p class="text-white/50 mt-2">Processing ${gateway.toUpperCase()} payment...</p>
+            <p class="text-xs text-white/30 mt-2">Check your phone for the STK push</p>
+        </div>
+    `;
+    fetch('/payment/initiate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+            gateway: gateway,
+            amount: amount,
+            phone: phone,
+            book_id: currentBook.id
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            content.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="ti ti-circle-check text-5xl text-emerald-400 mb-3"></i>
+                    <p class="text-white/70 mb-2">STK Push Sent!</p>
+                    <p class="text-sm text-white/40 mb-4">Check your phone and enter PIN to complete.</p>
+                    <div id="payment-status" class="text-sm text-white/40 mb-3">Waiting for confirmation...</div>
+                    <button onclick="checkPaymentAndComplete('${data.payment_id}')" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition">
+                        I've Completed Payment
+                    </button>
+                </div>
+            `;
+            let attempts = 0;
+            const interval = setInterval(() => {
+                attempts++;
+                const statusDiv = document.getElementById('payment-status');
+                if (statusDiv) statusDiv.textContent = `Checking... (${attempts})`;
+                fetch(`/payment/status/${data.payment_id}`)
+                    .then(res => res.json())
+                    .then(statusData => {
+                        if (statusData.status === 'completed') {
+                            clearInterval(interval);
+                            if (statusDiv) statusDiv.textContent = '✅ Payment confirmed! Completing purchase...';
+                            setTimeout(() => confirmPurchaseWithWallet(), 1000);
+                        } else if (attempts > 15) {
+                            clearInterval(interval);
+                            if (statusDiv) statusDiv.textContent = '⏰ Still waiting? Click the button above.';
+                        }
+                    });
+            }, 3000);
+        } else {
+            alert(data.message || 'Payment initiation failed');
+        }
+    });
 }
 
-function purchaseWithPesaPal(bookId) {
-    window.location.href = '/book/purchase/' + bookId + '?payment_method=pesapal';
+function checkPaymentAndComplete(paymentId) {
+    fetch(`/payment/status/${paymentId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'completed') {
+                confirmPurchaseWithWallet();
+            } else {
+                alert('Payment still pending. Please wait or check your phone.');
+            }
+        });
+}
+
+function showSuccessModal(redirectUrl, downloadUrl) {
+    successRedirectUrl = redirectUrl;
+    successDownloadUrl = downloadUrl;
+    const modal = document.getElementById('successModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeSuccessAndRead() {
+    const modal = document.getElementById('successModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    if (successRedirectUrl) window.location.href = successRedirectUrl;
+}
+
+function closeSuccessAndDownload() {
+    const modal = document.getElementById('successModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    if (successDownloadUrl) window.location.href = successDownloadUrl;
+}
+
+function closePurchaseModal() {
+    const modal = document.getElementById('purchaseModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 </script>
 @endpush
 
-<style>
-/* ========================================== */
-/* COMPACT BOOK VIEW - OPTIMIZED              */
-/* ========================================== */
-
-/* Reduce card padding */
-.library-card,
-.glass-card {
-    padding: 0.75rem !important;
-}
-
-/* Smaller titles */
-.text-3xl {
-    font-size: 1.35rem !important;
-}
-
-.text-2xl {
-    font-size: 1.1rem !important;
-}
-
-.text-xl {
-    font-size: 0.95rem !important;
-}
-
-.text-lg {
-    font-size: 0.85rem !important;
-}
-
-/* Tighter spacing */
-.p-6 {
-    padding: 0.75rem !important;
-}
-
-.p-4 {
-    padding: 0.5rem !important;
-}
-
-.p-3 {
-    padding: 0.35rem !important;
-}
-
-.p-2 {
-    padding: 0.25rem !important;
-}
-
-/* Reduced gaps */
-.gap-8 {
-    gap: 1rem !important;
-}
-
-.gap-6 {
-    gap: 0.75rem !important;
-}
-
-.gap-4 {
-    gap: 0.5rem !important;
-}
-
-.gap-3 {
-    gap: 0.35rem !important;
-}
-
-.gap-2 {
-    gap: 0.2rem !important;
-}
-
-/* Smaller margins */
-.mb-6 {
-    margin-bottom: 0.5rem !important;
-}
-
-.mb-4 {
-    margin-bottom: 0.35rem !important;
-}
-
-.mb-3 {
-    margin-bottom: 0.25rem !important;
-}
-
-.mt-4 {
-    margin-top: 0.35rem !important;
-}
-
-.mt-3 {
-    margin-top: 0.25rem !important;
-}
-
-.mt-2 {
-    margin-top: 0.15rem !important;
-}
-
-/* Smaller borders */
-.rounded-2xl {
-    border-radius: 0.65rem !important;
-}
-
-.rounded-xl {
-    border-radius: 0.45rem !important;
-}
-
-.rounded-lg {
-    border-radius: 0.3rem !important;
-}
-
-/* Compact stats */
-.compact-stats .stat-number {
-    font-size: 1rem !important;
-}
-
-.compact-stats .stat-label {
-    font-size: 0.5rem !important;
-}
-
-/* Price display */
-.price-amount {
-    font-size: 1.1rem !important;
-}
-
-.price-label {
-    font-size: 0.5rem !important;
-}
-
-/* Badges */
-.badge-sm {
-    font-size: 0.55rem !important;
-    padding: 0.1rem 0.4rem !important;
-}
-
-/* Description */
-.description-text {
-    font-size: 0.75rem !important;
-    line-height: 1.4 !important;
-}
-
-/* Book info cards */
-.info-card {
-    padding: 0.3rem 0.4rem !important;
-}
-
-.info-card .label {
-    font-size: 0.5rem !important;
-}
-
-.info-card .value {
-    font-size: 0.7rem !important;
-}
-
-/* Buttons */
-.btn-compact {
-    padding: 0.3rem 0.6rem !important;
-    font-size: 0.7rem !important;
-}
-
-/* Location card */
-.location-card {
-    padding: 0.4rem 0.6rem !important;
-}
-
-.location-card .title {
-    font-size: 0.75rem !important;
-}
-
-.location-card .text {
-    font-size: 0.65rem !important;
-}
-
-/* Modal */
-.modal-compact {
-    max-width: 380px !important;
-    padding: 1rem !important;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .text-3xl {
-        font-size: 1.1rem !important;
-    }
-    
-    .p-6 {
-        padding: 0.5rem !important;
-    }
-    
-    .gap-8 {
-        gap: 0.5rem !important;
-    }
-    
-    .grid {
-        gap: 0.5rem !important;
-    }
-    
-    .library-card {
-        padding: 0.5rem !important;
-    }
-}
-</style>
 @endsection
