@@ -104,34 +104,34 @@
     </div>
 </div>
 
-            <!-- Row 3: Institution & Price -->
-            <div class="grid md:grid-cols-2 gap-6 mt-5">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Select Institution
-                    </label>
-                    <select name="institution_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white">
-                        <option value="">-- Select Institution --</option>
-                        @foreach($institutions as $inst)
-                            <option value="{{ $inst->id }}" {{ old('institution_id', $book->institution_id) == $inst->id ? 'selected' : '' }}>
-                                {{ $inst->name }} ({{ $inst->type_label }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+            
+<!-- Row 3: Institution & Price -->
+<div class="grid md:grid-cols-2 gap-6 mt-5">
+    <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Select Institution
+        </label>
+        <select name="institution_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl bg-white">
+            <option value="">-- Select Institution --</option>
+            @foreach($institutions as $inst)
+                <option value="{{ $inst->id }}" {{ old('institution_id', $book->institution_id) == $inst->id ? 'selected' : '' }}>
+                    {{ $inst->name }} ({{ $inst->type_label }})
+                </option>
+            @endforeach
+        </select>
+    </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Price
-                    </label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                        <input type="number" name="price" step="0.01" value="{{ old('price', $book->price) }}" 
-                               class="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-xl">
-                    </div>
-                </div>
-            </div>
-
+    <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Price
+        </label>
+        <div class="relative">
+            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold">TSh</span>
+            <input type="number" name="price" step="0.01" value="{{ old('price', $book->price) }}" 
+                   class="w-full pl-14 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500">
+        </div>
+    </div>
+</div>
             <!-- Row 4: Pages & Published Date -->
             <div class="grid md:grid-cols-2 gap-6 mt-5">
                 <div>

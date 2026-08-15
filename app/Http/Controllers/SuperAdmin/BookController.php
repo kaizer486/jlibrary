@@ -257,11 +257,12 @@ class BookController extends Controller
         
         $books = $query->paginate(24);
         
-        // Stats
+        // Stats - ADDED paidBooks
         $totalBooks = Book::count();
         $approvedBooks = Book::where('status', 'approved')->count();
         $pendingBooks = Book::where('status', 'pending')->count();
-        $freeBooks = Book::where('is_paid', false)->count();
+        $paidBooks = Book::where('is_paid', 1)->count();  // ✅ ADD THIS
+        $freeBooks = Book::where('is_paid', 0)->count();
         $featuredBooks = Book::where('is_featured', true)->count();
         $trendingBooks = Book::where('is_trending', true)->count();
         $institutions = Institution::where('status', 'approved')->get();
@@ -269,7 +270,8 @@ class BookController extends Controller
         
         return view('super-admin.books.index', compact(
             'books', 'totalBooks', 'approvedBooks', 'pendingBooks', 
-            'freeBooks', 'featuredBooks', 'trendingBooks', 'institutions', 'categories'
+            'paidBooks', 'freeBooks', 'featuredBooks', 'trendingBooks', 
+            'institutions', 'categories'
         ));
     }
     
@@ -280,54 +282,78 @@ class BookController extends Controller
         return view('super-admin.books.create', compact('institutions', 'categories'));
     }
     
+    /**
+     * Store a newly created book in storage.
+     * FIXED: Properly handle checkbox values
+     */
     public function store(Request $request)
-{
-    $request->validate([
-        'title' => 'required|string|max:255',
-        'author' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'price' => 'nullable|numeric|min:0',
-        'is_paid' => 'boolean',
-        'institution_id' => 'nullable|exists:institutions,id',
-        'book_file' => 'required|file|mimes:pdf|max:20480',
-        'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        'total_pages' => 'nullable|integer|min:0',
-        'category' => 'nullable|string|max:255',
-        'sub_category' => 'nullable|string|max:255',
-        'is_featured' => 'boolean',
-        'is_trending' => 'boolean',
-        'published_date' => 'nullable|date',
-    ]);
-    
-    $bookPath = $request->file('book_file')->store('books', 'public');
-    
-    $coverPath = null;
-    if ($request->hasFile('cover_image')) {
-        $coverPath = $request->file('cover_image')->store('book-covers', 'public');
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'author' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'is_paid' => 'nullable|boolean',
+            'institution_id' => 'nullable|exists:institutions,id',
+            'book_file' => 'required|file|mimes:pdf|max:20480',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'total_pages' => 'nullable|integer|min:0',
+            'category' => 'nullable|string|max:255',
+            'sub_category' => 'nullable|string|max:255',
+            'is_featured' => 'nullable|boolean',
+            'is_trending' => 'nullable|boolean',
+            'published_date' => 'nullable|date',
+        ]);
+        
+        $bookPath = $request->file('book_file')->store('books', 'public');
+        
+        $coverPath = null;
+        if ($request->hasFile('cover_image')) {
+            $coverPath = $request->file('cover_image')->store('book-covers', 'public');
+        }
+        
+        // ✅ FIX: Properly handle checkbox values - check if they exist in the request
+        $is_paid = $request->has('is_paid') ? 1 : 0;
+        $is_featured = $request->has('is_featured') ? 1 : 0;
+        $is_trending = $request->has('is_trending') ? 1 : 0;
+        
+        // Generate slug
+        $slug = Str::slug($request->title);
+        $originalSlug = $slug;
+        $count = 1;
+        while (Book::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $count;
+            $count++;
+        }
+        
+        $book = Book::create([
+            'title' => $request->title,
+            'slug' => $slug,
+            'author' => $request->author,
+            'description' => $request->description,
+            'price' => $request->price ?? 0,
+            'is_paid' => $is_paid,
+            'file_path' => $bookPath,
+            'cover_image' => $coverPath,
+            'total_pages' => $request->total_pages ?? 0,
+            'uploaded_by' => auth()->id(),
+            'institution_id' => $request->institution_id,
+            'status' => 'approved',
+            'category' => $request->category,
+            'sub_category' => $request->sub_category,
+            'is_featured' => $is_featured,
+            'is_trending' => $is_trending,
+            'published_date' => $request->published_date,
+            'availability' => 'available',
+            'copies_available' => 1,
+            'total_copies' => 1,
+            'views_count' => 0,
+            'downloads' => 0,
+            'book_type' => 'both',
+        ]);
+        
+        return redirect()->route('super-admin.books.index')->with('success', 'Book added successfully!');
     }
-    
-    // FIX: Set uploaded_by to auth()->id() explicitly
-    Book::create([
-        'title' => $request->title,
-        'author' => $request->author,
-        'description' => $request->description,
-        'price' => $request->price ?? 0,
-        'is_paid' => $request->is_paid ?? false,
-        'file_path' => $bookPath,
-        'cover_image' => $coverPath,
-        'total_pages' => $request->total_pages ?? 0,
-        'uploaded_by' => auth()->id(), // ✅ This sets the uploader
-        'institution_id' => $request->institution_id,
-        'status' => 'approved',
-        'category' => $request->category,
-        'sub_category' => $request->sub_category,
-        'is_featured' => $request->is_featured ?? false,
-        'is_trending' => $request->is_trending ?? false,
-        'published_date' => $request->published_date,
-    ]);
-    
-    return redirect()->route('super-admin.books.index')->with('success', 'Book added successfully!');
-}
     
     public function show(Book $book)
     {
@@ -344,6 +370,10 @@ class BookController extends Controller
         return view('super-admin.books.edit', compact('book', 'institutions', 'categories'));
     }
     
+    /**
+     * Update the specified book in storage.
+     * FIXED: Properly handle checkbox values
+     */
     public function update(Request $request, Book $book)
     {
         $request->validate([
@@ -351,32 +381,50 @@ class BookController extends Controller
             'author' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'nullable|numeric|min:0',
-            'is_paid' => 'boolean',
+            'is_paid' => 'nullable|boolean',
             'institution_id' => 'nullable|exists:institutions,id',
             'total_pages' => 'nullable|integer|min:0',
             'category' => 'nullable|string|max:255',
             'sub_category' => 'nullable|string|max:255',
-            'is_featured' => 'boolean',
-            'is_trending' => 'boolean',
+            'is_featured' => 'nullable|boolean',
+            'is_trending' => 'nullable|boolean',
             'published_date' => 'nullable|date',
             'status' => 'nullable|in:pending,approved,rejected',
         ]);
+        
+        // ✅ FIX: Properly handle checkbox values
+        $is_paid = $request->has('is_paid') ? 1 : 0;
+        $is_featured = $request->has('is_featured') ? 1 : 0;
+        $is_trending = $request->has('is_trending') ? 1 : 0;
         
         $book->update([
             'title' => $request->title,
             'author' => $request->author,
             'description' => $request->description,
             'price' => $request->price ?? 0,
-            'is_paid' => $request->is_paid ?? false,
+            'is_paid' => $is_paid,
             'total_pages' => $request->total_pages ?? 0,
             'institution_id' => $request->institution_id,
             'category' => $request->category,
             'sub_category' => $request->sub_category,
-            'is_featured' => $request->is_featured ?? false,
-            'is_trending' => $request->is_trending ?? false,
+            'is_featured' => $is_featured,
+            'is_trending' => $is_trending,
             'published_date' => $request->published_date,
             'status' => $request->status ?? $book->status,
         ]);
+        
+        // Update slug if title changed
+        if ($request->title !== $book->getOriginal('title')) {
+            $slug = Str::slug($request->title);
+            $originalSlug = $slug;
+            $count = 1;
+            while (Book::where('slug', $slug)->where('id', '!=', $book->id)->exists()) {
+                $slug = $originalSlug . '-' . $count;
+                $count++;
+            }
+            $book->slug = $slug;
+            $book->save();
+        }
         
         if ($request->hasFile('cover_image')) {
             if ($book->cover_image) {

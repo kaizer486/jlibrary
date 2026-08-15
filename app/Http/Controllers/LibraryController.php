@@ -210,7 +210,7 @@ class LibraryController extends Controller
         // PAGINATION
         // ==========================================
         
-        $perPage = $request->get('per_page', 48);
+        $perPage = $request->get('per_page', 84);
         $page = $request->get('page', 1);
         
         $books = new LengthAwarePaginator(
