@@ -257,11 +257,11 @@ class BookController extends Controller
         
         $books = $query->paginate(24);
         
-        // Stats - ADDED paidBooks
+        // Stats
         $totalBooks = Book::count();
         $approvedBooks = Book::where('status', 'approved')->count();
         $pendingBooks = Book::where('status', 'pending')->count();
-        $paidBooks = Book::where('is_paid', 1)->count();  // ✅ ADD THIS
+        $paidBooks = Book::where('is_paid', 1)->count();
         $freeBooks = Book::where('is_paid', 0)->count();
         $featuredBooks = Book::where('is_featured', true)->count();
         $trendingBooks = Book::where('is_trending', true)->count();
@@ -284,7 +284,7 @@ class BookController extends Controller
     
     /**
      * Store a newly created book in storage.
-     * FIXED: Properly handle checkbox values
+     * FIXED: Removed non-existent columns (availability, copies_available, total_copies)
      */
     public function store(Request $request)
     {
@@ -312,7 +312,7 @@ class BookController extends Controller
             $coverPath = $request->file('cover_image')->store('book-covers', 'public');
         }
         
-        // ✅ FIX: Properly handle checkbox values - check if they exist in the request
+        // Properly handle checkbox values
         $is_paid = $request->has('is_paid') ? 1 : 0;
         $is_featured = $request->has('is_featured') ? 1 : 0;
         $is_trending = $request->has('is_trending') ? 1 : 0;
@@ -344,12 +344,15 @@ class BookController extends Controller
             'is_featured' => $is_featured,
             'is_trending' => $is_trending,
             'published_date' => $request->published_date,
-            'availability' => 'available',
-            'copies_available' => 1,
-            'total_copies' => 1,
             'views_count' => 0,
             'downloads' => 0,
             'book_type' => 'both',
+            'stock_quantity' => 1,
+            'quantity' => 1,
+            'hardcopy_available' => 1,
+            'is_bookstore_item' => 0,
+            'sold_count' => 0,
+            'sales_count' => 0,
         ]);
         
         return redirect()->route('super-admin.books.index')->with('success', 'Book added successfully!');
@@ -372,7 +375,7 @@ class BookController extends Controller
     
     /**
      * Update the specified book in storage.
-     * FIXED: Properly handle checkbox values
+     * FIXED: Removed non-existent columns (availability, copies_available, total_copies)
      */
     public function update(Request $request, Book $book)
     {
@@ -390,13 +393,16 @@ class BookController extends Controller
             'is_trending' => 'nullable|boolean',
             'published_date' => 'nullable|date',
             'status' => 'nullable|in:pending,approved,rejected',
+            'book_file' => 'nullable|file|mimes:pdf|max:20480',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
         
-        // ✅ FIX: Properly handle checkbox values
+        // Properly handle checkbox values
         $is_paid = $request->has('is_paid') ? 1 : 0;
         $is_featured = $request->has('is_featured') ? 1 : 0;
         $is_trending = $request->has('is_trending') ? 1 : 0;
         
+        // Update basic info
         $book->update([
             'title' => $request->title,
             'author' => $request->author,
@@ -426,16 +432,18 @@ class BookController extends Controller
             $book->save();
         }
         
+        // Handle cover image upload
         if ($request->hasFile('cover_image')) {
-            if ($book->cover_image) {
+            if ($book->cover_image && Storage::disk('public')->exists($book->cover_image)) {
                 Storage::disk('public')->delete($book->cover_image);
             }
             $book->cover_image = $request->file('cover_image')->store('book-covers', 'public');
             $book->save();
         }
         
+        // Handle book file upload
         if ($request->hasFile('book_file')) {
-            if ($book->file_path) {
+            if ($book->file_path && Storage::disk('public')->exists($book->file_path)) {
                 Storage::disk('public')->delete($book->file_path);
             }
             $book->file_path = $request->file('book_file')->store('books', 'public');
