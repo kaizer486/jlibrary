@@ -41,19 +41,55 @@
                                        class="block text-center bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
                                         <i class="ti ti-eye"></i> Read Now
                                     </a>
-                                    <a href="{{ route('institution.public.download', ['institutionId' => $book->institution_id, 'book' => $book->id]) }}"
-                                       class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition">
-                                        <i class="ti ti-download"></i> Download PDF
-                                    </a>
+                                    <!-- DOWNLOAD BUTTON WITH AJAX -->
+                                    @php
+                                        $remaining = auth()->user()->getRemainingDownloadsToday();
+                                        $isExhausted = auth()->user()->hasReachedDailyDownloadLimit();
+                                    @endphp
+                                    @if(!$isExhausted)
+                                        <button onclick="downloadBook({{ $book->id }})" 
+                                                id="download-btn-{{ $book->id }}"
+                                                class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition w-full">
+                                            <i class="ti ti-download"></i> 
+                                            <span id="download-text-{{ $book->id }}">Download PDF</span>
+                                            @if($remaining > 0)
+                                                <span class="text-xs text-gray-400 ml-1" id="download-count-{{ $book->id }}">({{ $remaining }} left today)</span>
+                                            @endif
+                                        </button>
+                                        <div id="download-status-{{ $book->id }}" class="mt-2 text-sm text-center"></div>
+                                    @else
+                                        <div class="block text-center bg-gray-100 text-gray-500 px-4 py-2 rounded-lg cursor-not-allowed">
+                                            <i class="ti ti-ban"></i> Download Limit Reached
+                                            <span class="text-xs block">5 downloads used today. Try again tomorrow.</span>
+                                        </div>
+                                    @endif
                                 @else
                                     <a href="{{ route('library.read', $book->id) }}"
                                        class="block text-center bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
                                         <i class="ti ti-eye"></i> Read Now
                                     </a>
-                                    <a href="{{ route('library.download', $book->id) }}"
-                                       class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition">
-                                        <i class="ti ti-download"></i> Download PDF
-                                    </a>
+                                    <!-- DOWNLOAD BUTTON WITH AJAX -->
+                                    @php
+                                        $remaining = auth()->user()->getRemainingDownloadsToday();
+                                        $isExhausted = auth()->user()->hasReachedDailyDownloadLimit();
+                                    @endphp
+                                    @if(!$isExhausted)
+                                        <button onclick="downloadBook({{ $book->id }})" 
+                                                id="download-btn-{{ $book->id }}"
+                                                class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition w-full">
+                                            <i class="ti ti-download"></i> 
+                                            <span id="download-text-{{ $book->id }}">Download PDF</span>
+                                            @if($remaining > 0)
+                                                <span class="text-xs text-gray-400 ml-1" id="download-count-{{ $book->id }}">({{ $remaining }} left today)</span>
+                                            @endif
+                                        </button>
+                                        <div id="download-status-{{ $book->id }}" class="mt-2 text-sm text-center"></div>
+                                    @else
+                                        <div class="block text-center bg-gray-100 text-gray-500 px-4 py-2 rounded-lg cursor-not-allowed">
+                                            <i class="ti ti-ban"></i> Download Limit Reached
+                                            <span class="text-xs block">5 downloads used today. Try again tomorrow.</span>
+                                        </div>
+                                    @endif
                                 @endif
                             @else
                                 <button onclick="showPurchaseModal({{ $book->id }}, {{ $book->price }}, '{{ addslashes($book->title) }}')"
@@ -334,11 +370,27 @@
     padding: 0;
     margin: 0;
 }
+
+/* Download button disabled state */
+#download-btn-{{ $book->id }}:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
 </style>
 
 @push('scripts')
 <script>
-// Star Rating
+// ==========================================
+// STAR RATING
+// ==========================================
 let selRating = 0;
 const rInput = document.getElementById('rating-input');
 const rHint  = document.getElementById('rating-hint');
@@ -367,7 +419,9 @@ function starClick(n) {
     }
 }
 
-// Review Form Submit
+// ==========================================
+// REVIEW FORM SUBMIT
+// ==========================================
 (function() {
     const reviewForm = document.getElementById('reviewForm');
     if (!reviewForm) return;
@@ -419,7 +473,9 @@ function starClick(n) {
     });
 })();
 
-// Share Function
+// ==========================================
+// SHARE FUNCTION
+// ==========================================
 function shareBook() {
     const shareData = {
         title: '{{ addslashes($book->title) }}',
@@ -443,7 +499,9 @@ function shareBook() {
     }
 }
 
-// Toast Notification
+// ==========================================
+// TOAST NOTIFICATION
+// ==========================================
 function showToast(message) {
     const existing = document.querySelector('.kimi-toast');
     if (existing) existing.remove();
@@ -458,7 +516,9 @@ function showToast(message) {
     }, 3000);
 }
 
-// Helpful/Like Function
+// ==========================================
+// HELPFUL/LIKE FUNCTION
+// ==========================================
 function toggleHelpful(reviewId, button) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (!csrfToken) {
@@ -506,7 +566,168 @@ function toggleHelpful(reviewId, button) {
     });
 }
 
-// Purchase Modal Functions
+function downloadBook(bookId) {
+    const btn = document.getElementById('download-btn-' + bookId);
+    const status = document.getElementById('download-status-' + bookId);
+    const text = document.getElementById('download-text-' + bookId);
+    const countSpan = document.getElementById('download-count-' + bookId);
+    
+    if (!btn) return;
+    
+    btn.disabled = true;
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
+    text.innerHTML = '<i class="ti ti-loader-2 animate-spin"></i> Processing...';
+    if (status) {
+        status.innerHTML = '';
+        status.className = 'mt-2 text-sm text-center';
+    }
+    
+    fetch('/library/download/' + bookId, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            return response.json().then(function(data) {
+                throw new Error(data.error || 'Download failed');
+            });
+        }
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.success) {
+            if (countSpan) {
+                countSpan.textContent = '(' + data.remaining + ' left today)';
+            }
+            
+            if (status) {
+                status.innerHTML = '<span class="text-green-600 font-medium">' + data.message + '</span>';
+                status.className = 'mt-2 text-sm text-center text-green-600';
+            }
+            
+            if (data.remaining <= 0) {
+                btn.disabled = true;
+                btn.classList.add('bg-gray-100', 'text-gray-500', 'cursor-not-allowed');
+                btn.classList.remove('border-jlibrary-600', 'text-jlibrary-600', 'hover:bg-jlibrary-600', 'hover:text-white');
+                text.innerHTML = 'Download Limit Reached';
+                if (countSpan) countSpan.textContent = '';
+                if (status) {
+                    status.innerHTML = '<span class="text-red-600 font-medium">You have reached the daily download limit of 5 books. Please try again tomorrow.</span>';
+                    status.className = 'mt-2 text-sm text-center text-red-600';
+                }
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                text.innerHTML = 'Download PDF';
+            }
+            
+            updateDownloadIndicator(data.used, data.remaining, data.limit);
+            
+            var downloadUrl = '/library/download/raw/' + bookId;
+            var link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = data.book_title + '.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+        } else {
+            var errorMessage = data.error || 'You have reached the daily download limit of 5 books. Please try again tomorrow.';
+            
+            if (data.limit_reached || errorMessage.indexOf('limit') !== -1) {
+                errorMessage = 'You have reached the daily download limit of 5 books. Please try again tomorrow.';
+                btn.disabled = true;
+                btn.classList.add('bg-gray-100', 'text-gray-500', 'cursor-not-allowed');
+                btn.classList.remove('border-jlibrary-600', 'text-jlibrary-600', 'hover:bg-jlibrary-600', 'hover:text-white');
+                text.innerHTML = 'Download Limit Reached';
+                if (countSpan) countSpan.textContent = '';
+            }
+            
+            if (status) {
+                status.innerHTML = '<span class="text-red-600 font-medium">' + errorMessage + '</span>';
+                status.className = 'mt-2 text-sm text-center text-red-600';
+            }
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            text.innerHTML = 'Download PDF';
+        }
+    })
+    .catch(function(error) {
+        console.error('Download error:', error);
+        
+        var errorMessage = 'You have reached the daily download limit of 5 books. Please try again tomorrow.';
+        if (error.message.indexOf('limit') !== -1) {
+            errorMessage = 'You have reached the daily download limit of 5 books. Please try again tomorrow.';
+        } else if (error.message.indexOf('login') !== -1) {
+            errorMessage = 'Please log in to download books.';
+        } else if (error.message.indexOf('purchase') !== -1) {
+            errorMessage = 'Please purchase this book to download it.';
+        }
+        
+        if (status) {
+            status.innerHTML = '<span class="text-red-600 font-medium">' + errorMessage + '</span>';
+            status.className = 'mt-2 text-sm text-center text-red-600';
+        }
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        text.innerHTML = 'Download PDF';
+    });
+}
+
+// ==========================================
+// UPDATE DOWNLOAD INDICATOR
+// ==========================================
+function updateDownloadIndicator(used, remaining, limit) {
+    // Update the download limit indicator in the top bar
+    const indicator = document.querySelector('.download-limit-indicator');
+    if (!indicator) return;
+    
+    // Update text
+    const textSpan = indicator.querySelector('span.text-xs.font-medium');
+    if (textSpan) {
+        textSpan.textContent = `${used}/${limit}`;
+    }
+    
+    // Update progress bar
+    const progressBar = indicator.querySelector('.h-full.rounded-full');
+    if (progressBar) {
+        const percentage = Math.min(100, (used / limit) * 100);
+        progressBar.style.width = `${percentage}%`;
+        
+        // Update colors based on remaining
+        const colorClass = remaining <= 0 ? 'bg-red-500' : (remaining <= 1 ? 'bg-orange-500' : 'bg-green-500');
+        progressBar.className = `h-full rounded-full transition-all duration-500 ${colorClass}`;
+    }
+    
+    // Update container colors
+    const container = indicator;
+    if (remaining <= 0) {
+        container.className = container.className.replace(/bg-\w+-50/g, 'bg-red-50').replace(/border-\w+-\w+/g, 'border-red-200');
+    } else if (remaining <= 1) {
+        container.className = container.className.replace(/bg-\w+-50/g, 'bg-orange-50').replace(/border-\w+-\w+/g, 'border-orange-200');
+    } else {
+        container.className = container.className.replace(/bg-\w+-50/g, 'bg-green-50').replace(/border-\w+-\w+/g, 'border-green-200');
+    }
+    
+    // Update tooltip message
+    const tooltipMessage = document.getElementById('download-tooltip-message');
+    if (tooltipMessage) {
+        if (remaining <= 0) {
+            tooltipMessage.textContent = 'Daily download limit reached (5/5). Please try again tomorrow.';
+        } else if (remaining <= 1) {
+            tooltipMessage.textContent = `⚠️ You have only ${remaining} download(s) remaining today!`;
+        } else {
+            tooltipMessage.textContent = `You have ${remaining} download(s) remaining today`;
+        }
+    }
+}
+
+// ==========================================
+// PURCHASE MODAL FUNCTIONS - PESAPAL ONLY
+// ==========================================
 let currentBook = null;
 let successRedirectUrl = null;
 let successDownloadUrl = null;
@@ -523,12 +744,15 @@ function showPurchaseModal(bookId, bookPrice, bookTitle) {
             <p class="text-gray-500 mt-2">Loading purchase info...</p>
         </div>
     `;
+    
+    // Get wallet balance
     fetch('/wallet/balance')
         .then(res => res.json())
         .then(walletData => {
             const walletBalance = walletData.balance || 0;
             const shortfall = bookPrice - walletBalance;
             const hasSufficientFunds = walletBalance >= bookPrice;
+            
             content.innerHTML = `
                 <div class="flex gap-4 mb-6 pb-4 border-b">
                     <div class="w-20 h-24 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -573,33 +797,15 @@ function showPurchaseModal(bookId, bookPrice, bookTitle) {
                         </div>
                         <p class="text-sm text-amber-600">You need TSh ${Number(shortfall).toLocaleString()} more to complete this purchase.</p>
                     </div>
-                    <button onclick="topUpAndComplete(${shortfall})"
-                            class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center gap-2 mb-3">
-                        <i class="ti ti-plus-circle"></i>
-                        Add TSh ${Number(shortfall).toLocaleString()} & Complete Purchase
+                    
+                    <!-- PESAPAL PAYMENT BUTTON - PRIMARY PAYMENT METHOD -->
+                    <button onclick="payWithPesapal(${shortfall})"
+                            class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center gap-2">
+                        <i class="ti ti-credit-card"></i>
+                        Pay TSh ${Number(shortfall).toLocaleString()} with PesaPal
                     </button>
-                    <div class="relative my-3">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-gray-200"></div>
-                        </div>
-                        <div class="relative flex justify-center text-sm">
-                            <span class="px-2 bg-white text-gray-500">OR</span>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <button onclick="payWithMobileMoney('mpesa', ${shortfall})"
-                                class="w-full border border-green-500 text-green-600 py-2.5 rounded-xl font-medium hover:bg-green-50 transition flex items-center justify-center gap-2">
-                            <i class="ti ti-device-mobile"></i> Pay with M-Pesa
-                        </button>
-                        <button onclick="payWithMobileMoney('tigopesa', ${shortfall})"
-                                class="w-full border border-blue-500 text-blue-600 py-2.5 rounded-xl font-medium hover:bg-blue-50 transition flex items-center justify-center gap-2">
-                            <i class="ti ti-device-mobile"></i> Pay with TigoPesa
-                        </button>
-                        <button onclick="payWithMobileMoney('halopesa', ${shortfall})"
-                                class="w-full border border-red-500 text-red-600 py-2.5 rounded-xl font-medium hover:bg-red-50 transition flex items-center justify-center gap-2">
-                            <i class="ti ti-device-mobile"></i> Pay with HaloPesa
-                        </button>
-                    </div>
+                    
+                    <p class="text-center text-xs text-gray-400 mt-2">Secured payment via PesaPal</p>
                 `}
                 <div class="mt-6 pt-4 border-t text-center">
                     <div class="flex justify-center gap-4 text-xs text-gray-400">
@@ -621,6 +827,32 @@ function showPurchaseModal(bookId, bookPrice, bookTitle) {
         });
 }
 
+// ==========================================
+// PESAPAL PAYMENT
+// ==========================================
+function payWithPesapal(amount) {
+    const content = document.getElementById('purchaseModalContent');
+    content.innerHTML = `
+        <div class="text-center py-8">
+            <i class="ti ti-loader-2 animate-spin text-3xl text-purple-600"></i>
+            <p class="text-gray-500 mt-2">Redirecting to PesaPal...</p>
+            <p class="text-xs text-gray-400 mt-2">Please wait while we prepare your secure payment</p>
+        </div>
+    `;
+    
+    // Store book info for after payment
+    localStorage.setItem('pending_purchase_book_id', currentBook.id);
+    localStorage.setItem('pending_purchase_amount', amount);
+    
+    // Redirect to PesaPal payment page
+    setTimeout(() => {
+        window.location.href = `/payment/pesapal/initiate?book_id=${currentBook.id}&amount=${amount}`;
+    }, 1500);
+}
+
+// ==========================================
+// WALLET PURCHASE
+// ==========================================
 function confirmPurchaseWithWallet() {
     const content = document.getElementById('purchaseModalContent');
     content.innerHTML = `
@@ -629,6 +861,7 @@ function confirmPurchaseWithWallet() {
             <p class="text-gray-500 mt-2">Processing purchase...</p>
         </div>
     `;
+    
     fetch(`/books/${currentBook.id}/purchase-wallet`, {
         method: 'POST',
         headers: {
@@ -661,114 +894,6 @@ function confirmPurchaseWithWallet() {
             </div>
         `;
     });
-}
-
-function topUpAndComplete(amount) {
-    closePurchaseModal();
-    window.location.href = `/payment/methods?amount=${amount}&book_id=${currentBook.id}&redirect=library`;
-}
-
-function payWithMobileMoney(gateway, amount) {
-    const content = document.getElementById('purchaseModalContent');
-    content.innerHTML = `
-        <div class="text-center py-4">
-            <div class="mb-4">
-                <i class="ti ti-device-mobile text-5xl text-purple-600"></i>
-            </div>
-            <h4 class="font-bold text-gray-800 mb-2">Enter Phone Number</h4>
-            <input type="tel" id="mobile-phone" placeholder="0712 345 678"
-                   class="w-full px-4 py-3 border border-gray-300 rounded-xl mb-4 text-center text-lg">
-            <button onclick="processMobileMoneyPayment('${gateway}', ${amount})"
-                    class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold">
-                Pay TSh ${Number(amount).toLocaleString()}
-            </button>
-            <button onclick="showPurchaseModal(${currentBook.id}, ${currentBook.price}, '${escapeHtml(currentBook.title)}')"
-                    class="w-full mt-2 text-gray-500 py-2 rounded-xl">Back</button>
-        </div>
-    `;
-}
-
-function processMobileMoneyPayment(gateway, amount) {
-    const phone = document.getElementById('mobile-phone')?.value;
-    if (!phone) {
-        alert('Please enter your phone number');
-        return;
-    }
-    const content = document.getElementById('purchaseModalContent');
-    content.innerHTML = `
-        <div class="text-center py-8">
-            <i class="ti ti-loader-2 animate-spin text-3xl text-purple-600"></i>
-            <p class="text-gray-500 mt-2">Processing ${gateway.toUpperCase()} payment...</p>
-            <p class="text-xs text-gray-400 mt-2">Check your phone for the STK push</p>
-        </div>
-    `;
-    fetch('/payment/initiate', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-        },
-        body: JSON.stringify({
-            gateway: gateway,
-            amount: amount,
-            phone: phone,
-            book_id: currentBook.id
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            content.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="ti ti-circle-check text-5xl text-green-500 mb-3"></i>
-                    <p class="text-gray-700 mb-2">STK Push Sent!</p>
-                    <p class="text-sm text-gray-500 mb-4">Check your phone and enter PIN to complete.</p>
-                    <div id="payment-status" class="text-sm text-gray-500 mb-3">Waiting for confirmation...</div>
-                    <button onclick="checkPaymentAndComplete('${data.payment_id}')" class="w-full bg-purple-600 text-white py-2 rounded-lg">
-                        I've Completed Payment
-                    </button>
-                </div>
-            `;
-            let attempts = 0;
-            const interval = setInterval(() => {
-                attempts++;
-                const statusDiv = document.getElementById('payment-status');
-                if (statusDiv) statusDiv.innerHTML = `Checking... (${attempts})`;
-                fetch(`/payment/status/${data.payment_id}`)
-                    .then(res => res.json())
-                    .then(statusData => {
-                        if (statusData.status === 'completed') {
-                            clearInterval(interval);
-                            if (statusDiv) statusDiv.innerHTML = '✅ Payment confirmed! Completing purchase...';
-                            setTimeout(() => confirmPurchaseWithWallet(), 1000);
-                        } else if (attempts > 15) {
-                            clearInterval(interval);
-                            if (statusDiv) statusDiv.innerHTML = '⏰ Still waiting? Click the button above.';
-                        }
-                    });
-            }, 3000);
-        } else {
-            content.innerHTML = `
-                <div class="text-center py-8">
-                    <i class="ti ti-circle-x text-3xl text-red-500"></i>
-                    <p class="text-red-600 mt-2">${escapeHtml(data.message)}</p>
-                    <button onclick="showPurchaseModal(${currentBook.id}, ${currentBook.price}, '${escapeHtml(currentBook.title)}')" class="mt-4 text-purple-600">Try Again</button>
-                </div>
-            `;
-        }
-    });
-}
-
-function checkPaymentAndComplete(paymentId) {
-    fetch(`/payment/status/${paymentId}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'completed') {
-                confirmPurchaseWithWallet();
-            } else {
-                alert('Payment still pending. Please wait or check your phone.');
-            }
-        });
 }
 
 function showSuccessModal(redirectUrl, downloadUrl) {
@@ -808,6 +933,39 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ==========================================
+// CHECK FOR PENDING PESAPAL PAYMENT ON LOAD
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we're returning from a successful PesaPal payment
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('payment_success');
+    const orderTrackingId = urlParams.get('OrderTrackingId');
+    
+    if (paymentSuccess && orderTrackingId) {
+        // Verify payment and complete purchase
+        const bookId = localStorage.getItem('pending_purchase_book_id');
+        if (bookId) {
+            fetch(`/payment/pesapal/verify?order_tracking_id=${orderTrackingId}&book_id=${bookId}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.removeItem('pending_purchase_book_id');
+                    localStorage.removeItem('pending_purchase_amount');
+                    showSuccessModal(data.redirect_url, data.download_url);
+                }
+            })
+            .catch(error => console.error('Verification error:', error));
+        }
+    }
+});
 </script>
 @endpush
 @endsection

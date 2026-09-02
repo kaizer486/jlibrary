@@ -177,6 +177,28 @@ Route::get('/auth/google/callback', function () {
     return redirect('/dashboard');
 })->name('auth.google.callback');
 
+// API Endpoint for Download Status
+Route::get('/api/download-status', function() {
+    if (!auth()->check()) {
+        return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+    }
+    
+    $user = auth()->user();
+    $used = DB::table('download_logs')
+        ->where('user_id', $user->id)
+        ->whereDate('downloaded_at', today())
+        ->count();
+    $limit = 5;
+    $remaining = max(0, $limit - $used);
+    
+    return response()->json([
+        'success' => true,
+        'used' => $used,
+        'remaining' => $remaining,
+        'limit' => $limit,
+        'progress' => min(100, round(($used / $limit) * 100))
+    ]);
+})->name('api.download.status');
 
 // ==========================================
 // SECTION 2: PUBLIC ROUTES (No login required)
@@ -246,6 +268,7 @@ Route::prefix('institution')->name('institution.public.')->group(function () {
 // Public library
 Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
 Route::get('/library/{id}', [LibraryController::class, 'show'])->name('library.show');
+Route::get('/library/download/raw/{bookId}', [LibraryController::class, 'downloadRaw'])->name('library.download.raw');
 
 // Referral
 Route::get('/refer/{code}', [ReferralController::class, 'processReferral'])->name('referral.process');

@@ -44,10 +44,6 @@
 
         /* ========================================== */
         /* GLOBAL HORIZONTAL-SCROLL GUARD             */
-        /* This belongs here, not on individual pages: */
-        /* it's what stops ANY page's content (or the  */
-        /* off-canvas sidebar below) from ever being    */
-        /* able to drag the whole document sideways.    */
         /* ========================================== */
         html {
             overflow-x: hidden;
@@ -80,12 +76,6 @@
         
         @media (max-width: 1024px) {
             #sidebar {
-                /* translateX(-100%) alone can still be counted toward the
-                   page's scrollable width on some mobile browsers even
-                   though it's fixed. Pulling it fully out of the layout
-                   viewport with a matching negative left, on top of the
-                   transform, keeps it from ever contributing to that
-                   calculation. */
                 left: -280px;
                 transform: translateX(-100%);
             }
@@ -195,6 +185,53 @@
         }
         
         /* ========================================== */
+        /* DOWNLOAD LIMIT INDICATOR                  */
+        /* ========================================== */
+        .download-limit-indicator {
+            transition: all 0.3s ease;
+        }
+
+        .download-limit-indicator:hover {
+            transform: scale(1.02);
+        }
+
+        .download-limit-indicator .ti-info-circle {
+            cursor: help;
+        }
+
+        /* Tooltip arrow */
+        .download-limit-indicator .group .absolute::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: 12px;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid #1f2937;
+        }
+
+        /* Pulse animation when close to limit */
+        @keyframes pulse-warning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .download-limit-indicator.warning {
+            animation: pulse-warning 1.5s ease-in-out infinite;
+        }
+
+        /* ========================================== */
+        /* TOAST NOTIFICATIONS                       */
+        /* ========================================== */
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        /* ========================================== */
         /* OTHER STYLES                              */
         /* ========================================== */
         .institution-badge {
@@ -286,6 +323,13 @@
             .mobile-hidden {
                 display: none !important;
             }
+            
+            .download-limit-indicator .ti-info-circle {
+                display: none;
+            }
+            .download-limit-indicator .w-12 {
+                display: none;
+            }
         }
         
         /* Search result item hover */
@@ -346,6 +390,58 @@
                     
                     <!-- Right Section -->
                     <div class="flex items-center gap-1 sm:gap-3">
+                        <!-- ========== DOWNLOAD LIMIT INDICATOR ========== -->
+                        @auth
+                            @php
+                                $downloadStatus = auth()->user()->getDownloadLimitStatus();
+                            @endphp
+                            
+                            @if(isset($downloadStatus['limit']))
+                                <div class="download-limit-indicator flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full 
+                                    {{ $downloadStatus['color'] === 'red' ? 'bg-red-50 border border-red-200' : 
+                                       ($downloadStatus['color'] === 'orange' ? 'bg-orange-50 border border-orange-200' : 
+                                       'bg-green-50 border border-green-200') }}
+                                    {{ $downloadStatus['status'] === 'warning' ? 'warning' : '' }}">
+                                    
+                                    <!-- Icon -->
+                                    <i class="ti ti-download text-sm 
+                                        {{ $downloadStatus['color'] === 'red' ? 'text-red-500' : 
+                                           ($downloadStatus['color'] === 'orange' ? 'text-orange-500' : 
+                                           'text-green-500') }}"></i>
+                                    
+                                    <!-- Progress Text -->
+                                    <span class="text-xs font-medium whitespace-nowrap
+                                        {{ $downloadStatus['color'] === 'red' ? 'text-red-700' : 
+                                           ($downloadStatus['color'] === 'orange' ? 'text-orange-700' : 
+                                           'text-green-700') }}">
+                                        {{ $downloadStatus['used'] }}/{{ $downloadStatus['limit'] }}
+                                    </span>
+                                    
+                                    <!-- Mini Progress Bar -->
+                                    <div class="hidden sm:block w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full transition-all duration-500 
+                                            {{ $downloadStatus['color'] === 'red' ? 'bg-red-500' : 
+                                               ($downloadStatus['color'] === 'orange' ? 'bg-orange-500' : 
+                                               'bg-green-500') }}"
+                                            style="width: {{ $downloadStatus['progress'] }}%">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tooltip on hover -->
+                                    <div class="relative group">
+                                        <i class="ti ti-info-circle text-xs text-gray-400 cursor-help"></i>
+                                        <div class="absolute right-0 top-full mt-2 w-48 bg-gray-800 text-white text-xs rounded-lg p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                            <p class="font-semibold">Download Limit</p>
+                                            <p class="text-gray-300">{{ $downloadStatus['message'] }}</p>
+                                            @if($downloadStatus['status'] === 'exhausted')
+                                                <p class="text-yellow-400 mt-1">⏰ Resets at midnight</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @endauth
+                        
                         <!-- ========== NOTIFICATION BELL ========== -->
                         @php
                             $unreadNotifications = Auth::check() ? App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count() : 0;
@@ -400,14 +496,15 @@
                                     <i class="ti ti-wallet text-green-600 text-xs"></i>
                                     <span class="text-xs font-semibold text-green-700">TSh {{ number_format(Auth::user()->wallet_balance ?? 0, 2) }}</span>
                                 </div>
-                              <!-- Avatar -->
-<div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
-    @if(Auth::user()->avatar)
-        <img src="{{ url('media/' . Auth::user()->avatar) }}" class="w-full h-full object-cover" alt="Avatar">
-    @else
-        <i class="ti ti-user text-white text-xs sm:text-sm"></i>
-    @endif
-</div>
+                                
+                                <!-- Avatar -->
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                    @if(Auth::user()->avatar)
+                                        <img src="{{ url('media/' . Auth::user()->avatar) }}" class="w-full h-full object-cover" alt="Avatar">
+                                    @else
+                                        <i class="ti ti-user text-white text-xs sm:text-sm"></i>
+                                    @endif
+                                </div>
                                 <span class="hidden md:inline text-sm text-gray-700">{{ Auth::user()->full_name }}</span>
                                 <i id="dropdown-chevron" class="ti ti-chevron-down text-gray-400 text-xs transition-transform duration-200 hidden sm:inline"></i>
                             </button>
@@ -431,33 +528,33 @@
                                     </div>
                                     <div class="mt-2">
                                         <span class="text-xs px-2 py-0.5 rounded-full inline-block 
-    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin')) bg-red-100 text-red-700
-    @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team')) bg-yellow-100 text-yellow-700
-    @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin')) bg-purple-100 text-purple-700
-    @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin')) bg-blue-100 text-blue-700
-    @elseif(auth()->user()->hasAnyRole(['author', 'seller'])) bg-purple-100 text-purple-700
-    @elseif(auth()->user()->hasRole('librarian')) bg-amber-100 text-amber-700
-    @elseif(auth()->user()->hasRole('instructor')) bg-cyan-100 text-cyan-700
-    @else bg-gray-100 text-gray-700 @endif">
-    @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
-        👑 Super Admin
-    @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
-        🎨 Media Team
-    @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
-        🛡️ Admin
-    @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
-        🏢 Institution Admin
-    @elseif(auth()->user()->hasAnyRole(['author', 'seller']))
-        ✍️ Author & Seller
-    @elseif(auth()->user()->hasRole('librarian'))
-        📚 Librarian
-    @elseif(auth()->user()->hasRole('instructor'))
-        👨‍🏫 Instructor
-    @else
-        👤 Member
-    @endif
-</span>
-                                    </div>                                    
+                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin')) bg-red-100 text-red-700
+                                            @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team')) bg-yellow-100 text-yellow-700
+                                            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin')) bg-purple-100 text-purple-700
+                                            @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin')) bg-blue-100 text-blue-700
+                                            @elseif(auth()->user()->hasAnyRole(['author', 'seller'])) bg-purple-100 text-purple-700
+                                            @elseif(auth()->user()->hasRole('librarian')) bg-amber-100 text-amber-700
+                                            @elseif(auth()->user()->hasRole('instructor')) bg-cyan-100 text-cyan-700
+                                            @else bg-gray-100 text-gray-700 @endif">
+                                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('super_admin'))
+                                                👑 Super Admin
+                                            @elseif(auth()->user()->isMediaTeam() || auth()->user()->hasRole('media_team'))
+                                                🎨 Media Team
+                                            @elseif(auth()->user()->isAdmin() || auth()->user()->hasRole('admin'))
+                                                🛡️ Admin
+                                            @elseif(auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin'))
+                                                🏢 Institution Admin
+                                            @elseif(auth()->user()->hasAnyRole(['author', 'seller']))
+                                                ✍️ Author & Seller
+                                            @elseif(auth()->user()->hasRole('librarian'))
+                                                📚 Librarian
+                                            @elseif(auth()->user()->hasRole('instructor'))
+                                                👨‍🏫 Instructor
+                                            @else
+                                                👤 Member
+                                            @endif
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <!-- ADMIN ACCESS -->
@@ -481,7 +578,6 @@
                                     </a>
                                 @endif
 
-
                                 <!-- INSTITUTION ADMIN -->
                                 @if(!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin() && (auth()->user()->isAnyInstitutionAdmin() || auth()->user()->hasRole('institution_admin')))
                                     <a href="{{ route('institution.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 border-b transition">
@@ -491,14 +587,14 @@
                                     </a>
                                 @endif
 
-                              <!-- AUTHOR & SELLER -->
-@if(auth()->user()->hasAnyRole(['author', 'seller']))
-    <a href="{{ route('author.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
-        <i class="ti ti-edit text-lg text-purple-500"></i>
-        <span class="font-medium text-gray-700">Author & Seller Studio</span>
-        <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded ml-auto">Studio</span>
-    </a>
-@endif
+                                <!-- AUTHOR & SELLER -->
+                                @if(auth()->user()->hasAnyRole(['author', 'seller']))
+                                    <a href="{{ route('author.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 border-b transition">
+                                        <i class="ti ti-edit text-lg text-purple-500"></i>
+                                        <span class="font-medium text-gray-700">Author & Seller Studio</span>
+                                        <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded ml-auto">Studio</span>
+                                    </a>
+                                @endif
 
                                 <!-- LIBRARIAN -->
                                 @if(!auth()->user()->isAdmin() && !auth()->user()->isSuperAdmin() && auth()->user()->hasRole('librarian'))
@@ -573,6 +669,52 @@
             @yield('content')
         </div>
     </main>
+
+    <!-- ========================================== -->
+    <!-- TOAST NOTIFICATIONS                       -->
+    <!-- ========================================== -->
+    @if(session('download_message'))
+        <div id="download-toast" class="fixed bottom-4 right-4 z-50 max-w-sm bg-white rounded-xl shadow-lg border border-gray-200 p-4 animate-slide-up">
+            <div class="flex items-start gap-3">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-800">{{ session('download_message') }}</p>
+                    @if(session('download_limit_remaining') !== null)
+                        <div class="flex items-center gap-2 mt-2">
+                            <div class="flex-1 bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-purple-500 h-1.5 rounded-full" 
+                                     style="width: {{ session('download_limit_used') ? (session('download_limit_used') / 5 * 100) : 0 }}%">
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-500">
+                                {{ session('download_limit_remaining') }} remaining
+                            </span>
+                        </div>
+                    @endif
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+        </div>
+    @endif
+
+    @if(session('error') && str_contains(session('error'), 'download limit'))
+        <div id="error-toast" class="fixed bottom-4 right-4 z-50 max-w-sm bg-white rounded-xl shadow-lg border border-red-200 p-4 animate-slide-up">
+            <div class="flex items-start gap-3">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <i class="ti ti-alert-circle text-red-500"></i>
+                        <p class="text-sm font-semibold text-red-700">Download Limit Reached</p>
+                    </div>
+                    <p class="text-sm text-gray-700 mt-1">{{ session('error') }}</p>
+                    <p class="text-xs text-gray-500 mt-1">⏰ Resets at midnight</p>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+        </div>
+    @endif
 
     <!-- ========================================== -->
     <!-- JAVASCRIPT                                -->
@@ -749,7 +891,26 @@
             }
 
             // ==========================================
-            // GLOBAL SEARCH - COMPLETE FIX
+// UPDATE DOWNLOAD INDICATOR ON PAGE LOAD
+// ==========================================
+function fetchDownloadStatus() {
+    fetch('/api/download-status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateDownloadIndicator(data.used, data.remaining, data.limit);
+            }
+        })
+        .catch(error => console.error('Error fetching download status:', error));
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', function() {
+    fetchDownloadStatus();
+});
+
+            // ==========================================
+            // GLOBAL SEARCH
             // ==========================================
             const searchInput = document.getElementById('global-search');
             const resultsContainer = document.getElementById('global-search-results');
@@ -757,7 +918,6 @@
             let isSearching = false;
 
             if (searchInput && resultsContainer) {
-                // Input event with debounce
                 searchInput.addEventListener('input', function() {
                     clearTimeout(searchTimeout);
                     const query = this.value.trim();
@@ -772,29 +932,24 @@
                     }, 300);
                 });
 
-                // Focus event
                 searchInput.addEventListener('focus', function() {
                     if (this.value.trim().length >= 2 && !isSearching) {
                         resultsContainer.classList.remove('hidden');
                     }
                 });
 
-                // Click outside to close
                 document.addEventListener('click', function(e) {
                     if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
                         resultsContainer.classList.add('hidden');
                     }
                 });
 
-                // Keyboard shortcuts
                 document.addEventListener('keydown', function(e) {
-                    // Ctrl+K or Cmd+K to focus search
                     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                         e.preventDefault();
                         searchInput.focus();
                         searchInput.select();
                     }
-                    // Escape to close results
                     if (e.key === 'Escape') {
                         resultsContainer.classList.add('hidden');
                         searchInput.blur();
@@ -802,164 +957,154 @@
                 });
             }
 
-           async function performSearch(query) {
-    if (!resultsContainer) return;
-    isSearching = true;
-    
-    try {
-        console.log('Searching for:', query);
-        
-        const response = await fetch(`/api/global-search?q=${encodeURIComponent(query)}`);
-        
-        console.log('Response status:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        console.log('Search results:', data);
-        
-        if (!data.results || data.results.length === 0) {
-            resultsContainer.innerHTML = `
-                <div class="p-8 text-center">
-                    <i class="ti ti-search-off text-4xl text-gray-300 mb-3 block"></i>
-                    <p class="text-gray-500 text-sm font-medium">No results found</p>
-                    <p class="text-gray-400 text-xs mt-1">Try searching for books, courses, or documents</p>
-                </div>
-            `;
-        } else {
-            // Group results by type
-            const grouped = {};
-            data.results.forEach(item => {
-                if (!grouped[item.type]) grouped[item.type] = [];
-                grouped[item.type].push(item);
-            });
-
-            const typeLabels = {
-                book: '📚 Books',
-                chat: '💬 AI Chats',
-                certificate: '🎓 Certificates',
-                quiz: '📝 Quizzes',
-                group: '👥 Community Groups',
-                marketplace: '🛒 Marketplace',
-                document: '📄 Documents',
-                transaction: '💰 Transactions',
-                referral: '🎁 Referrals',
-                conversion: '🔄 File Conversions',
-                institution: '🏛️ Institutions',
-                shelf: '📚 Shelves',
-                category: '🏷️ Categories',
-                borrowing: '📖 Borrowings',
-                purchase: '🛍️ Purchases',
-                notification: '🔔 Notifications',
-                withdrawal: '💳 Withdrawals',
-                author: ' Authors'
-            };
-
-            const typeColors = {
-                book: 'from-purple-500 to-indigo-500',
-                chat: 'from-green-500 to-emerald-500',
-                certificate: 'from-pink-500 to-rose-500',
-                quiz: 'from-indigo-500 to-blue-500',
-                group: 'from-blue-500 to-cyan-500',
-                marketplace: 'from-orange-500 to-red-500',
-                document: 'from-cyan-500 to-teal-500',
-                transaction: 'from-amber-500 to-yellow-500',
-                referral: 'from-green-500 to-teal-500',
-                conversion: 'from-purple-500 to-pink-500',
-                institution: 'from-violet-500 to-purple-500',
-                shelf: 'from-blue-500 to-indigo-500',
-                category: 'from-gray-500 to-slate-500',
-                borrowing: 'from-amber-500 to-orange-500',
-                purchase: 'from-emerald-500 to-green-500',
-                notification: 'from-red-500 to-pink-500',
-                withdrawal: 'from-rose-500 to-red-500',
-                author: 'from-cyan-500 to-blue-500'
-            };
-
-            let html = '';
-            
-            // Priority order for display
-            const priorityTypes = ['book', 'institution', 'group', 'marketplace', 'quiz', 'certificate', 'document'];
-            
-            const sortedKeys = Object.keys(grouped).sort((a, b) => {
-                const indexA = priorityTypes.indexOf(a);
-                const indexB = priorityTypes.indexOf(b);
-                if (indexA === -1 && indexB === -1) return 0;
-                if (indexA === -1) return 1;
-                if (indexB === -1) return -1;
-                return indexA - indexB;
-            });
-
-            for (const type of sortedKeys) {
-                const items = grouped[type];
-                const label = typeLabels[type] || type.charAt(0).toUpperCase() + type.slice(1) + 's';
-                const color = typeColors[type] || 'from-gray-400 to-gray-500';
+            async function performSearch(query) {
+                if (!resultsContainer) return;
+                isSearching = true;
                 
-                html += `
-                    <div class="border-b border-gray-100 last:border-0">
-                        <div class="px-4 py-2 bg-gray-50/80 sticky top-0 z-10">
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${label}</p>
-                        </div>
-                        <div>
-                            ${items.slice(0, 5).map(item => `
-                                <a href="${item.url}" 
-                                   class="search-result-item flex items-center gap-3 px-4 py-2.5 hover:bg-purple-50/50 transition group cursor-pointer border-b border-gray-50 last:border-0">
-                                    <div class="w-8 h-8 bg-gradient-to-br ${color} rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                                        <i class="${item.icon || 'ti ti-search'} text-white text-sm"></i>
+                try {
+                    const response = await fetch(`/api/global-search?q=${encodeURIComponent(query)}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.results || data.results.length === 0) {
+                        resultsContainer.innerHTML = `
+                            <div class="p-8 text-center">
+                                <i class="ti ti-search-off text-4xl text-gray-300 mb-3 block"></i>
+                                <p class="text-gray-500 text-sm font-medium">No results found</p>
+                                <p class="text-gray-400 text-xs mt-1">Try searching for books, courses, or documents</p>
+                            </div>
+                        `;
+                    } else {
+                        const grouped = {};
+                        data.results.forEach(item => {
+                            if (!grouped[item.type]) grouped[item.type] = [];
+                            grouped[item.type].push(item);
+                        });
+
+                        const typeLabels = {
+                            book: '📚 Books',
+                            chat: '💬 AI Chats',
+                            certificate: '🎓 Certificates',
+                            quiz: '📝 Quizzes',
+                            group: '👥 Community Groups',
+                            marketplace: '🛒 Marketplace',
+                            document: '📄 Documents',
+                            transaction: '💰 Transactions',
+                            referral: '🎁 Referrals',
+                            conversion: '🔄 File Conversions',
+                            institution: '🏛️ Institutions',
+                            shelf: '📚 Shelves',
+                            category: '🏷️ Categories',
+                            borrowing: '📖 Borrowings',
+                            purchase: '🛍️ Purchases',
+                            notification: '🔔 Notifications',
+                            withdrawal: '💳 Withdrawals',
+                            author: ' Authors'
+                        };
+
+                        const typeColors = {
+                            book: 'from-purple-500 to-indigo-500',
+                            chat: 'from-green-500 to-emerald-500',
+                            certificate: 'from-pink-500 to-rose-500',
+                            quiz: 'from-indigo-500 to-blue-500',
+                            group: 'from-blue-500 to-cyan-500',
+                            marketplace: 'from-orange-500 to-red-500',
+                            document: 'from-cyan-500 to-teal-500',
+                            transaction: 'from-amber-500 to-yellow-500',
+                            referral: 'from-green-500 to-teal-500',
+                            conversion: 'from-purple-500 to-pink-500',
+                            institution: 'from-violet-500 to-purple-500',
+                            shelf: 'from-blue-500 to-indigo-500',
+                            category: 'from-gray-500 to-slate-500',
+                            borrowing: 'from-amber-500 to-orange-500',
+                            purchase: 'from-emerald-500 to-green-500',
+                            notification: 'from-red-500 to-pink-500',
+                            withdrawal: 'from-rose-500 to-red-500',
+                            author: 'from-cyan-500 to-blue-500'
+                        };
+
+                        let html = '';
+                        const priorityTypes = ['book', 'institution', 'group', 'marketplace', 'quiz', 'certificate', 'document'];
+                        
+                        const sortedKeys = Object.keys(grouped).sort((a, b) => {
+                            const indexA = priorityTypes.indexOf(a);
+                            const indexB = priorityTypes.indexOf(b);
+                            if (indexA === -1 && indexB === -1) return 0;
+                            if (indexA === -1) return 1;
+                            if (indexB === -1) return -1;
+                            return indexA - indexB;
+                        });
+
+                        for (const type of sortedKeys) {
+                            const items = grouped[type];
+                            const label = typeLabels[type] || type.charAt(0).toUpperCase() + type.slice(1) + 's';
+                            const color = typeColors[type] || 'from-gray-400 to-gray-500';
+                            
+                            html += `
+                                <div class="border-b border-gray-100 last:border-0">
+                                    <div class="px-4 py-2 bg-gray-50/80 sticky top-0 z-10">
+                                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">${label}</p>
                                     </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-gray-800 group-hover:text-purple-600 truncate">
-                                            ${escapeHtml(item.title)}
-                                        </p>
-                                        <p class="text-xs text-gray-400 truncate">${escapeHtml(item.subtitle || '')}</p>
+                                    <div>
+                                        ${items.slice(0, 5).map(item => `
+                                            <a href="${item.url}" 
+                                               class="search-result-item flex items-center gap-3 px-4 py-2.5 hover:bg-purple-50/50 transition group cursor-pointer border-b border-gray-50 last:border-0">
+                                                <div class="w-8 h-8 bg-gradient-to-br ${color} rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                                                    <i class="${item.icon || 'ti ti-search'} text-white text-sm"></i>
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-medium text-gray-800 group-hover:text-purple-600 truncate">
+                                                        ${escapeHtml(item.title)}
+                                                    </p>
+                                                    <p class="text-xs text-gray-400 truncate">${escapeHtml(item.subtitle || '')}</p>
+                                                </div>
+                                                ${item.badge ? `<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full flex-shrink-0">${escapeHtml(item.badge)}</span>` : ''}
+                                                <i class="ti ti-chevron-right text-gray-300 group-hover:text-purple-500 text-sm flex-shrink-0 ml-1"></i>
+                                            </a>
+                                        `).join('')}
+                                        ${items.length > 5 ? `
+                                            <div class="px-4 py-2 text-center border-t border-gray-50">
+                                                <span class="text-xs text-gray-400">+${items.length - 5} more results</span>
+                                            </div>
+                                        ` : ''}
                                     </div>
-                                    ${item.badge ? `<span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full flex-shrink-0">${escapeHtml(item.badge)}</span>` : ''}
-                                    <i class="ti ti-chevron-right text-gray-300 group-hover:text-purple-500 text-sm flex-shrink-0 ml-1"></i>
-                                </a>
-                            `).join('')}
-                            ${items.length > 5 ? `
-                                <div class="px-4 py-2 text-center border-t border-gray-50">
-                                    <span class="text-xs text-gray-400">+${items.length - 5} more results</span>
                                 </div>
-                            ` : ''}
+                            `;
+                        }
+
+                        html += `
+                            <div class="p-3 text-center border-t border-gray-200 bg-gray-50/80 sticky bottom-0 rounded-b-xl">
+                                <a href="/global-search?q=${encodeURIComponent(query)}" 
+                                   class="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center justify-center gap-1 group">
+                                    View all results 
+                                    <i class="ti ti-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                                </a>
+                            </div>
+                        `;
+
+                        resultsContainer.innerHTML = html;
+                    }
+                    
+                    resultsContainer.classList.remove('hidden');
+                    
+                } catch (error) {
+                    console.error('Search error:', error);
+                    resultsContainer.innerHTML = `
+                        <div class="p-8 text-center">
+                            <i class="ti ti-alert-circle text-3xl text-red-400 mb-3 block"></i>
+                            <p class="text-gray-700 text-sm font-medium">Search failed</p>
+                            <p class="text-gray-400 text-xs mt-1">${error.message || 'Please try again'}</p>
                         </div>
-                    </div>
-                `;
+                    `;
+                    resultsContainer.classList.remove('hidden');
+                } finally {
+                    isSearching = false;
+                }
             }
-
-            // View All link
-            html += `
-                <div class="p-3 text-center border-t border-gray-200 bg-gray-50/80 sticky bottom-0 rounded-b-xl">
-                    <a href="/global-search?q=${encodeURIComponent(query)}" 
-                       class="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center justify-center gap-1 group">
-                        View all results 
-                        <i class="ti ti-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
-                    </a>
-                </div>
-            `;
-
-            resultsContainer.innerHTML = html;
-        }
-        
-        resultsContainer.classList.remove('hidden');
-        
-    } catch (error) {
-        console.error('Search error:', error);
-        resultsContainer.innerHTML = `
-            <div class="p-8 text-center">
-                <i class="ti ti-alert-circle text-3xl text-red-400 mb-3 block"></i>
-                <p class="text-gray-700 text-sm font-medium">Search failed</p>
-                <p class="text-gray-400 text-xs mt-1">${error.message || 'Please try again'}</p>
-            </div>
-        `;
-        resultsContainer.classList.remove('hidden');
-    } finally {
-        isSearching = false;
-    }
-}
 
             // ==========================================
             // LOAD UNREAD NOTIFICATION COUNT
@@ -978,6 +1123,22 @@
                 })
                 .catch(error => console.error('Error:', error));
             @endauth
+
+            // ==========================================
+            // AUTO-DISMISS TOASTS
+            // ==========================================
+            setTimeout(function() {
+                const toasts = document.querySelectorAll('#download-toast, #error-toast');
+                toasts.forEach(function(toast) {
+                    setTimeout(function() {
+                        toast.style.opacity = '0';
+                        toast.style.transition = 'opacity 0.5s';
+                        setTimeout(function() {
+                            toast.remove();
+                        }, 500);
+                    }, 5000);
+                });
+            }, 1000);
         });
     </script>
     

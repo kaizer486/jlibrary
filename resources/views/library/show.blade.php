@@ -41,19 +41,55 @@
                                        class="block text-center bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
                                         <i class="ti ti-eye"></i> Read Now
                                     </a>
-                                    <a href="{{ route('institution.public.download', ['institutionId' => $book->institution_id, 'book' => $book->id]) }}"
-                                       class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition">
-                                        <i class="ti ti-download"></i> Download PDF
-                                    </a>
+                                    <!-- DOWNLOAD BUTTON WITH AJAX -->
+                                    @php
+                                        $remaining = auth()->user()->getRemainingDownloadsToday();
+                                        $isExhausted = auth()->user()->hasReachedDailyDownloadLimit();
+                                    @endphp
+                                    @if(!$isExhausted)
+                                        <button onclick="downloadBook({{ $book->id }})" 
+                                                id="download-btn-{{ $book->id }}"
+                                                class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition w-full">
+                                            <i class="ti ti-download"></i> 
+                                            <span id="download-text-{{ $book->id }}">Download PDF</span>
+                                            @if($remaining > 0)
+                                                <span class="text-xs text-gray-400 ml-1" id="download-count-{{ $book->id }}">({{ $remaining }} left today)</span>
+                                            @endif
+                                        </button>
+                                        <div id="download-status-{{ $book->id }}" class="mt-2 text-sm text-center"></div>
+                                    @else
+                                        <div class="block text-center bg-gray-100 text-gray-500 px-4 py-2 rounded-lg cursor-not-allowed">
+                                            <i class="ti ti-ban"></i> Download Limit Reached
+                                            <span class="text-xs block">5 downloads used today. Try again tomorrow.</span>
+                                        </div>
+                                    @endif
                                 @else
                                     <a href="{{ route('library.read', $book->id) }}"
                                        class="block text-center bg-jlibrary-600 text-white px-4 py-2 rounded-lg hover:bg-jlibrary-700 transition">
                                         <i class="ti ti-eye"></i> Read Now
                                     </a>
-                                    <a href="{{ route('library.download', $book->id) }}"
-                                       class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition">
-                                        <i class="ti ti-download"></i> Download PDF
-                                    </a>
+                                    <!-- DOWNLOAD BUTTON WITH AJAX -->
+                                    @php
+                                        $remaining = auth()->user()->getRemainingDownloadsToday();
+                                        $isExhausted = auth()->user()->hasReachedDailyDownloadLimit();
+                                    @endphp
+                                    @if(!$isExhausted)
+                                        <button onclick="downloadBook({{ $book->id }})" 
+                                                id="download-btn-{{ $book->id }}"
+                                                class="block text-center border border-jlibrary-600 text-jlibrary-600 px-4 py-2 rounded-lg hover:bg-jlibrary-600 hover:text-white transition w-full">
+                                            <i class="ti ti-download"></i> 
+                                            <span id="download-text-{{ $book->id }}">Download PDF</span>
+                                            @if($remaining > 0)
+                                                <span class="text-xs text-gray-400 ml-1" id="download-count-{{ $book->id }}">({{ $remaining }} left today)</span>
+                                            @endif
+                                        </button>
+                                        <div id="download-status-{{ $book->id }}" class="mt-2 text-sm text-center"></div>
+                                    @else
+                                        <div class="block text-center bg-gray-100 text-gray-500 px-4 py-2 rounded-lg cursor-not-allowed">
+                                            <i class="ti ti-ban"></i> Download Limit Reached
+                                            <span class="text-xs block">5 downloads used today. Try again tomorrow.</span>
+                                        </div>
+                                    @endif
                                 @endif
                             @else
                                 <button onclick="showPurchaseModal({{ $book->id }}, {{ $book->price }}, '{{ addslashes($book->title) }}')"
@@ -334,11 +370,27 @@
     padding: 0;
     margin: 0;
 }
+
+/* Download button disabled state */
+#download-btn-{{ $book->id }}:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
 </style>
 
 @push('scripts')
 <script>
-// Star Rating
+// ==========================================
+// STAR RATING
+// ==========================================
 let selRating = 0;
 const rInput = document.getElementById('rating-input');
 const rHint  = document.getElementById('rating-hint');
@@ -367,7 +419,9 @@ function starClick(n) {
     }
 }
 
-// Review Form Submit
+// ==========================================
+// REVIEW FORM SUBMIT
+// ==========================================
 (function() {
     const reviewForm = document.getElementById('reviewForm');
     if (!reviewForm) return;
@@ -419,7 +473,9 @@ function starClick(n) {
     });
 })();
 
-// Share Function
+// ==========================================
+// SHARE FUNCTION
+// ==========================================
 function shareBook() {
     const shareData = {
         title: '{{ addslashes($book->title) }}',
@@ -443,7 +499,9 @@ function shareBook() {
     }
 }
 
-// Toast Notification
+// ==========================================
+// TOAST NOTIFICATION
+// ==========================================
 function showToast(message) {
     const existing = document.querySelector('.kimi-toast');
     if (existing) existing.remove();
@@ -458,7 +516,9 @@ function showToast(message) {
     }, 3000);
 }
 
-// Helpful/Like Function
+// ==========================================
+// HELPFUL/LIKE FUNCTION
+// ==========================================
 function toggleHelpful(reviewId, button) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (!csrfToken) {
@@ -506,7 +566,156 @@ function toggleHelpful(reviewId, button) {
     });
 }
 
-// Purchase Modal Functions
+// ==========================================
+// AJAX DOWNLOAD WITH REAL-TIME LIMIT
+// ==========================================
+function downloadBook(bookId) {
+    const btn = document.getElementById('download-btn-' + bookId);
+    const status = document.getElementById('download-status-' + bookId);
+    const text = document.getElementById('download-text-' + bookId);
+    const countSpan = document.getElementById('download-count-' + bookId);
+    
+    if (!btn) return;
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
+    text.innerHTML = '<i class="ti ti-loader-2 animate-spin"></i> Processing...';
+    if (status) status.innerHTML = '';
+    
+    // Make AJAX request
+    fetch(`/library/download/${bookId}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Download failed');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Update the download count display
+            if (countSpan) {
+                countSpan.textContent = `(${data.remaining} left today)`;
+            }
+            
+            // Update status message
+            if (status) {
+                status.innerHTML = `<span class="text-green-600">✅ ${data.message}</span>`;
+            }
+            
+            // Show warning if close to limit
+            if (data.remaining <= 1 && status) {
+                status.innerHTML += `<br><span class="text-orange-500 text-xs">⚠️ You have ${data.remaining} download(s) remaining today.</span>`;
+            }
+            
+            // If limit reached, disable button permanently
+            if (data.remaining <= 0) {
+                btn.disabled = true;
+                btn.classList.add('bg-gray-100', 'text-gray-500', 'cursor-not-allowed');
+                btn.classList.remove('border-jlibrary-600', 'text-jlibrary-600', 'hover:bg-jlibrary-600', 'hover:text-white');
+                text.innerHTML = 'Download Limit Reached';
+                if (countSpan) countSpan.textContent = '';
+                if (status) {
+                    status.innerHTML = `<span class="text-red-500">🚫 Daily download limit reached. Try again tomorrow.</span>`;
+                }
+            } else {
+                // Re-enable button
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                text.innerHTML = 'Download PDF';
+            }
+            
+            // Update download limit indicator in top bar
+            updateDownloadIndicator(data.used, data.remaining, data.limit);
+            
+            // Start the actual file download
+            const downloadUrl = `/library/download/raw/${bookId}`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = data.book_title + '.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+        } else {
+            if (status) {
+                status.innerHTML = `<span class="text-red-500">❌ ${data.error || 'Download failed'}</span>`;
+            }
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            text.innerHTML = 'Download PDF';
+        }
+    })
+    .catch(error => {
+        console.error('Download error:', error);
+        if (status) {
+            status.innerHTML = `<span class="text-red-500">❌ ${error.message}</span>`;
+        }
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        text.innerHTML = 'Download PDF';
+    });
+}
+
+// ==========================================
+// UPDATE DOWNLOAD INDICATOR
+// ==========================================
+function updateDownloadIndicator(used, remaining, limit) {
+    // Update the download limit indicator in the top bar
+    const indicator = document.querySelector('.download-limit-indicator');
+    if (!indicator) return;
+    
+    // Update text
+    const textSpan = indicator.querySelector('span.text-xs.font-medium');
+    if (textSpan) {
+        textSpan.textContent = `${used}/${limit}`;
+    }
+    
+    // Update progress bar
+    const progressBar = indicator.querySelector('.h-full.rounded-full');
+    if (progressBar) {
+        const percentage = Math.min(100, (used / limit) * 100);
+        progressBar.style.width = `${percentage}%`;
+        
+        // Update colors based on remaining
+        const colorClass = remaining <= 0 ? 'bg-red-500' : (remaining <= 1 ? 'bg-orange-500' : 'bg-green-500');
+        progressBar.className = `h-full rounded-full transition-all duration-500 ${colorClass}`;
+    }
+    
+    // Update container colors
+    const container = indicator;
+    if (remaining <= 0) {
+        container.className = container.className.replace(/bg-\w+-50/g, 'bg-red-50').replace(/border-\w+-\w+/g, 'border-red-200');
+    } else if (remaining <= 1) {
+        container.className = container.className.replace(/bg-\w+-50/g, 'bg-orange-50').replace(/border-\w+-\w+/g, 'border-orange-200');
+    } else {
+        container.className = container.className.replace(/bg-\w+-50/g, 'bg-green-50').replace(/border-\w+-\w+/g, 'border-green-200');
+    }
+    
+    // Update tooltip message
+    const tooltipMessage = document.getElementById('download-tooltip-message');
+    if (tooltipMessage) {
+        if (remaining <= 0) {
+            tooltipMessage.textContent = 'Daily download limit reached (5/5). Please try again tomorrow.';
+        } else if (remaining <= 1) {
+            tooltipMessage.textContent = `⚠️ You have only ${remaining} download(s) remaining today!`;
+        } else {
+            tooltipMessage.textContent = `You have ${remaining} download(s) remaining today`;
+        }
+    }
+}
+
+// ==========================================
+// PURCHASE MODAL FUNCTIONS
+// ==========================================
 let currentBook = null;
 let successRedirectUrl = null;
 let successDownloadUrl = null;

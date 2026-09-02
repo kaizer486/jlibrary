@@ -750,6 +750,78 @@ public function hasInstitution(): bool
             ->orderBy('created_at', 'desc');
     }
 
+/**
+ * Get today's download count
+ */
+public function getTodayDownloadCount(): int
+{
+    return DownloadLog::where('user_id', $this->id)
+        ->whereDate('downloaded_at', today())
+        ->count();
+}
+
+/**
+ * Get remaining downloads for today
+ */
+public function getRemainingDownloadsToday(): int
+{
+    return max(0, 5 - $this->getTodayDownloadCount());
+}
+
+
+/**
+ * Get download limit progress percentage
+ */
+public function getDownloadLimitProgress(): int
+{
+    $count = $this->getTodayDownloadCount();
+    return min(100, round(($count / 5) * 100));
+}
+
+/**
+ * Check if user is close to limit (4 downloads)
+ */
+public function isCloseToDownloadLimit(): bool
+{
+    return $this->getTodayDownloadCount() >= 4;
+}
+
+/**
+ * Get download limit status for display
+ */
+public function getDownloadLimitStatus(): array
+{
+    $used = $this->getTodayDownloadCount();
+    $remaining = $this->getRemainingDownloadsToday();
+    $limit = 5;
+    $progress = $this->getDownloadLimitProgress();
+    
+    $status = 'available';
+    $message = "You have {$remaining} download(s) remaining today";
+    $color = 'green';
+    
+    if ($remaining <= 0) {
+        $status = 'exhausted';
+        $message = 'Daily download limit reached (5/5). Please try again tomorrow.';
+        $color = 'red';
+    } elseif ($remaining <= 1) {
+        $status = 'warning';
+        $message = "⚠️ You have only {$remaining} download(s) remaining today!";
+        $color = 'orange';
+    }
+    
+    return [
+        'used' => $used,
+        'remaining' => $remaining,
+        'limit' => $limit,
+        'progress' => $progress,
+        'status' => $status,
+        'message' => $message,
+        'color' => $color,
+    ];
+}
+
+
     // ==========================================
     // SUBSCRIPTION METHODS
     // ==========================================
