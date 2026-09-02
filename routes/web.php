@@ -400,6 +400,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/initiate', [MultiPaymentController::class, 'initiatePayment'])->name('initiate');
         Route::post('/save-details', [MultiPaymentController::class, 'savePaymentDetails'])->name('save-details');
         Route::get('/status/{paymentId}', [MultiPaymentController::class, 'checkStatus'])->name('status');
+
+        Route::get('/pesapal/initiate', [MultiPaymentController::class, 'initiatePesapalPayment'])->name('pesapal.initiate');
     });
 
     // ---- Referrals ----
