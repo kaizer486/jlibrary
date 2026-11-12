@@ -756,7 +756,7 @@ public function hasInstitution(): bool
 public function getTodayDownloadCount(): int
 {
     return DownloadLog::where('user_id', $this->id)
-        ->whereDate('downloaded_at', today())
+        ->whereBetween('downloaded_at', [now()->startOfDay(), now()->endOfDay()])
         ->count();
 }
 
@@ -1562,15 +1562,13 @@ public function getPendingSellerOrdersAttribute(): int
         return $this->books()->wherePivot('status', 'completed')->count();
     }
 
-     public function hasReachedDailyDownloadLimit(): bool
-    {
-        $todayCount = DownloadLog::where('user_id', $this->id)
-            ->whereDate('downloaded_at', today())
-            ->count();
-
-        return $todayCount >= 5;
-    }
-
+ public function hasReachedDailyDownloadLimit(): bool
+{
+    $todayCount = DownloadLog::where('user_id', $this->id)
+        ->whereDate('downloaded_at', today())
+        ->count();
+    return $todayCount >= 5;
+}
     /**
      * Get remaining downloads for today
      */

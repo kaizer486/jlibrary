@@ -177,26 +177,26 @@ Route::get('/auth/google/callback', function () {
     return redirect('/dashboard');
 })->name('auth.google.callback');
 
-// API Endpoint for Download Status
 Route::get('/api/download-status', function() {
     if (!auth()->check()) {
         return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
     }
-    
-    $user = auth()->user();
-    $used = DB::table('download_logs')
-        ->where('user_id', $user->id)
-        ->whereDate('downloaded_at', today())
+
+    $user  = auth()->user();
+    $limit = \App\Http\Controllers\LibraryController::DAILY_DOWNLOAD_LIMIT;
+
+    $used = \App\Models\DownloadLog::where('user_id', $user->id)
+        ->whereBetween('downloaded_at', [now()->startOfDay(), now()->endOfDay()])
         ->count();
-    $limit = 5;
+
     $remaining = max(0, $limit - $used);
-    
+
     return response()->json([
-        'success' => true,
-        'used' => $used,
+        'success'   => true,
+        'used'      => $used,
         'remaining' => $remaining,
-        'limit' => $limit,
-        'progress' => min(100, round(($used / $limit) * 100))
+        'limit'     => $limit,
+        'progress'  => min(100, round(($used / $limit) * 100)),
     ]);
 })->name('api.download.status');
 
@@ -267,8 +267,9 @@ Route::prefix('institution')->name('institution.public.')->group(function () {
 
 // Public library
 Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
-Route::get('/library/{id}', [LibraryController::class, 'show'])->name('library.show');
-Route::get('/library/download/raw/{bookId}', [LibraryController::class, 'downloadRaw'])->name('library.download.raw');
+Route::get('/library/{id}', [LibraryController::class, 'show'])
+    ->whereNumber('id')
+    ->name('library.show');
 
 // Referral
 Route::get('/refer/{code}', [ReferralController::class, 'processReferral'])->name('referral.process');
@@ -371,18 +372,30 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/subscription/cancel', [UserSubscriptionController::class, 'cancel'])->name('subscription.cancel');
     });
 
-    // ---- Library (User) ----
+     // ---- Library (User) ----
     Route::prefix('library')->name('library.')->group(function () {
         Route::get('/', [LibraryController::class, 'index'])->name('index');
         Route::get('/my-library', [LibraryController::class, 'myLibrary'])->name('my-library');
-        Route::get('/{book}', [LibraryController::class, 'show'])->name('show');
-        Route::get('/{book}/read', [LibraryController::class, 'read'])->name('read');
-        Route::get('/{book}/pdf', [LibraryController::class, 'servePdf'])->name('pdf');
-        Route::get('/{book}/download', [LibraryController::class, 'download'])->name('download');
-        Route::post('/{book}/progress', [LibraryController::class, 'updateProgress'])->name('progress');
-        Route::post('/{book}/add-to-library', [LibraryController::class, 'addToLibrary'])->name('add-to-library');
-    });
 
+        Route::get('/{book}', [LibraryController::class, 'show'])
+            ->whereNumber('book')->name('show');
+        Route::get('/{book}/read', [LibraryController::class, 'read'])
+            ->whereNumber('book')->name('read');
+        Route::get('/{book}/pdf', [LibraryController::class, 'servePdf'])
+            ->whereNumber('book')->name('pdf');
+        Route::get('/{book}/download', [LibraryController::class, 'download'])
+            ->whereNumber('book')->name('download');
+        Route::post('/{book}/progress', [LibraryController::class, 'updateProgress'])
+            ->whereNumber('book')->name('progress');
+        Route::post('/{book}/add-to-library', [LibraryController::class, 'addToLibrary'])
+            ->whereNumber('book')->name('add-to-library');
+
+        // Raw file streaming (was previously outside the auth group)
+        Route::get('/download/raw/{bookId}', [LibraryController::class, 'downloadRaw'])
+            ->whereNumber('bookId')
+            ->name('download.raw');
+    });
+    
     // ---- User Personal Library ----
     Route::prefix('user/library')->name('user.library.')->group(function () {
         Route::get('/', [UserLibraryController::class, 'index'])->name('index');

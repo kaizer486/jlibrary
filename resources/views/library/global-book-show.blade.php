@@ -582,7 +582,7 @@ function downloadBook(bookId) {
         status.className = 'mt-2 text-sm text-center';
     }
     
-    fetch('/library/download/' + bookId, {
+    fetch('/library/' + bookId + '/download', {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -658,14 +658,14 @@ function downloadBook(bookId) {
     .catch(function(error) {
         console.error('Download error:', error);
         
-        var errorMessage = 'You have reached the daily download limit of 5 books. Please try again tomorrow.';
-        if (error.message.indexOf('limit') !== -1) {
-            errorMessage = 'You have reached the daily download limit of 5 books. Please try again tomorrow.';
-        } else if (error.message.indexOf('login') !== -1) {
-            errorMessage = 'Please log in to download books.';
-        } else if (error.message.indexOf('purchase') !== -1) {
-            errorMessage = 'Please purchase this book to download it.';
-        }
+      var errorMessage = error.message || 'Download failed. Please try again.';
+if (error.message && error.message.indexOf('limit') !== -1) {
+    errorMessage = 'You have reached the daily download limit of 5 books. Please try again tomorrow.';
+} else if (error.message && error.message.indexOf('login') !== -1) {
+    errorMessage = 'Please log in to download books.';
+} else if (error.message && error.message.indexOf('purchase') !== -1) {
+    errorMessage = 'Please purchase this book to download it.';
+}
         
         if (status) {
             status.innerHTML = '<span class="text-red-600 font-medium">' + errorMessage + '</span>';
