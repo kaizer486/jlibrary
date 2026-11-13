@@ -828,12 +828,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/marketplace/{listing}/approve', [AdminMarketplaceController::class, 'approve'])->name('marketplace.approve');
     Route::post('/marketplace/{listing}/reject', [AdminMarketplaceController::class, 'reject'])->name('marketplace.reject');
 
-    // Applications
-    Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
-    Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])->name('applications.show');
-    Route::post('/applications/{application}/approve', [AdminApplicationController::class, 'approve'])->name('applications.approve');
-    Route::post('/applications/{application}/reject', [AdminApplicationController::class, 'reject'])->name('applications.reject');
-    Route::delete('/applications/{application}', [AdminApplicationController::class, 'destroy'])->name('applications.destroy');
+      // Applications (unified controller — same code path as super-admin)
+    Route::get('/applications', [\App\Http\Controllers\ApplicationController::class, 'index'])->name('applications.index');
+    Route::get('/applications/{application}', [\App\Http\Controllers\ApplicationController::class, 'show'])->name('applications.show');
+    Route::post('/applications/{application}/approve', [\App\Http\Controllers\ApplicationController::class, 'approve'])->name('applications.approve');
+    Route::post('/applications/{application}/reject', [\App\Http\Controllers\ApplicationController::class, 'reject'])->name('applications.reject');
+    Route::delete('/applications/{application}', [\App\Http\Controllers\ApplicationController::class, 'destroy'])->name('applications.destroy');
 
     // Payments
     Route::prefix('payments')->name('payments.')->group(function () {
