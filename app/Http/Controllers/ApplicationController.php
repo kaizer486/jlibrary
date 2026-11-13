@@ -55,13 +55,14 @@ class ApplicationController extends Controller
             ->exists();
 
         if ($alreadyApplied) {
-            return redirect()->route('dashboard')
+            return redirect()->back()
+                ->withInput()
                 ->with('error', 'You already have an active ' . $validated['type']
                     . ' application. Please wait for it to be reviewed, or contact support.');
         }
         // --------------------------------------------------------------------------
 
-        // Upload files (moved inside the transaction so we can clean up on failure)
+        // Upload files before the transaction so we can clean up on failure
         $passportPhoto = null;
         $supportingDocument = null;
 
@@ -126,7 +127,8 @@ class ApplicationController extends Controller
             $this->deleteFilesIfExist([$passportPhoto, $supportingDocument]);
 
             if ($e->getMessage() === 'DUPLICATE_APPLICATION') {
-                return redirect()->route('dashboard')
+                return redirect()->back()
+                    ->withInput()
                     ->with('error', 'You already have an active ' . $validated['type']
                         . ' application. Please wait for it to be reviewed.');
             }
@@ -172,6 +174,7 @@ class ApplicationController extends Controller
 
     public function show(Application $application)
     {
+        $application->load(['user', 'reviewer']);
         return view('admin.applications.show', compact('application'));
     }
 
@@ -268,6 +271,23 @@ class ApplicationController extends Controller
         }
 
         return Storage::disk('public')->download($path);
+    }
+
+    // -------------------- Destroy --------------------
+
+    public function destroy(Application $application)
+    {
+        $documents = ['passport_photo', 'supporting_document', 'business_license', 'tax_certificate'];
+
+        foreach ($documents as $doc) {
+            if ($application->$doc && Storage::disk('public')->exists($application->$doc)) {
+                Storage::disk('public')->delete($application->$doc);
+            }
+        }
+
+        $application->delete();
+
+        return back()->with('success', 'Application deleted successfully!');
     }
 
     // -------------------- Helpers --------------------
