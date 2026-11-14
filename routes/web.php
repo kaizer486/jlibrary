@@ -394,8 +394,25 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/download/raw/{bookId}', [LibraryController::class, 'downloadRaw'])
             ->whereNumber('bookId')
             ->name('download.raw');
+
+             // Hardcopy order placement   ← NEW
+        Route::post('/{book}/order', [\App\Http\Controllers\LibraryOrderController::class, 'store'])
+            ->whereNumber('book')->name('order.store');
     });
+
     
+        // ---- Buyer orders list ----
+    Route::get('/my-orders', [\App\Http\Controllers\LibraryOrderController::class, 'index'])
+        ->name('library.orders.index');
+
+
+        // ---- Buyer order viewing   ← NEW
+    Route::get('/my-orders/{order}', [\App\Http\Controllers\LibraryOrderController::class, 'show'])
+        ->whereNumber('order')->name('library.order.show');
+
+
+        
+
     // ---- User Personal Library ----
     Route::prefix('user/library')->name('user.library.')->group(function () {
         Route::get('/', [UserLibraryController::class, 'index'])->name('index');
@@ -633,6 +650,13 @@ Route::middleware(['auth', 'author.seller'])->prefix('studio')->name('author.')-
 
     // Books
     Route::resource('books', AuthorBookController::class);
+
+        // Book Orders (hardcopy orders for the author's books)
+    Route::prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Author\OrderController::class, 'index'])->name('index');
+        Route::get('/{order}', [\App\Http\Controllers\Author\OrderController::class, 'show'])->name('show');
+        Route::post('/{order}/status', [\App\Http\Controllers\Author\OrderController::class, 'updateStatus'])->name('update-status');
+    });
 
     // Earnings
     Route::get('/earnings', [EarningController::class, 'index'])->name('earnings');
@@ -1031,6 +1055,7 @@ Route::middleware(['auth', MediaTeamMiddleware::class])->prefix('super-admin')->
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/communities', [App\Http\Controllers\Admin\CommunityController::class, 'index'])->name('communities.index');
+    Route::delete('/communities/{group}/members/{member}', [App\Http\Controllers\Admin\CommunityController::class, 'removeMember'])->name('communities.members.remove');
     Route::get('/communities/{group}', [App\Http\Controllers\Admin\CommunityController::class, 'show'])->name('communities.show');
     Route::delete('/communities/{group}', [App\Http\Controllers\Admin\CommunityController::class, 'destroy'])->name('communities.destroy');
     Route::post('/communities/{group}/toggle-status', [App\Http\Controllers\Admin\CommunityController::class, 'toggleStatus'])->name('communities.toggle-status');
@@ -1038,6 +1063,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
 Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
     Route::get('/communities', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'index'])->name('communities.index');
+    Route::delete('/communities/{group}/members/{member}', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'removeMember'])->name('communities.members.remove');
     Route::get('/communities/{group}', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'show'])->name('communities.show');
     Route::delete('/communities/{group}', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'destroy'])->name('communities.destroy');
     Route::post('/communities/{group}/toggle-status', [App\Http\Controllers\SuperAdmin\CommunityController::class, 'toggleStatus'])->name('communities.toggle-status');

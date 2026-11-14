@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CommunityGroup;
+use App\Models\CommunityMember;
 use Illuminate\Http\Request;
 
 class CommunityController extends Controller
@@ -11,18 +12,11 @@ class CommunityController extends Controller
     public function index(Request $request)
     {
         $query = CommunityGroup::with('creator')
-            ->withCount([
-                'members as members_count' => function($query) {
-                    $query->where('group_id', 'community_groups.id');
-                },
-                'messages as messages_count' => function($query) {
-                    $query->where('group_id', 'community_groups.id');
-                }
-            ]);
+            ->withCount(['members', 'messages']);
 
         // Search filter
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%')
                   ->orWhere('description', 'like', '%' . $request->search . '%');
             });
@@ -34,8 +28,7 @@ class CommunityController extends Controller
         }
 
         // Sort
-        $sort = $request->sort ?? 'latest';
-        switch ($sort) {
+        switch ($request->sort ?? 'latest') {
             case 'oldest':
                 $query->oldest();
                 break;
@@ -54,15 +47,12 @@ class CommunityController extends Controller
 
         $groups = $query->paginate(20);
 
-        // Stats
-        $totalGroups = CommunityGroup::count();
-        $activeGroups = CommunityGroup::where('is_active', true)->count();
+        $totalGroups    = CommunityGroup::count();
+        $activeGroups   = CommunityGroup::where('is_active', true)->count();
         $inactiveGroups = CommunityGroup::where('is_active', false)->count();
         $featuredGroups = CommunityGroup::where('is_featured', true)->count();
-        
-        // Get total members and messages
-        $totalMembers = \DB::table('community_members')->count();
-        $totalMessages = \DB::table('community_messages')->count();
+        $totalMembers   = \DB::table('community_members')->count();
+        $totalMessages  = \DB::table('community_messages')->count();
 
         return view('super-admin.communities.index', compact(
             'groups',
@@ -78,27 +68,32 @@ class CommunityController extends Controller
     public function show(CommunityGroup $group)
     {
         $group->load(['creator', 'members.user', 'messages.user']);
-        $group->loadCount([
-            'members as members_count' => function($query) {
-                $query->where('group_id', 'community_groups.id');
-            },
-            'messages as messages_count' => function($query) {
-                $query->where('group_id', 'community_groups.id');
-            }
-        ]);
-        
+        $group->loadCount(['members', 'messages']);
+
         return view('super-admin.communities.show', compact('group'));
+    }
+
+    public function removeMember(CommunityGroup $group, CommunityMember $member)
+    {
+        // Guard: member must belong to this group
+        if ((int) $member->group_id !== (int) $group->id) {
+            abort(404);
+        }
+
+        // Guard: don't allow removing the creator
+        if ((int) $member->user_id === (int) $group->created_by) {
+            return back()->with('error', 'Cannot remove the group creator. Delete the group instead.');
+        }
+
+        $member->delete();
+
+        return back()->with('success', 'Member removed from the group.');
     }
 
     public function destroy(CommunityGroup $group)
     {
-        // Delete all messages first
         $group->messages()->delete();
-        
-        // Delete all members
         $group->members()->delete();
-        
-        // Delete the group
         $group->delete();
 
         return redirect()->route('super-admin.communities.index')

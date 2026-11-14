@@ -72,9 +72,25 @@
         </a>
 
         <!-- REGULAR USER MENUS -->
-        <a href="{{ route('library.index') }}" class="nav-item {{ (request()->routeIs('library.*') && !request()->routeIs('library.my-library')) ? 'active' : '' }}">
+        <a href="{{ route('library.index') }}" class="nav-item {{ (request()->routeIs('library.*') && !request()->routeIs('library.my-library') && !request()->routeIs('library.orders.index') && !request()->routeIs('library.order.show')) ? 'active' : '' }}">
             <i class="ti ti-books text-blue-400 text-xl"></i>
             <span>Library</span>
+        </a>
+
+        <!-- My Orders (hardcopy orders + softcopy purchases) -->
+        <a href="{{ route('library.orders.index') }}" class="nav-item {{ request()->routeIs('library.orders.index') || request()->routeIs('library.order.show') ? 'active' : '' }}">
+            <i class="ti ti-truck-delivery text-orange-400 text-xl"></i>
+            <span>My Orders</span>
+            @php
+                try {
+                    $myPendingOrders = \App\Models\Order::where('user_id', Auth::id())->where('status', 'pending')->count();
+                } catch (\Exception $e) {
+                    $myPendingOrders = 0;
+                }
+            @endphp
+            @if($myPendingOrders > 0)
+                <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full flex-shrink-0">{{ $myPendingOrders }}</span>
+            @endif
         </a>
 
         <a href="{{ route('ai.chat') }}" class="nav-item {{ request()->routeIs('ai.*') ? 'active' : '' }}">

@@ -69,16 +69,19 @@
             <span class="font-medium">My Listings</span>
         </a>
 
-        <!-- Orders -->
+           <!-- Orders (products + books) -->
         <a href="{{ route('seller.orders') }}" 
-           class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('seller.orders') || request()->routeIs('seller.orders.show') ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 {{ request()->routeIs('seller.orders') || request()->routeIs('seller.orders.show') || request()->routeIs('author.orders.*') ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'text-gray-300 hover:bg-gray-700/50 hover:text-white' }}">
             <i class="ti ti-package text-lg"></i>
             <span class="font-medium">Orders</span>
             @php
                 try {
                     $listingIds = App\Models\MarketplaceListing::where('seller_id', Auth::id())->pluck('id');
-                    $pendingOrders = App\Models\MarketplaceOrder::whereIn('listing_id', $listingIds)
+                    $pendingProducts = App\Models\MarketplaceOrder::whereIn('listing_id', $listingIds)
                         ->where('status', 'pending')->count();
+                    $pendingBooks = App\Models\Order::where('author_id', Auth::id())
+                        ->where('status', 'pending')->count();
+                    $pendingOrders = $pendingProducts + $pendingBooks;
                 } catch (\Exception $e) {
                     $pendingOrders = 0;
                 }

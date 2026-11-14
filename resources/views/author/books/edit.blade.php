@@ -5,14 +5,11 @@
 
 @section('content')
 
-<!-- ========================================== -->
-<!-- LIGHT BISQUE BACKGROUND                    -->
-<!-- ========================================== -->
 <div style="position: fixed; inset: 0; background: #e9e8e6; z-index: -10;"></div>
 
 <div class="relative z-10 min-h-screen py-8">
     <div class="container mx-auto px-4 max-w-4xl">
-        
+
         <!-- Back Button -->
         <div class="mb-6">
             <a href="{{ route('author.books.index') }}" class="text-slate-600 hover:text-slate-800 flex items-center gap-2">
@@ -22,7 +19,7 @@
 
         <!-- Main Form Card -->
         <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 overflow-hidden">
-            
+
             <!-- Header -->
             <div class="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-4 border-b-2 border-amber-400/30">
                 <h1 class="text-xl font-bold text-white flex items-center gap-2">
@@ -49,7 +46,8 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('author.books.update', $book) }}" enctype="multipart/form-data" class="p-6">
+            <form method="POST" action="{{ route('author.books.update', $book) }}" enctype="multipart/form-data" class="p-6"
+                  x-data="{ format: '{{ old('book_type', $book->book_type ?? 'softcopy') }}' }">
                 @csrf
                 @method('PUT')
 
@@ -60,7 +58,7 @@
                             <label class="block text-sm font-semibold text-slate-700 mb-2">
                                 Book Title <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="title" value="{{ old('title', $book->title) }}" required 
+                            <input type="text" name="title" value="{{ old('title', $book->title) }}" required
                                    class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800">
                             @error('title') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
@@ -69,34 +67,14 @@
                             <label class="block text-sm font-semibold text-slate-700 mb-2">
                                 Author Name <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="author" value="{{ old('author', $book->author) }}" required 
+                            <input type="text" name="author" value="{{ old('author', $book->author) }}" required
                                    class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800">
                             @error('author') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">
-                                Price
-                            </label>
-                            <div class="relative">
-                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 font-medium">TSh</span>
-                                <input type="number" name="price" step="0.01" value="{{ old('price', $book->price) }}" 
-                                       class="w-full pl-16 pr-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="flex items-center gap-3 cursor-pointer p-3 bg-orange-50/60 rounded-xl border-2 border-orange-100/60">
-                                <input type="checkbox" name="is_paid" value="1" {{ $book->is_paid ? 'checked' : '' }} class="w-4 h-4 text-orange-600 rounded focus:ring-orange-500">
-                                <span class="text-sm text-slate-700 font-medium">This is a paid book</span>
-                            </label>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">
-                                Total Pages
-                            </label>
-                            <input type="number" name="total_pages" value="{{ old('total_pages', $book->total_pages) }}" 
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Total Pages</label>
+                            <input type="number" name="total_pages" value="{{ old('total_pages', $book->total_pages) }}"
                                    class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800">
                         </div>
                     </div>
@@ -104,10 +82,8 @@
                     <!-- Right Column -->
                     <div class="space-y-5">
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">
-                                Book File (PDF)
-                            </label>
-                            <input type="file" name="book_file" accept=".pdf" 
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Book File (PDF)</label>
+                            <input type="file" name="book_file" accept=".pdf"
                                    class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-orange-500 file:text-white hover:file:bg-orange-600 transition text-slate-700">
                             <p class="text-xs text-slate-400 mt-1">Max 20MB. Leave empty to keep current file.</p>
                             @if($book->file_path)
@@ -117,35 +93,111 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">
-                                Cover Image (Optional)
-                            </label>
-                            <input type="file" name="cover_image" accept="image/jpeg,image/png,image/jpg" 
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Cover Image (Optional)</label>
+                            <input type="file" name="cover_image" accept="image/jpeg,image/png,image/jpg"
                                    class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:bg-orange-500 file:text-white hover:file:bg-orange-600 transition text-slate-700">
                             <p class="text-xs text-slate-400 mt-1">Leave empty to keep current cover. Max 2MB</p>
                             @error('cover_image') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-2">
-                                Status
-                            </label>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Status</label>
                             <select name="status" class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800">
                                 <option value="pending" {{ $book->status == 'pending' ? 'selected' : '' }}>⏳ Pending</option>
                                 <option value="approved" {{ $book->status == 'approved' ? 'selected' : '' }}>✅ Approved</option>
                                 <option value="rejected" {{ $book->status == 'rejected' ? 'selected' : '' }}>❌ Rejected</option>
                             </select>
-                            <p class="text-xs text-slate-400 mt-1">Note: Changing to "Approved" will make your book visible to everyone</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- NEW: Book Format & Pricing                 -->
+                <!-- ========================================== -->
+                <div class="mt-8 pt-6 border-t-2 border-slate-200/60">
+                    <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="ti ti-currency-dollar text-orange-600"></i>
+                        Book Format &amp; Pricing
+                    </h3>
+
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <label class="cursor-pointer p-4 rounded-xl border-2 transition"
+                               :class="format === 'softcopy' ? 'border-orange-500 bg-orange-50' : 'border-slate-200 hover:border-slate-300'">
+                            <input type="radio" name="book_type" value="softcopy" x-model="format" class="sr-only">
+                            <div class="text-center">
+                                <div class="text-3xl mb-1">📱</div>
+                                <p class="font-semibold text-slate-800">Softcopy</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Digital PDF</p>
+                            </div>
+                        </label>
+
+                        <label class="cursor-pointer p-4 rounded-xl border-2 transition"
+                               :class="format === 'hardcopy' ? 'border-orange-500 bg-orange-50' : 'border-slate-200 hover:border-slate-300'">
+                            <input type="radio" name="book_type" value="hardcopy" x-model="format" class="sr-only">
+                            <div class="text-center">
+                                <div class="text-3xl mb-1">📦</div>
+                                <p class="font-semibold text-slate-800">Hardcopy</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Physical book</p>
+                            </div>
+                        </label>
+
+                        <label class="cursor-pointer p-4 rounded-xl border-2 transition"
+                               :class="format === 'both' ? 'border-orange-500 bg-orange-50' : 'border-slate-200 hover:border-slate-300'">
+                            <input type="radio" name="book_type" value="both" x-model="format" class="sr-only">
+                            <div class="text-center">
+                                <div class="text-3xl mb-1">📱📦</div>
+                                <p class="font-semibold text-slate-800">Both</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Digital + Physical</p>
+                            </div>
+                        </label>
+                    </div>
+                    @error('book_type') <p class="text-red-500 text-xs mt-2">{{ $message }}</p> @enderror
+
+                    <div class="grid md:grid-cols-2 gap-6 mt-5">
+                        <div x-show="format === 'softcopy' || format === 'both'" x-cloak>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">
+                                📱 Softcopy Price <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 font-medium">TSh</span>
+                                <input type="number" name="softcopy_price" step="0.01" min="0"
+                                       value="{{ old('softcopy_price', $book->softcopy_price) }}"
+                                       class="w-full pl-16 pr-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800">
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Set 0 for free digital download</p>
+                            @error('softcopy_price') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div x-show="format === 'hardcopy' || format === 'both'" x-cloak>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">
+                                📦 Hardcopy Price <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 font-medium">TSh</span>
+                                <input type="number" name="hardcopy_price" step="0.01" min="0"
+                                       value="{{ old('hardcopy_price', $book->hardcopy_price) }}"
+                                       class="w-full pl-16 pr-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800">
+                            </div>
+                            @error('hardcopy_price') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div x-show="format === 'hardcopy' || format === 'both'" x-cloak>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">
+                                📦 Stock Quantity <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" name="stock_quantity" min="0"
+                                   value="{{ old('stock_quantity', $book->stock_quantity ?? 0) }}"
+                                   class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800">
+                            <p class="text-xs text-slate-400 mt-1">Number of physical copies available</p>
+                            @error('stock_quantity') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
 
                 <!-- Description -->
                 <div class="mt-5">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">
-                        Description
-                    </label>
-                    <textarea name="description" rows="5" 
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+                    <textarea name="description" rows="5"
                               class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition text-slate-800 placeholder-slate-400 resize-y">{{ old('description', $book->description) }}</textarea>
                 </div>
 
@@ -185,46 +237,9 @@
     </div>
 </div>
 
-@push('styles')
 <style>
-    /* Custom file input styling */
-    input[type="file"] {
-        cursor: pointer;
-    }
-    input[type="file"]::file-selector-button {
-        cursor: pointer;
-    }
-    
-    /* Danger zone styling */
-    .bg-red-50 {
-        background-color: #fef2f2;
-    }
-    .bg-red-100 {
-        background-color: #fee2e2;
-    }
-    .border-red-200 {
-        border-color: #fecaca;
-    }
-    .text-red-700 {
-        color: #b91c1c;
-    }
+    [x-cloak] { display: none !important; }
+    input[type="file"] { cursor: pointer; }
+    input[type="file"]::file-selector-button { cursor: pointer; }
 </style>
-@endpush
-
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Optional: Add confirmation for status change if needed
-        const statusSelect = document.querySelector('select[name="status"]');
-        if (statusSelect) {
-            statusSelect.addEventListener('change', function() {
-                if (this.value === 'approved') {
-                    // Optional: Show a notification or confirmation
-                    console.log('Book will be published');
-                }
-            });
-        }
-    });
-</script>
-@endpush
 @endsection

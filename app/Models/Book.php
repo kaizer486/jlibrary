@@ -810,6 +810,186 @@ public function hasInstitution(): bool
         return $this->reviews()->where('user_id', $userId)->first();
     }
 
-    
+        // ==========================================
+    // BOOK FORMAT HELPERS (Softcopy / Hardcopy)
+    // ==========================================
+
+    /**
+     * Returns the effective format for this book.
+     *
+     * Prefers the explicit `book_type` column if it is one of the known
+     * values. Otherwise, infers from legacy fields (hardcopy_available,
+     * price) so old books uploaded before the format fields existed
+     * still behave sensibly.
+     *
+     * @return string  'softcopy' | 'hardcopy' | 'both'
+     */
+        public function effectiveBookType(): string
+    {
+        // What the format prices actually support. A PDF file existing
+        // does NOT mean the softcopy is on sale — the author may have
+        // uploaded it as the print source for a hardcopy-only book.
+        $hasSoft = (float) ($this->softcopy_price ?? 0) > 0;
+        $hasHard = (bool) $this->hardcopy_available
+            && (float) ($this->hardcopy_price ?? 0) > 0;
+
+        // Trust the author's declared book_type FIRST when it exists.
+        // This preserves "hardcopy only" even if a PDF was uploaded.
+        if (in_array($this->book_type, ['softcopy', 'hardcopy', 'both'], true)) {
+            if ($this->book_type === 'hardcopy') {
+                return $hasHard ? 'hardcopy' : 'softcopy';
+            }
+            if ($this->book_type === 'softcopy') {
+                return 'softcopy';
+            }
+            // Declared "both" — verify both prices are actually set.
+            if ($hasSoft && $hasHard) {
+                return 'both';
+            }
+            if ($hasHard) {
+                return 'hardcopy';
+            }
+            return 'softcopy';
+        }
+
+        // No book_type declared (legacy book) — infer from prices.
+        if ($hasSoft && $hasHard) {
+            return 'both';
+        }
+        if ($hasHard) {
+            return 'hardcopy';
+        }
+        return 'softcopy';
+    }
+      public function offersSoftcopy(): bool
+    {
+        $type = $this->effectiveBookType();
+
+        // Must be explicitly softcopy or both — a PDF file existing is
+        // NOT enough. If the author chose "hardcopy only", the file still
+        // exists but the digital version is NOT for sale.
+        if (!in_array($type, ['softcopy', 'both'], true)) {
+            return false;
+        }
+
+        // Free digital download (has file, price 0) is fine.
+        // Paid digital download requires a softcopy_price > 0.
+        return $this->hasPdf() && (
+            $this->effectiveSoftcopyPrice() > 0
+            || !$this->isPaid
+        );
+    }
+    /**
+     * Does this book offer a hardcopy (physical) version?
+     */
+    public function offersHardcopy(): bool
+    {
+        $type = $this->effectiveBookType();
+
+        return in_array($type, ['hardcopy', 'both'], true)
+            && (bool) $this->hardcopy_available
+            && $this->effectiveHardcopyPrice() > 0;
+    }
+
+    /**
+     * Softcopy price (falls back to legacy `price`).
+     */
+    public function effectiveSoftcopyPrice(): float
+    {
+        $soft = $this->softcopy_price;
+
+        if ($soft !== null && (float) $soft > 0) {
+            return (float) $soft;
+        }
+
+        // Legacy paid books only stored `price` — treat that as softcopy.
+        if ($this->is_paid && (float) $this->price > 0) {
+            return (float) $this->price;
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * Hardcopy price.
+     */
+    public function effectiveHardcopyPrice(): float
+    {
+        return (float) ($this->hardcopy_price ?? 0);
+    }
+
+    /**
+     * Whether the book has enough physical stock for the requested quantity.
+     */
+    public function hasStockFor(int $quantity): bool
+    {
+        return $this->offersHardcopy()
+            && (int) ($this->stock_quantity ?? 0) >= $quantity;
+    }
+
+    /**
+     * Returns a human label for the effective format.
+     */
+    public function getFormatLabelAttribute(): string
+    {
+        return match ($this->effectiveBookType()) {
+            'softcopy' => '📱 Softcopy',
+            'hardcopy' => '📦 Hardcopy',
+            'both'     => '📱📦 Softcopy & Hardcopy',
+            default    => 'Unknown',
+        };
+    }
+
+    // ==========================================
+    // ORDER OWNER HELPERS
+    // ==========================================
+
+    /**
+     * Who owns this book — used to route incoming orders to the correct
+     * dashboard (institution admin OR author).
+     *
+     * Returns an array like:
+     *   ['type' => 'institution', 'id' => 5, 'column' => 'institution_id']
+     *   ['type' => 'author',      'id' => 7, 'column' => 'author_id']
+     * or null if the book has no identifiable owner.
+     *
+     * @return array{type:string,id:int,column:string}|null
+     */
+    public function orderOwner(): ?array
+    {
+        if (!empty($this->institution_id)) {
+            return [
+                'type'   => 'institution',
+                'id'     => (int) $this->institution_id,
+                'column' => 'institution_id',
+            ];
+        }
+
+        if (!empty($this->uploaded_by)) {
+            return [
+                'type'   => 'author',
+                'id'     => (int) $this->uploaded_by,
+                'column' => 'author_id',
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Convenience: is this book owned by an author (uploader)?
+     */
+    public function isAuthorOwned(): bool
+    {
+        return empty($this->institution_id) && !empty($this->uploaded_by);
+    }
+
+    /**
+     * Convenience: is this book owned by an institution?
+     */
+    public function isInstitutionOwned(): bool
+    {
+        return !empty($this->institution_id);
+    }
 
 }

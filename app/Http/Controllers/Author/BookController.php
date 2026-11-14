@@ -202,12 +202,10 @@ class BookController extends Controller
 
     public function store(Request $request)
 {
-    $request->validate([
+      $request->validate([
         'title' => 'required|string|max:255',
         'author' => 'required|string|max:255',
         'description' => 'nullable|string',
-        'price' => 'nullable|numeric|min:0',
-        'is_paid' => 'boolean',
         'institution_id' => 'nullable|exists:institutions,id',
         'book_file' => 'required|file|mimes:pdf|max:20480',
         'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -217,6 +215,12 @@ class BookController extends Controller
         'is_featured' => 'boolean',
         'is_trending' => 'boolean',
         'published_date' => 'nullable|date',
+
+        // ── Format & pricing ──
+        'book_type'       => 'required|in:softcopy,hardcopy,both',
+        'softcopy_price'  => 'nullable|numeric|min:0|required_if:book_type,softcopy,both',
+        'hardcopy_price'  => 'nullable|numeric|min:0|required_if:book_type,hardcopy,both',
+        'stock_quantity'  => 'nullable|integer|min:0|required_if:book_type,hardcopy,both',
     ]);
 
     $bookPath = $request->file('book_file')->store('books', 'public');
@@ -226,12 +230,25 @@ class BookController extends Controller
         $coverPath = $request->file('cover_image')->store('book-covers', 'public');
     }
 
+     // ── Derive legacy fields from format fields ──
+    $bookType    = $request->book_type;
+    $softPrice   = $request->filled('softcopy_price') ? (float) $request->softcopy_price : null;
+    $hardPrice   = $request->filled('hardcopy_price') ? (float) $request->hardcopy_price : null;
+    $stock       = $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0;
+
+    $hasSoft     = in_array($bookType, ['softcopy', 'both'], true) && $softPrice !== null && $softPrice > 0;
+    $hasHard     = in_array($bookType, ['hardcopy', 'both'], true) && $hardPrice !== null && $hardPrice > 0;
+
+    // is_paid: true if any format has a price > 0
+    $isPaid      = $hasSoft || $hasHard;
+
+    // legacy `price` = softcopy price (falls back to hardcopy price)
+    $legacyPrice = $softPrice ?? $hardPrice ?? 0;
+
     Book::create([
         'title' => $request->title,
         'author' => $request->author,
         'description' => $request->description,
-        'price' => $request->price ?? 0,
-        'is_paid' => $request->is_paid ?? false,
         'file_path' => $bookPath,
         'cover_image' => $coverPath,
         'total_pages' => $request->total_pages ?? 0,
@@ -243,6 +260,17 @@ class BookController extends Controller
         'is_featured' => $request->is_featured ?? false,
         'is_trending' => $request->is_trending ?? false,
         'published_date' => $request->published_date,
+
+        // ── Format fields (new) ──
+        'book_type'          => $bookType,
+        'softcopy_price'     => $softPrice,
+        'hardcopy_price'     => $hardPrice,
+        'hardcopy_available' => $hasHard,
+        'stock_quantity'     => $hasHard ? $stock : 0,
+
+        // ── Legacy fields (auto-derived, still used by existing code) ──
+        'is_paid' => $isPaid,
+        'price'   => $legacyPrice,
     ]);
 
     return redirect()->route('author.books.index')->with('success', 'Book uploaded successfully and is now live!');
@@ -278,37 +306,62 @@ class BookController extends Controller
             abort(403, 'Unauthorized action.');
         }
         
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'author' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'nullable|numeric|min:0',
-            'is_paid' => 'boolean',
-            'institution_id' => 'nullable|exists:institutions,id',
-            'book_file' => 'nullable|file|mimes:pdf|max:20480',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'total_pages' => 'nullable|integer|min:0',
-            'category' => 'nullable|string|max:255',
-            'sub_category' => 'nullable|string|max:255',
-            'is_featured' => 'boolean',
-            'is_trending' => 'boolean',
-            'published_date' => 'nullable|date',
-        ]);
+         $request->validate([
+        'title' => 'required|string|max:255',
+        'author' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'institution_id' => 'nullable|exists:institutions,id',
+        'book_file' => 'nullable|file|mimes:pdf|max:20480',
+        'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        'total_pages' => 'nullable|integer|min:0',
+        'category' => 'nullable|string|max:255',
+        'sub_category' => 'nullable|string|max:255',
+        'is_featured' => 'boolean',
+        'is_trending' => 'boolean',
+        'published_date' => 'nullable|date',
 
-        $book->update([
-            'title' => $request->title,
-            'author' => $request->author,
-            'description' => $request->description,
-            'price' => $request->price ?? 0,
-            'is_paid' => $request->is_paid ?? false,
-            'total_pages' => $request->total_pages ?? 0,
-            'institution_id' => $request->institution_id,
-            'category' => $request->category,
-            'sub_category' => $request->sub_category,
-            'is_featured' => $request->is_featured ?? false,
-            'is_trending' => $request->is_trending ?? false,
-            'published_date' => $request->published_date,
-        ]);
+        // ── Format & pricing ──
+        'book_type'       => 'required|in:softcopy,hardcopy,both',
+        'softcopy_price'  => 'nullable|numeric|min:0|required_if:book_type,softcopy,both',
+        'hardcopy_price'  => 'nullable|numeric|min:0|required_if:book_type,hardcopy,both',
+        'stock_quantity'  => 'nullable|integer|min:0|required_if:book_type,hardcopy,both',
+    ]);
+       
+        // ── Derive legacy fields from format fields ──
+    $bookType    = $request->book_type;
+    $softPrice   = $request->filled('softcopy_price') ? (float) $request->softcopy_price : null;
+    $hardPrice   = $request->filled('hardcopy_price') ? (float) $request->hardcopy_price : null;
+    $stock       = $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0;
+
+    $hasSoft     = in_array($bookType, ['softcopy', 'both'], true) && $softPrice !== null && $softPrice > 0;
+    $hasHard     = in_array($bookType, ['hardcopy', 'both'], true) && $hardPrice !== null && $hardPrice > 0;
+
+    $isPaid      = $hasSoft || $hasHard;
+    $legacyPrice = $softPrice ?? $hardPrice ?? 0;
+
+    $book->update([
+        'title' => $request->title,
+        'author' => $request->author,
+        'description' => $request->description,
+        'total_pages' => $request->total_pages ?? 0,
+        'institution_id' => $request->institution_id,
+        'category' => $request->category,
+        'sub_category' => $request->sub_category,
+        'is_featured' => $request->is_featured ?? false,
+        'is_trending' => $request->is_trending ?? false,
+        'published_date' => $request->published_date,
+
+        // ── Format fields (new) ──
+        'book_type'          => $bookType,
+        'softcopy_price'     => $softPrice,
+        'hardcopy_price'     => $hardPrice,
+        'hardcopy_available' => $hasHard,
+        'stock_quantity'     => $hasHard ? $stock : 0,
+
+        // ── Legacy fields (auto-derived) ──
+        'is_paid' => $isPaid,
+        'price'   => $legacyPrice,
+    ]);
 
         if ($request->hasFile('cover_image')) {
             if ($book->cover_image) {

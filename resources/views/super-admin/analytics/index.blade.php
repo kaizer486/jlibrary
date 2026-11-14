@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="mb-6">
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center flex-wrap gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <i class="ti ti-chart-bar text-purple-600"></i>
@@ -35,7 +35,7 @@
             <i class="ti ti-users text-3xl text-purple-500"></i>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-blue-500">
         <div class="flex justify-between items-start">
             <div>
@@ -46,7 +46,7 @@
             <i class="ti ti-books text-3xl text-blue-500"></i>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-green-500">
         <div class="flex justify-between items-start">
             <div>
@@ -57,7 +57,7 @@
             <i class="ti ti-wallet text-3xl text-green-500"></i>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-yellow-500">
         <div class="flex justify-between items-start">
             <div>
@@ -82,7 +82,7 @@
             <i class="ti ti-building text-3xl text-indigo-500"></i>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-pink-500">
         <div class="flex justify-between items-start">
             <div>
@@ -92,7 +92,7 @@
             <i class="ti ti-brain text-3xl text-pink-500"></i>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-orange-500">
         <div class="flex justify-between items-start">
             <div>
@@ -102,7 +102,7 @@
             <i class="ti ti-certificate text-3xl text-orange-500"></i>
         </div>
     </div>
-    
+
     <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-teal-500">
         <div class="flex justify-between items-start">
             <div>
@@ -121,7 +121,7 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <i class="ti ti-chart-line text-purple-600"></i>
-                Revenue Overview ({{ date('Y') }})
+                Revenue Overview ({{ now()->year }})
             </h2>
             <select id="period-select" class="text-sm border rounded-lg px-3 py-1">
                 <option value="monthly">Monthly</option>
@@ -130,12 +130,12 @@
         </div>
         <canvas id="revenueChart" height="250"></canvas>
     </div>
-    
+
     <div class="bg-white rounded-xl shadow-sm p-6">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <i class="ti ti-users text-purple-600"></i>
-                User Growth ({{ date('Y') }})
+                User Growth ({{ now()->year }})
             </h2>
         </div>
         <canvas id="userChart" height="250"></canvas>
@@ -143,30 +143,56 @@
 </div>
 
 <!-- Top Lists Row -->
-<div class="grid lg:grid-cols-2 gap-6 mb-6">
+<div class="grid lg:grid-cols-3 gap-6 mb-6">
+    <!-- Most Downloaded Books -->
     <div class="bg-white rounded-xl shadow-sm p-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <i class="ti ti-books text-purple-600"></i>
-            Most Popular Books
+            <i class="ti ti-download text-purple-600"></i>
+            Most Downloaded Books
         </h2>
         <div class="space-y-3">
             @forelse($topBooks as $book)
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <p class="font-medium text-gray-800">{{ Str::limit($book->title, 40) }}</p>
-                        <p class="text-xs text-gray-500">by {{ $book->author }}</p>
+                    <div class="min-w-0">
+                        <p class="font-medium text-gray-800 truncate">{{ Str::limit($book->title, 30) }}</p>
+                        <p class="text-xs text-gray-500 truncate">by {{ $book->author }}</p>
                     </div>
-                    <div class="text-right">
+                    <div class="text-right flex-shrink-0 ml-2">
                         <p class="text-sm font-semibold text-blue-600">{{ number_format($book->downloads) }}</p>
                         <p class="text-xs text-gray-400">downloads</p>
                     </div>
                 </div>
             @empty
-                <p class="text-gray-500 text-center py-4">No books data yet</p>
+                <p class="text-gray-500 text-center py-4">No downloads data yet</p>
             @endforelse
         </div>
     </div>
-    
+
+    <!-- Most Viewed Books -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="ti ti-eye text-purple-600"></i>
+            Most Viewed Books
+        </h2>
+        <div class="space-y-3">
+            @forelse($topViewedBooks as $book)
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="min-w-0">
+                        <p class="font-medium text-gray-800 truncate">{{ Str::limit($book->title, 30) }}</p>
+                        <p class="text-xs text-gray-500 truncate">by {{ $book->author }}</p>
+                    </div>
+                    <div class="text-right flex-shrink-0 ml-2">
+                        <p class="text-sm font-semibold text-indigo-600">{{ number_format($book->views_count) }}</p>
+                        <p class="text-xs text-gray-400">views</p>
+                    </div>
+                </div>
+            @empty
+                <p class="text-gray-500 text-center py-4">No view data yet</p>
+            @endforelse
+        </div>
+    </div>
+
+    <!-- Top Institutions -->
     <div class="bg-white rounded-xl shadow-sm p-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i class="ti ti-building text-purple-600"></i>
@@ -175,11 +201,11 @@
         <div class="space-y-3">
             @forelse($topInstitutions as $inst)
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <p class="font-medium text-gray-800">{{ Str::limit($inst->name, 40) }}</p>
-                        <p class="text-xs text-gray-500">{{ $inst->type_label }}</p>
+                    <div class="min-w-0">
+                        <p class="font-medium text-gray-800 truncate">{{ Str::limit($inst->name, 25) }}</p>
+                        <p class="text-xs text-gray-500 truncate">{{ $inst->type_label ?? $inst->type }}</p>
                     </div>
-                    <div class="text-right">
+                    <div class="text-right flex-shrink-0 ml-2">
                         <p class="text-sm font-semibold text-green-600">{{ number_format($inst->users_count) }}</p>
                         <p class="text-xs text-gray-400">members</p>
                     </div>
@@ -201,25 +227,31 @@
         <div>
             <p class="text-sm font-medium text-gray-600 mb-2">📚 Recent Books</p>
             <div class="space-y-2">
-                @foreach($recentBooks as $book)
+                @forelse($recentBooks as $book)
                     <p class="text-sm text-gray-800">{{ Str::limit($book->title, 35) }}</p>
-                @endforeach
+                @empty
+                    <p class="text-sm text-gray-400">No books yet</p>
+                @endforelse
             </div>
         </div>
         <div>
             <p class="text-sm font-medium text-gray-600 mb-2">👥 New Users</p>
             <div class="space-y-2">
-                @foreach($recentUsers as $user)
+                @forelse($recentUsers as $user)
                     <p class="text-sm text-gray-800">{{ $user->full_name }}</p>
-                @endforeach
+                @empty
+                    <p class="text-sm text-gray-400">No users yet</p>
+                @endforelse
             </div>
         </div>
         <div>
             <p class="text-sm font-medium text-gray-600 mb-2">💰 Recent Payments</p>
             <div class="space-y-2">
-                @foreach($recentPayments as $payment)
+                @forelse($recentPayments as $payment)
                     <p class="text-sm text-gray-800">TSh {{ number_format($payment->amount, 2) }} - {{ $payment->user->full_name ?? 'N/A' }}</p>
-                @endforeach
+                @empty
+                    <p class="text-sm text-gray-400">No payments yet</p>
+                @endforelse
             </div>
         </div>
     </div>
@@ -229,14 +261,14 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     let revenueChart, userChart;
-    
+
     function initCharts(revenueData, userData, labels) {
         const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        const userCtx = document.getElementById('userChart').getContext('2d');
-        
+        const userCtx    = document.getElementById('userChart').getContext('2d');
+
         if (revenueChart) revenueChart.destroy();
-        if (userChart) userChart.destroy();
-        
+        if (userChart)    userChart.destroy();
+
         revenueChart = new Chart(revenueCtx, {
             type: 'line',
             data: {
@@ -252,7 +284,7 @@
             },
             options: { responsive: true, maintainAspectRatio: true }
         });
-        
+
         userChart = new Chart(userCtx, {
             type: 'bar',
             data: {
@@ -267,25 +299,28 @@
             options: { responsive: true, maintainAspectRatio: true }
         });
     }
-    
-    // Initial data
+
+    // Initial data from server
     const monthlyRevenue = @json($monthlyRevenue);
-    const monthlyUsers = @json($monthlyUsers);
-    const months = @json($months);
-    
+    const monthlyUsers   = @json($monthlyUsers);
+    const months         = @json($months);
+
     initCharts(monthlyRevenue, monthlyUsers, months);
-    
+
     // Period selector
-    document.getElementById('period-select')?.addEventListener('change', function() {
+    document.getElementById('period-select')?.addEventListener('change', function () {
         const period = this.value;
-        fetch(`/super-admin/analytics/data?period=${period}`)
+        fetch(`/super-admin/analytics/data?period=${period}`, {
+            headers: { 'Accept': 'application/json' }
+        })
             .then(response => response.json())
             .then(data => {
                 initCharts(data.revenue, data.users, data.labels);
-            });
+            })
+            .catch(err => console.error('Chart data error:', err));
     });
-    
-    // Export functions
+
+    // Export
     function exportReport(type) {
         window.location.href = `/super-admin/analytics/export?type=${type}`;
     }

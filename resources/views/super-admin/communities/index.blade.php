@@ -19,6 +19,17 @@
         </a>
     </div>
 
+    @if(session('success'))
+        <div class="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div class="bg-white rounded-xl p-4 border-l-4 border-purple-500 shadow-sm hover:shadow-md transition">
@@ -52,7 +63,7 @@
         <form method="GET" action="{{ route('super-admin.communities.index') }}" class="flex flex-col md:flex-row gap-4">
             <div class="flex-1 relative">
                 <i class="ti ti-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <input type="text" name="search" placeholder="Search by name or description..." 
+                <input type="text" name="search" placeholder="Search by name or description..."
                        value="{{ request('search') }}"
                        class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-yellow-400">
             </div>
@@ -132,16 +143,16 @@
                         <td class="px-6 py-4 text-sm text-gray-500">{{ $group->created_at->format('M d, Y') }}</td>
                         <td class="px-6 py-4 text-sm">
                             <div class="flex items-center gap-2">
-                                <a href="{{ route('super-admin.communities.show', $group) }}" 
+                                <a href="{{ route('super-admin.communities.show', $group) }}"
                                    class="text-blue-600 hover:text-blue-800" title="View">
                                     <i class="ti ti-eye"></i>
                                 </a>
-                                <a href="{{ route('community.show', $group) }}" 
+                                <a href="{{ route('community.show', $group) }}"
                                    class="text-green-600 hover:text-green-800" title="Open in Community">
                                     <i class="ti ti-external-link"></i>
                                 </a>
-                                <form method="POST" action="{{ route('super-admin.communities.destroy', $group) }}" 
-                                      class="inline" 
+                                <form method="POST" action="{{ route('super-admin.communities.destroy', $group) }}"
+                                      class="inline"
                                       onsubmit="return confirm('Delete this group permanently? All messages and data will be lost.')">
                                     @csrf
                                     @method('DELETE')
@@ -166,11 +177,6 @@
         <i class="ti ti-users text-6xl text-gray-400 mb-4 block"></i>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">No Communities Found</h3>
         <p class="text-gray-500">Communities will appear here when users create them.</p>
-        <!-- DEBUG: Show count -->
-        @php
-            $debugCount = \App\Models\CommunityGroup::count();
-        @endphp
-        <p class="text-xs text-gray-400 mt-2">Debug: Total groups in database: {{ $debugCount }}</p>
     </div>
     @endif
 </div>
