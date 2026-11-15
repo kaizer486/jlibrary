@@ -873,10 +873,9 @@ public function hasInstitution(): bool
         }
 
         // Free digital download (has file, price 0) is fine.
-        // Paid digital download requires a softcopy_price > 0.
-        return $this->hasPdf() && (
+               return $this->hasPdf() && (
             $this->effectiveSoftcopyPrice() > 0
-            || !$this->isPaid
+            || !$this->is_paid
         );
     }
     /**

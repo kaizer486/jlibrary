@@ -301,7 +301,7 @@
 <!-- SOFTCOPY PURCHASE MODAL -->
 <div id="purchaseModal" class="fixed inset-0 bg-black/60 hidden items-start justify-center z-50 p-4 overflow-y-auto">
     <div class="bg-white rounded-2xl max-w-lg w-full mx-auto my-8 overflow-hidden shadow-2xl animate-modal-pop">
-        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 text-white sticky top-0 z-10"></div>
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 text-white sticky top-0 z-10">
             <div class="flex justify-between items-center">
                 <h3 class="text-xl font-bold">Complete Softcopy Purchase</h3>
                 <button onclick="closePurchaseModal()" class="text-white/80 hover:text-white transition">
