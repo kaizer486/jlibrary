@@ -412,6 +412,24 @@
             <span>Payments</span>
         </a>
 
+                <!-- Hardcopy Orders -->
+        <a href="{{ route('super-admin.hardcopy-orders.index') }}" class="nav-item {{ request()->routeIs('super-admin.hardcopy-orders.*') ? 'active' : '' }}">
+            <i class="ti ti-truck-delivery text-orange-400 text-xl"></i>
+            <span>Orders</span>
+            @php
+                try {
+                    $unsetCommission = \App\Models\Order::whereIn('book_type', ['hardcopy', 'both'])
+                        ->whereNull('platform_commission')
+                        ->count();
+                } catch (\Exception $e) {
+                    $unsetCommission = 0;
+                }
+            @endphp
+            @if($unsetCommission > 0)
+                <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $unsetCommission }}</span>
+            @endif
+        </a>
+
         <!-- Quotes -->
         <a href="{{ route('super-admin.quotes.index') }}" class="nav-item {{ request()->routeIs('super-admin.quotes.*') ? 'active' : '' }}">
             <i class="ti ti-quote text-purple-400 text-xl"></i>

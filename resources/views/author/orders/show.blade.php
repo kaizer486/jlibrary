@@ -38,7 +38,9 @@
                             Placed {{ $order->created_at->format('F d, Y \a\t H:i') }}
                         </p>
                     </div>
-                    <div>{!! $order->status_badge !!}</div>
+                    <div class="flex items-center gap-2">
+                        {!! $order->status_badge !!}
+                    </div>
                 </div>
             </div>
 
@@ -120,8 +122,34 @@
                             @endif
                         </span>
                     </div>
+
+                    <!-- COMMISSION ROW -->
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-500">Commission</span>
+                        <span class="text-right">
+                            @if($order->hasCommission())
+                                <span class="font-semibold text-slate-700 block">
+                                    TSh {{ number_format($order->platform_commission, 2) }}
+                                </span>
+                                <span class="mt-0.5 inline-block">{!! $order->commission_badge !!}</span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                                    <i class="ti ti-clock text-xs"></i> Awaiting
+                                </span>
+                            @endif
+                        </span>
+                    </div>
+
+                    <!-- PAYOUT ROW -->
+                    <div class="flex justify-between py-2 border-b border-slate-100">
+                        <span class="font-semibold text-slate-800">Your Payout</span>
+                        <span class="font-bold text-emerald-700 text-lg">
+                            TSh {{ number_format($order->ownerPayout(), 2) }}
+                        </span>
+                    </div>
+
                     <div class="flex justify-between pt-3 border-t-2 border-slate-200">
-                        <span class="font-semibold text-slate-800">Total</span>
+                        <span class="font-semibold text-slate-800">Order Total</span>
                         <span class="font-bold text-orange-600 text-lg">TSh {{ number_format($order->total, 2) }}</span>
                     </div>
                 </div>
@@ -153,7 +181,7 @@
             </div>
         </div>
 
-        <!-- Buyer's notes (parsed from `Name: X | Notes: Y`) -->
+        <!-- Buyer's notes -->
         @php
             $userNotes = '';
             if ($order->notes && preg_match('/\|\s*Notes:\s*(.+)$/', $order->notes, $m)) {
@@ -181,10 +209,10 @@
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Status</label>
                         <select name="status" required
                                 class="w-full px-4 py-2.5 bg-white border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-slate-800">
-                            <option value="pending"    {{ $order->status === 'pending'    ? 'selected' : '' }}>⏳ Pending</option>
-                            <option value="processing" {{ $order->status === 'processing' ? 'selected' : '' }}>🔄 Processing (Preparing)</option>
-                            <option value="completed"  {{ $order->status === 'completed'  ? 'selected' : '' }}>✅ Completed (Delivered)</option>
-                            <option value="cancelled"  {{ $order->status === 'cancelled'  ? 'selected' : '' }}>❌ Cancelled</option>
+                            <option value="pending"    {{ $order->status === 'pending'    ? 'selected' : '' }}>Pending</option>
+                            <option value="processing" {{ $order->status === 'processing' ? 'selected' : '' }}>Processing (Preparing)</option>
+                            <option value="completed"  {{ $order->status === 'completed'  ? 'selected' : '' }}>Completed (Delivered)</option>
+                            <option value="cancelled"  {{ $order->status === 'cancelled'  ? 'selected' : '' }}>Cancelled</option>
                         </select>
                     </div>
                     <div class="flex items-end">

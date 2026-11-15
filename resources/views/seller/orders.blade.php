@@ -50,6 +50,8 @@
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Delivery</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Qty × Price</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Total</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Commission</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Payout</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                             <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
@@ -88,7 +90,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 @if($order->shipping_address)
-                                    <p class="text-xs text-gray-700 max-w-[200px] line-clamp-2">
+                                    <p class="text-xs text-gray-700 max-w-[180px] line-clamp-2">
                                         <i class="ti ti-map-pin text-xs text-orange-500"></i>
                                         {{ $order->shipping_address }}
                                     </p>
@@ -102,6 +104,26 @@
                             <td class="px-4 py-3 font-semibold text-emerald-600">
                                 TSh {{ number_format($order->total, 2) }}
                             </td>
+
+                            <!-- COMMISSION COLUMN -->
+                            <td class="px-4 py-3 text-sm">
+                                @if($order->hasCommission())
+                                    <p class="font-semibold text-slate-700">TSh {{ number_format($order->platform_commission, 0) }}</p>
+                                    <p class="mt-0.5">{!! $order->commission_badge !!}</p>
+                                @else
+                                    <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                                        <i class="ti ti-clock text-xs"></i> Awaiting
+                                    </span>
+                                @endif
+                            </td>
+
+                            <!-- PAYOUT COLUMN -->
+                            <td class="px-4 py-3 text-sm">
+                                <span class="font-bold text-slate-800">
+                                    TSh {{ number_format($order->ownerPayout(), 2) }}
+                                </span>
+                            </td>
+
                             <td class="px-4 py-3">
                                 <span class="text-xs px-2.5 py-1 rounded-full 
                                     {{ $order->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 
@@ -127,7 +149,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="11" class="px-4 py-8 text-center text-gray-500">
                                 <i class="ti ti-truck-delivery text-4xl mb-2 block text-gray-300"></i>
                                 <p>No book orders yet.</p>
                             </td>

@@ -953,6 +953,18 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
         Route::delete('/{application}', [SuperAdminApplicationController::class, 'destroy'])->name('destroy');
     });
 
+        // ==========================================
+    // HARDCOPY ORDERS (Super Admin oversight)
+    // ==========================================
+    Route::prefix('hardcopy-orders')->name('hardcopy-orders.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'index'])
+            ->name('index');
+        Route::get('/{order}', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'show'])
+            ->whereNumber('order')->name('show');
+        Route::post('/{order}/commission', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'updateCommission'])
+            ->whereNumber('order')->name('update-commission');
+    });
+
     // Payments
     Route::prefix('payments')->name('payments.')->group(function () {
         Route::get('/', [SuperAdminPaymentController::class, 'index'])->name('index');

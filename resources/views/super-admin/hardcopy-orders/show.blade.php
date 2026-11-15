@@ -1,0 +1,231 @@
+@extends('layouts.super-admin')
+
+@section('title', 'Order #' . $order->id)
+
+@section('content')
+<div class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Back -->
+    <a href="{{ route('super-admin.hardcopy-orders.index') }}"
+       class="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800">
+        <i class="ti ti-arrow-left"></i> Back to Hardcopy Orders
+    </a>
+
+    <!-- Header -->
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-bold flex items-center gap-2">
+                        <i class="ti ti-package"></i> Order #{{ $order->id }}
+                    </h1>
+                    <p class="text-purple-100 text-sm mt-1">
+                        Placed {{ $order->created_at->format('F d, Y \a\t H:i') }}
+                    </p>
+                </div>
+                <div>{!! $order->status_badge !!}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order info + Owner contact -->
+    <div class="grid md:grid-cols-2 gap-6">
+
+        <!-- Order details -->
+        <div class="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+            <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                <i class="ti ti-receipt text-purple-600"></i> Order Details
+            </h2>
+
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">Book</span>
+                    <span class="font-medium text-right">{{ $order->book->title ?? 'N/A' }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">Quantity</span>
+                    <span class="font-medium">× {{ $order->quantity }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">Unit Price</span>
+                    <span class="font-medium">TSh {{ number_format($order->price_per_unit, 2) }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">Total</span>
+                    <span class="font-bold text-emerald-600">TSh {{ number_format($order->total, 2) }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-500">Payment</span>
+                    <span class="font-medium">
+                        @if($order->payment_method === 'contact')
+                            <i class="ti ti-phone"></i> Contact on delivery
+                        @else
+                            {{ ucfirst($order->payment_method) }}
+                        @endif
+                    </span>
+                </div>
+            </div>
+
+            @if($order->shipping_address)
+                <div class="pt-3 border-t border-gray-100">
+                    <p class="text-xs text-gray-400 uppercase mb-1">Delivery Location</p>
+                    <p class="text-sm text-gray-700">
+                        <i class="ti ti-map-pin text-orange-500"></i> {{ $order->shipping_address }}
+                    </p>
+                </div>
+            @endif
+
+            @if($order->notes && preg_match('/\|\s*Notes:\s*(.+)$/', $order->notes, $m))
+                <div class="pt-3 border-t border-gray-100">
+                    <p class="text-xs text-gray-400 uppercase mb-1">Buyer's Notes</p>
+                    <p class="text-sm text-gray-700">{{ trim($m[1]) }}</p>
+                </div>
+            @endif
+        </div>
+
+        <!-- Owner + Buyer contact -->
+        <div class="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+            <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                <i class="ti ti-user-check text-purple-600"></i> Contacts
+            </h2>
+
+            <!-- Book Owner -->
+            <div class="bg-purple-50 rounded-xl p-4">
+                <p class="text-xs text-purple-600 uppercase mb-1 font-semibold">
+                    {{ $order->author_id ? 'Author (Book Owner)' : 'Institution (Book Owner)' }}
+                </p>
+                <p class="font-semibold text-gray-800 text-lg">{{ $order->owner_name }}</p>
+
+                @if($order->author && $order->author->email)
+                    <a href="mailto:{{ $order->author->email }}"
+                       class="text-sm text-purple-700 hover:text-purple-900 mt-2 inline-block">
+                        <i class="ti ti-mail text-xs"></i> {{ $order->author->email }}
+                    </a>
+                @endif
+
+                @if($order->author && $order->author->mpesa_phone)
+                    <a href="tel:{{ $order->author->mpesa_phone }}"
+                       class="text-sm text-purple-700 hover:text-purple-900 mt-1 inline-block ml-3">
+                        <i class="ti ti-phone text-xs"></i> {{ $order->author->mpesa_phone }}
+                    </a>
+                @endif
+            </div>
+
+            <!-- Buyer -->
+            <div class="bg-blue-50 rounded-xl p-4">
+                <p class="text-xs text-blue-600 uppercase mb-1 font-semibold">Buyer</p>
+                <p class="font-semibold text-gray-800">{{ $order->user->full_name ?? 'Guest' }}</p>
+
+                @if($order->user && $order->user->email)
+                    <a href="mailto:{{ $order->user->email }}"
+                       class="text-sm text-blue-700 hover:text-blue-900 mt-2 inline-block">
+                        <i class="ti ti-mail text-xs"></i> {{ $order->user->email }}
+                    </a>
+                @endif
+
+                @if($order->customer_phone)
+                    <a href="tel:{{ $order->customer_phone }}"
+                       class="text-sm text-blue-700 hover:text-blue-900 mt-1 inline-block ml-3">
+                        <i class="ti ti-phone text-xs"></i> {{ $order->customer_phone }}
+                    </a>
+                @endif
+            </div>
+
+            <div class="bg-orange-50 rounded-xl p-3 text-xs text-orange-800 flex items-start gap-2">
+                <i class="ti ti-info-circle mt-0.5 flex-shrink-0"></i>
+                <span>Contact the owner to negotiate the platform commission for this order. Save the agreed amount below.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commission form -->
+    <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="ti ti-coin text-purple-600"></i> Commission &amp; Payout
+        </h2>
+
+        @if(session('success'))
+            <div class="mb-4 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800 flex items-center gap-2">
+                <i class="ti ti-check-circle"></i> {{ session('success') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
+                <ul class="list-disc list-inside">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('super-admin.hardcopy-orders.update-commission', $order->id) }}">
+            @csrf
+
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Platform Commission (TSh) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="platform_commission" step="0.01" min="0"
+                           max="{{ $order->total }}"
+                           value="{{ old('platform_commission', $order->platform_commission) }}"
+                           placeholder="0.00" required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    <p class="text-xs text-gray-400 mt-1">
+                        Max: TSh {{ number_format($order->total, 2) }}
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Commission Status <span class="text-red-500">*</span>
+                    </label>
+                    <select name="commission_status" required
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <option value="pending"    {{ $order->commission_status === 'pending'    ? 'selected' : '' }}>Pending</option>
+                        <option value="negotiated" {{ $order->commission_status === 'negotiated' ? 'selected' : '' }}>Negotiated</option>
+                        <option value="collected"  {{ $order->commission_status === 'collected'  ? 'selected' : '' }}>Collected</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Negotiation Notes (internal)
+                </label>
+                <textarea name="commission_notes" rows="3"
+                          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="e.g. Agreed on 15% commission over call on Nov 15, confirmed via WhatsApp">{{ old('commission_notes', $order->commission_notes) }}</textarea>
+            </div>
+
+            <!-- Preview -->
+            <div class="bg-gray-50 rounded-xl p-4 mb-4 grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <p class="text-xs text-gray-500">Total</p>
+                    <p class="text-sm font-semibold text-gray-800">TSh {{ number_format($order->total, 0) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-purple-600">Commission</p>
+                    <p class="text-sm font-bold text-purple-700">
+                        TSh {{ number_format($order->commissionAmount(), 0) }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs text-emerald-600">Owner Payout</p>
+                    <p class="text-sm font-bold text-emerald-700">
+                        TSh {{ number_format($order->ownerPayout(), 0) }}
+                    </p>
+                </div>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition flex items-center justify-center gap-2">
+                <i class="ti ti-device-floppy"></i> Save Commission
+            </button>
+        </form>
+    </div>
+
+</div>
+@endsection

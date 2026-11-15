@@ -20,14 +20,14 @@ class LibraryOrderController extends Controller
      */
     public function store(Request $request)
     {
-       $request->validate([
-    'book_id'          => 'required|exists:books,id',
-    'quantity'         => 'required|integer|min:1|max:50',
-    'customer_name'    => 'required|string|max:120',
-    'customer_phone'   => 'required|string|max:30',
-    'shipping_address' => 'required|string|max:500',
-    'notes'            => 'nullable|string|max:1000',
-]);
+        $request->validate([
+            'book_id'          => 'required|exists:books,id',
+            'quantity'         => 'required|integer|min:1|max:50',
+            'customer_name'    => 'required|string|max:120',
+            'customer_phone'   => 'required|string|max:30',
+            'shipping_address' => 'required|string|max:500',
+            'notes'            => 'nullable|string|max:1000',
+        ]);
 
         $user = Auth::user();
         if (!$user) {
@@ -81,9 +81,9 @@ class LibraryOrderController extends Controller
                     'shipping_address' => $request->shipping_address,
                     'customer_phone'   => $request->customer_phone,
                     'notes'            => trim(
-    'Name: ' . $request->customer_name
-    . ($request->filled('notes') ? ' | Notes: ' . $request->notes : '')
-),
+                        'Name: ' . $request->customer_name
+                        . ($request->filled('notes') ? ' | Notes: ' . $request->notes : '')
+                    ),
                 ]);
             });
         } catch (\Throwable $e) {
@@ -123,6 +123,7 @@ class LibraryOrderController extends Controller
 
         return view('library.order-show', compact('order'));
     }
+
     /**
      * Buyer's "My Orders" list — hardcopy orders + softcopy purchases.
      */
@@ -180,6 +181,7 @@ class LibraryOrderController extends Controller
                . '" (x' . $order->quantity . ') for TSh ' . number_format($order->total, 2)
                . '. Phone: ' . $order->customer_phone;
 
+        // ── Step 1: Notify the book OWNER (author OR institution admins) ──
         if ($owner['type'] === 'author') {
             NotificationHelper::send(
                 $owner['id'],
@@ -193,26 +195,50 @@ class LibraryOrderController extends Controller
                     'link'     => route('author.orders.show', $order->id),
                 ]
             );
-            return;
+        } else {
+            // Institution-owned book → notify every institution admin
+            $admins = \App\Models\User::where('institution_id', $owner['id'])
+                ->where('is_institution_admin', true)
+                ->get();
+
+            foreach ($admins as $admin) {
+                NotificationHelper::send(
+                    $admin->id,
+                    'new_order',
+                    $title,
+                    $body,
+                    [
+                        'order_id' => $order->id,
+                        'book_id'  => $book->id,
+                        'user_id'  => $buyer->id,
+                        'link'     => route('orders.show', $order->id),
+                    ]
+                );
+            }
         }
 
-        $admins = \App\Models\User::where('institution_id', $owner['id'])
-            ->where('is_institution_admin', true)
-            ->get();
+        // ── Step 2: Notify every super-admin so they can negotiate commission ──
+        try {
+            $superAdmins = \App\Models\User::role('super_admin')->get();
 
-        foreach ($admins as $admin) {
-            NotificationHelper::send(
-                $admin->id,
-                'new_order',
-                $title,
-                $body,
-                [
-                    'order_id' => $order->id,
-                    'book_id'  => $book->id,
-                    'user_id'  => $buyer->id,
-                    'link'     => route('orders.show', $order->id),
-                ]
-            );
+            foreach ($superAdmins as $sa) {
+                NotificationHelper::send(
+                    $sa->id,
+                    'new_hardcopy_order',
+                    'New Hardcopy Order #' . $order->id,
+                    'Buyer ' . $buyer->full_name . ' ordered "' . $book->title
+                        . '" (x' . $order->quantity . ') for TSh ' . number_format($order->total, 2)
+                        . '. Contact the owner to negotiate commission.',
+                    [
+                        'order_id' => $order->id,
+                        'book_id'  => $book->id,
+                        'buyer_id' => $buyer->id,
+                        'link'     => route('super-admin.hardcopy-orders.show', $order->id),
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Super-admin notification failed: ' . $e->getMessage());
         }
     }
 }

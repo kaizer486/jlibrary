@@ -33,9 +33,11 @@ class Order extends Model
         'transaction_id',
         'shipping_address',
         'customer_phone',
-        'notes',
+             'notes',
+        'platform_commission',
+        'commission_status',
+        'commission_notes',
     ];
-
     protected $casts = [
         'institution_id' => 'integer',
         'author_id'      => 'integer',
@@ -44,6 +46,7 @@ class Order extends Model
         'quantity'       => 'integer',
         'price_per_unit' => 'decimal:2',
         'total'          => 'decimal:2',
+        'platform_commission' => 'decimal:2',
         'created_at'     => 'datetime',
         'updated_at'     => 'datetime',
     ];
@@ -199,6 +202,56 @@ class Order extends Model
             'completed'  => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">✅ Completed</span>',
             'cancelled'  => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">❌ Cancelled</span>',
             default      => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">' . ucfirst((string) $this->status) . '</span>',
+        };
+    }
+
+    
+    // ==========================================
+    // COMMISSION HELPERS
+    // ==========================================
+
+    public function hasCommission(): bool
+    {
+        return $this->platform_commission !== null
+            && (float) $this->platform_commission > 0;
+    }
+
+    public function commissionAmount(): float
+    {
+        return (float) ($this->platform_commission ?? 0);
+    }
+
+    public function ownerPayout(): float
+    {
+        return max(0, (float) $this->total - $this->commissionAmount());
+    }
+
+    public function isCommissionPending(): bool
+    {
+        return empty($this->commission_status)
+            || $this->commission_status === 'pending';
+    }
+
+    public function isCommissionNegotiated(): bool
+    {
+        return $this->commission_status === 'negotiated';
+    }
+
+    public function isCommissionCollected(): bool
+    {
+        return $this->commission_status === 'collected';
+    }
+
+    public function getCommissionBadgeAttribute(): string
+    {
+        if (!$this->hasCommission() && $this->isCommissionPending()) {
+            return '<span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">Not set</span>';
+        }
+
+        return match ($this->commission_status) {
+            'negotiated' => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Negotiated</span>',
+            'collected'  => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Collected</span>',
+            default      => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>',
         };
     }
 }
