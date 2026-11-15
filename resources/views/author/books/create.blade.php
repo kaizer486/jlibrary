@@ -179,16 +179,26 @@
                 </div>
             </div>
 
-            <!-- Row 6: Files -->
+                     <!-- Row 6: Files -->
             <div class="grid md:grid-cols-2 gap-6 mt-5">
-                <div>
+                <div x-show="format === 'softcopy' || format === 'both'" x-cloak>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Book File (PDF) <span class="text-red-500">*</span>
                     </label>
-                    <input type="file" name="book_file" accept=".pdf" required
+                    <input type="file" name="book_file" accept=".pdf"
+                           :required="format === 'softcopy' || format === 'both'"
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
                     <p class="text-xs text-gray-400 mt-1">Max 20MB. Only PDF files allowed.</p>
                     @error('book_file') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div x-show="format === 'hardcopy'" x-cloak class="md:col-span-2">
+                    <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-start gap-2">
+                        <i class="ti ti-info-circle text-orange-600 mt-0.5"></i>
+                        <p class="text-xs text-orange-800">
+                            <strong>Hardcopy-only book:</strong> no PDF file is required. You can add one later if you decide to sell a softcopy too.
+                        </p>
+                    </div>
                 </div>
 
                 <div>

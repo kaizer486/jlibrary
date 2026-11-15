@@ -207,7 +207,7 @@ class BookController extends Controller
         'author' => 'required|string|max:255',
         'description' => 'nullable|string',
         'institution_id' => 'nullable|exists:institutions,id',
-        'book_file' => 'required|file|mimes:pdf|max:20480',
+        'book_file' => 'nullable|file|mimes:pdf|max:20480|required_if:book_type,softcopy,both',
         'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         'total_pages' => 'nullable|integer|min:0',
         'category' => 'nullable|string|max:255',
@@ -223,7 +223,10 @@ class BookController extends Controller
         'stock_quantity'  => 'nullable|integer|min:0|required_if:book_type,hardcopy,both',
     ]);
 
-    $bookPath = $request->file('book_file')->store('books', 'public');
+       $bookPath = null;
+    if ($request->hasFile('book_file')) {
+        $bookPath = $request->file('book_file')->store('books', 'public');
+    }
     
     $coverPath = null;
     if ($request->hasFile('cover_image')) {
@@ -311,7 +314,7 @@ class BookController extends Controller
         'author' => 'required|string|max:255',
         'description' => 'nullable|string',
         'institution_id' => 'nullable|exists:institutions,id',
-        'book_file' => 'nullable|file|mimes:pdf|max:20480',
+        'book_file' => 'nullable|file|mimes:pdf|max:20480|required_if:book_type,softcopy,both',
         'cover_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         'total_pages' => 'nullable|integer|min:0',
         'category' => 'nullable|string|max:255',
