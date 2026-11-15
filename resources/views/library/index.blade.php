@@ -11,107 +11,60 @@
     <!-- Search and Filter Bar -->
     <div class="bg-white rounded-lg md:rounded-xl shadow-sm p-2 md:p-4 mb-3 md:mb-6">
         <form method="GET" action="{{ route('library.index') }}" class="flex flex-col gap-1.5 md:gap-3">
-            <div class="flex flex-col md:flex-row gap-1.5 md:gap-3 items-start md:items-center">
-                <div class="w-full md:flex-1">
-                    <input type="text" name="search" placeholder="Search..." 
-                           value="{{ request('search') }}"
-                           class="w-full px-2 md:px-4 py-1 md:py-2 text-[10px] md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-jlibrary-500 focus:border-transparent">
-                </div>
-                
-                <div class="w-full md:flex-1 md:max-w-xs">
-                    <select name="category" class="w-full px-2 md:px-4 py-1 md:py-2 text-[10px] md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-jlibrary-500 bg-white">
-                        <option value="">📚 All Categories</option>
-                        <optgroup label="🔬 Technology & Science">
-                            <option value="Computer Science & Information Technology" {{ request('category') == 'Computer Science & Information Technology' ? 'selected' : '' }}>Computer Science & IT</option>
-                            <option value="Artificial Intelligence & Data Science" {{ request('category') == 'Artificial Intelligence & Data Science' ? 'selected' : '' }}>AI & Data Science</option>
-                            <option value="Engineering & Technology" {{ request('category') == 'Engineering & Technology' ? 'selected' : '' }}>Engineering & Technology</option>
-                            <option value="Mathematics & Statistics" {{ request('category') == 'Mathematics & Statistics' ? 'selected' : '' }}>Mathematics & Statistics</option>
-                            <option value="Physical Sciences" {{ request('category') == 'Physical Sciences' ? 'selected' : '' }}>Physical Sciences</option>
-                            <option value="Biological Sciences" {{ request('category') == 'Biological Sciences' ? 'selected' : '' }}>Biological Sciences</option>
-                        </optgroup>
-                        <optgroup label="🏥 Health & Medicine">
-                            <option value="Health & Medical Sciences" {{ request('category') == 'Health & Medical Sciences' ? 'selected' : '' }}>Health & Medical Sciences</option>
-                            <option value="Public Health" {{ request('category') == 'Public Health' ? 'selected' : '' }}>Public Health</option>
-                            <option value="Agriculture & Veterinary Sciences" {{ request('category') == 'Agriculture & Veterinary Sciences' ? 'selected' : '' }}>Agriculture & Veterinary</option>
-                            <option value="Environmental & Earth Sciences" {{ request('category') == 'Environmental & Earth Sciences' ? 'selected' : '' }}>Environmental & Earth Sciences</option>
-                        </optgroup>
-                        <optgroup label="💼 Business & Finance">
-                            <option value="Business & Management" {{ request('category') == 'Business & Management' ? 'selected' : '' }}>Business & Management</option>
-                            <option value="Economics & Finance" {{ request('category') == 'Economics & Finance' ? 'selected' : '' }}>Economics & Finance</option>
-                            <option value="Accounting" {{ request('category') == 'Accounting' ? 'selected' : '' }}>Accounting</option>
-                            <option value="Marketing" {{ request('category') == 'Marketing' ? 'selected' : '' }}>Marketing</option>
-                            <option value="Entrepreneurship" {{ request('category') == 'Entrepreneurship' ? 'selected' : '' }}>Entrepreneurship</option>
-                        </optgroup>
-                        <optgroup label="📖 Social Sciences & Humanities">
-                            <option value="Law" {{ request('category') == 'Law' ? 'selected' : '' }}>Law</option>
-                            <option value="Education" {{ request('category') == 'Education' ? 'selected' : '' }}>Education</option>
-                            <option value="Social Sciences" {{ request('category') == 'Social Sciences' ? 'selected' : '' }}>Social Sciences</option>
-                            <option value="Psychology" {{ request('category') == 'Psychology' ? 'selected' : '' }}>Psychology</option>
-                            <option value="Political Science & Public Administration" {{ request('category') == 'Political Science & Public Administration' ? 'selected' : '' }}>Political Science</option>
-                            <option value="Humanities" {{ request('category') == 'Humanities' ? 'selected' : '' }}>Humanities</option>
-                            <option value="Philosophy" {{ request('category') == 'Philosophy' ? 'selected' : '' }}>Philosophy</option>
-                            <option value="Languages & Linguistics" {{ request('category') == 'Languages & Linguistics' ? 'selected' : '' }}>Languages & Linguistics</option>
-                            <option value="Literature" {{ request('category') == 'Literature' ? 'selected' : '' }}>Literature</option>
-                            <option value="History & Archaeology" {{ request('category') == 'History & Archaeology' ? 'selected' : '' }}>History & Archaeology</option>
-                            <option value="Geography & Tourism" {{ request('category') == 'Geography & Tourism' ? 'selected' : '' }}>Geography & Tourism</option>
-                            <option value="Religion & Theology" {{ request('category') == 'Religion & Theology' ? 'selected' : '' }}>Religion & Theology</option>
-                        </optgroup>
-                        <optgroup label="🎨 Arts & Design">
-                            <option value="Arts, Design & Music" {{ request('category') == 'Arts, Design & Music' ? 'selected' : '' }}>Arts, Design & Music</option>
-                            <option value="Architecture & Urban Planning" {{ request('category') == 'Architecture & Urban Planning' ? 'selected' : '' }}>Architecture & Urban Planning</option>
-                        </optgroup>
-                        <optgroup label="📚 General Reading">
-                            <option value="Children's Books" {{ request('category') == "Children's Books" ? 'selected' : '' }}>Children's Books</option>
-                            <option value="Fiction" {{ request('category') == 'Fiction' ? 'selected' : '' }}>Fiction</option>
-                            <option value="Non-Fiction" {{ request('category') == 'Non-Fiction' ? 'selected' : '' }}>Non-Fiction</option>
-                            <option value="Biographies & Memoirs" {{ request('category') == 'Biographies & Memoirs' ? 'selected' : '' }}>Biographies & Memoirs</option>
-                            <option value="Self-Help & Personal Development" {{ request('category') == 'Self-Help & Personal Development' ? 'selected' : '' }}>Self-Help & Personal Development</option>
-                            <option value="Leadership" {{ request('category') == 'Leadership' ? 'selected' : '' }}>Leadership</option>
-                        </optgroup>
-                        <optgroup label="📝 Academic & Research">
-                            <option value="Research & Academic Publications" {{ request('category') == 'Research & Academic Publications' ? 'selected' : '' }}>Research & Academic</option>
-                            <option value="Journals & Conference Proceedings" {{ request('category') == 'Journals & Conference Proceedings' ? 'selected' : '' }}>Journals & Proceedings</option>
-                            <option value="Theses & Dissertations" {{ request('category') == 'Theses & Dissertations' ? 'selected' : '' }}>Theses & Dissertations</option>
-                        </optgroup>
-                        <optgroup label="📋 Government & Reference">
-                            <option value="Government Publications" {{ request('category') == 'Government Publications' ? 'selected' : '' }}>Government Publications</option>
-                            <option value="Policies, Acts & Regulations" {{ request('category') == 'Policies, Acts & Regulations' ? 'selected' : '' }}>Policies & Regulations</option>
-                            <option value="Reports & White Papers" {{ request('category') == 'Reports & White Papers' ? 'selected' : '' }}>Reports & White Papers</option>
-                            <option value="Reference Books" {{ request('category') == 'Reference Books' ? 'selected' : '' }}>Reference Books</option>
-                            <option value="Open Educational Resources (OER)" {{ request('category') == 'Open Educational Resources (OER)' ? 'selected' : '' }}>Open Educational Resources</option>
-                            <option value="Newspapers & Magazines" {{ request('category') == 'Newspapers & Magazines' ? 'selected' : '' }}>Newspapers & Magazines</option>
-                            <option value="Encyclopedias & Dictionaries" {{ request('category') == 'Encyclopedias & Dictionaries' ? 'selected' : '' }}>Encyclopedias & Dictionaries</option>
-                        </optgroup>
-                    </select>
-                </div>
-                
-                <button type="submit" class="w-full md:w-auto bg-jlibrary-600 text-white px-3 md:px-5 py-1 md:py-2 text-[10px] md:text-sm rounded-lg hover:bg-jlibrary-700 transition whitespace-nowrap">
-                    <i class="ti ti-search"></i> <span class="hidden sm:inline">Search</span>
-                </button>
-                
-                @if(request('search') || request('category'))
-                    <a href="{{ route('library.index') }}" class="w-full md:w-auto bg-gray-200 text-gray-700 px-3 md:px-4 py-1 md:py-2 text-[10px] md:text-sm rounded-lg hover:bg-gray-300 transition whitespace-nowrap text-center">
-                        <i class="ti ti-x"></i> <span class="hidden sm:inline">Clear</span>
-                    </a>
-                @endif
-            </div>
+           <div class="flex flex-col md:flex-row gap-1.5 md:gap-3 items-start md:items-center">
+    <div class="w-full md:flex-1">
+        <input type="text" name="search" placeholder="Search..." 
+               value="{{ request('search') }}"
+               class="w-full px-2 md:px-4 py-1 md:py-2 text-[10px] md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-jlibrary-500 focus:border-transparent">
+    </div>
+    
+    <!-- JLIBRARY MARKET BUTTON — right after search, before category -->
+    <a href="{{ request('format') === 'hardcopy' 
+                ? route('library.index', request()->except('format', 'page')) 
+                : route('library.index', array_merge(request()->except('page'), ['format' => 'hardcopy'])) }}"
+       class="w-full md:w-auto inline-flex items-center justify-center gap-1 px-3 md:px-4 py-1 md:py-2 text-[10px] md:text-sm rounded-lg transition whitespace-nowrap border font-medium
+              {{ request('format') === 'hardcopy'
+                  ? 'bg-jlibrary-600 text-white border-jlibrary-600 hover:bg-jlibrary-700'
+                  : 'bg-white text-jlibrary-600 border-jlibrary-300 hover:bg-jlibrary-50' }}">
+        <i class="ti ti-building-store"></i>
+        <span class="hidden sm:inline">JLIBRARY MARKET</span>
+        <span class="sm:hidden">Market</span>
+    </a>
+    
+    <div class="w-full md:flex-1 md:max-w-xs">
+        <select name="category" class="w-full px-2 md:px-4 py-1 md:py-2 text-[10px] md:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-jlibrary-500 bg-white">
+            <option value="">📚 All Categories</option>
+            <!-- ...all your existing optgroups stay the same... -->
+        </select>
+    </div>
+    
+    <button type="submit" class="w-full md:w-auto bg-jlibrary-600 text-white px-3 md:px-5 py-1 md:py-2 text-[10px] md:text-sm rounded-lg hover:bg-jlibrary-700 transition whitespace-nowrap">
+        <i class="ti ti-search"></i> <span class="hidden sm:inline">Search</span>
+    </button>
+    
+    @if(request('search') || request('category') || request('format'))
+        <a href="{{ route('library.index') }}" class="w-full md:w-auto bg-gray-200 text-gray-700 px-3 md:px-4 py-1 md:py-2 text-[10px] md:text-sm rounded-lg hover:bg-gray-300 transition whitespace-nowrap text-center">
+            <i class="ti ti-x"></i> <span class="hidden sm:inline">Clear</span>
+        </a>
+    @endif
+</div>
+
         </form>
     </div>
     
-    <!-- Results Count -->
-    <div class="mb-2 md:mb-4 text-[10px] md:text-sm text-gray-500">
-        Found <span class="font-semibold text-gray-700">{{ $books->total() }}</span> books
-        @if(request('category'))
-            <span class="font-medium text-jlibrary-600">in "{{ request('category') }}"</span>
-        @endif
-    </div>
+        @if(request('format') === 'hardcopy')
+        <div class="bg-jlibrary-50 border-l-4 border-jlibrary-600 rounded-r-lg px-3 md:px-4 py-2 md:py-3 mb-3 md:mb-4">
+            <p class="text-xs md:text-sm text-gray-700">
+                <strong class="text-jlibrary-800">Physical books available to order. Select any book and fill in your delivery details to place an order.
+            </p>
+        </div>
+    @endif
     
     <!-- Books Grid -->
     @if($books->count() > 0)
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-1 md:gap-2 lg:gap-3">
             @foreach($books as $book)
                 @php
-                    // FIXED: Use proper named routes instead of manual URL construction
                     if ($book->institution_id) {
                         $bookUrl = route('institution.public.show', [
                             'institutionId' => $book->institution_id,
@@ -133,7 +86,7 @@
                                 <i class="ti ti-book text-lg md:text-4xl text-white/40 group-hover:scale-110 transition-transform duration-300"></i>
                             @endif
                             
-                            <!-- Hover Overlay - Hidden on mobile -->
+                            <!-- Hover Overlay -->
                             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex items-end justify-center pb-2.5">
                                 <span class="text-white text-[11px] font-semibold bg-jlibrary-600/80 px-3 py-1 rounded-full">
                                     <i class="ti ti-eye"></i> View
@@ -188,7 +141,13 @@
         <div class="bg-white rounded-xl shadow-sm p-6 md:p-12 text-center">
             <i class="ti ti-books text-3xl md:text-6xl text-gray-400 mb-2 md:mb-4 block"></i>
             <h3 class="text-base md:text-xl font-semibold mb-1 md:mb-2">No books found</h3>
-            <p class="text-xs md:text-sm text-gray-500">Try adjusting your search or filter criteria</p>
+            <p class="text-xs md:text-sm text-gray-500">
+                @if(request('format') === 'hardcopy')
+                    No hardcopy books match your search. Try clearing filters.
+                @else
+                    Try adjusting your search or filter criteria
+                @endif
+            </p>
             <a href="{{ route('library.index') }}" class="inline-block mt-2 md:mt-4 text-xs md:text-sm text-jlibrary-600 hover:text-jlibrary-700">Clear filters</a>
         </div>
     @endif

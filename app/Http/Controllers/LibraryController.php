@@ -28,28 +28,21 @@ class LibraryController extends Controller
     protected function getCategories()
     {
         return [
-            // Technology & Science
             'Computer Science & Information Technology',
             'Artificial Intelligence & Data Science',
             'Engineering & Technology',
             'Mathematics & Statistics',
             'Physical Sciences',
             'Biological Sciences',
-
-            // Health & Medicine
             'Health & Medical Sciences',
             'Public Health',
             'Agriculture & Veterinary Sciences',
             'Environmental & Earth Sciences',
-
-            // Business & Finance
             'Business & Management',
             'Economics & Finance',
             'Accounting',
             'Marketing',
             'Entrepreneurship',
-
-            // Social Sciences & Humanities
             'Law',
             'Education',
             'Social Sciences',
@@ -62,25 +55,17 @@ class LibraryController extends Controller
             'History & Archaeology',
             'Geography & Tourism',
             'Religion & Theology',
-
-            // Arts & Design
             'Arts, Design & Music',
             'Architecture & Urban Planning',
-
-            // General Reading
             'Children\'s Books',
             'Fiction',
             'Non-Fiction',
             'Biographies & Memoirs',
             'Self-Help & Personal Development',
             'Leadership',
-
-            // Academic & Research
             'Research & Academic Publications',
             'Journals & Conference Proceedings',
             'Theses & Dissertations',
-
-            // Government & Reference
             'Government Publications',
             'Policies, Acts & Regulations',
             'Reports & White Papers',
@@ -163,6 +148,21 @@ class LibraryController extends Controller
             }
         }
 
+        // ── JLIBRARY MARKET filter (hardcopy only) ──
+        if ($request->get('format') === 'hardcopy') {
+            $allBooks = $allBooks->filter(function ($book) {
+                // Only Book instances have offersHardcopy().
+                // BookshopBook has hardcopy_price/stock too, so fall back
+                // to a direct field check for it.
+                if (method_exists($book, 'offersHardcopy')) {
+                    return $book->offersHardcopy();
+                }
+
+                return !empty($book->hardcopy_available)
+                    && (float) ($book->hardcopy_price ?? 0) > 0;
+            })->values();
+        }
+
         // Institution filter
         if ($request->has('institution_id') && $request->institution_id) {
             $allBooks = $allBooks->filter(function ($book) use ($request) {
@@ -242,7 +242,6 @@ class LibraryController extends Controller
      */
     public function show($id)
     {
-        // Try to find the book in BOTH tables
         $book = Book::find($id);
         if (!$book) {
             $book = BookshopBook::find($id);
@@ -252,18 +251,14 @@ class LibraryController extends Controller
             abort(404, 'Book not found.');
         }
 
-        // Increment view count
         if (isset($book->views_count)) {
             $book->increment('views_count');
         }
 
-        // If book has NO institution, show it directly in a dedicated view
         if (!$book->institution_id) {
-            // Load relationships
             $book->load(['uploader', 'ratings.user', 'reviews.user']);
             $book->loadCount(['ratings', 'reviews', 'bookmarks']);
 
-            // Check if user has access
             $hasAccess = false;
             $progress = null;
 
@@ -275,7 +270,6 @@ class LibraryController extends Controller
             return view('library.global-book-show', compact('book', 'hasAccess', 'progress'));
         }
 
-        // If book HAS institution, redirect to institution page
         return redirect()->route('institution.public.show', [
             'institutionId' => $book->institution_id,
             'book' => $book->id
@@ -289,7 +283,6 @@ class LibraryController extends Controller
     {
         $user = auth()->user();
 
-        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -299,9 +292,7 @@ class LibraryController extends Controller
             abort(404, 'Book not found.');
         }
 
-        // For free books, always allow access
         if (!$book->isPaidItem()) {
-            // Auto-add free book to user's library if not already there
             $userBook = $user->books()->where('book_id', $book->id)->first();
 
             if (!$userBook) {
@@ -320,13 +311,11 @@ class LibraryController extends Controller
             return view('library.reader', compact('book', 'currentPage'));
         }
 
-        // For paid books, check access
         if (method_exists($book, 'userHasAccess') && !$book->userHasAccess($user->id)) {
             return redirect()->route('institution.public.show', ['institutionId' => $book->institution_id ?? 1, 'book' => $book->id])
                 ->with('error', 'You need to purchase this book to read it.');
         }
 
-        // Get or create user_book record for paid books
         $userBook = $user->books()->where('book_id', $book->id)->first();
 
         if (!$userBook) {
@@ -356,7 +345,6 @@ class LibraryController extends Controller
             'total_pages' => 'required|integer'
         ]);
 
-        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -394,25 +382,21 @@ class LibraryController extends Controller
     {
         $userId = Auth::id();
 
-        // Books user is reading
         $reading = UserBook::where('user_id', $userId)
                           ->where('status', 'reading')
                           ->with('book')
                           ->get();
 
-        // Books user completed
         $completed = UserBook::where('user_id', $userId)
                             ->where('status', 'completed')
                             ->with('book')
                             ->get();
 
-        // Books user wants to read
         $wantToRead = UserBook::where('user_id', $userId)
                              ->where('status', 'want_to_read')
                              ->with('book')
                              ->get();
 
-        // Purchased books (paid)
         $purchased = Book::whereHas('payments', function ($q) use ($userId) {
             $q->where('user_id', $userId)
               ->where('status', 'completed');
@@ -428,12 +412,10 @@ class LibraryController extends Controller
     {
         $user = auth()->user();
 
-        // Check if user is logged in
         if (!$user) {
             abort(403, 'Please login to read this book.');
         }
 
-        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -443,17 +425,14 @@ class LibraryController extends Controller
             abort(404, 'Book not found.');
         }
 
-        // Allow access if user is Super Admin or Admin
         if ($user->isSuperAdmin() || $user->isAdmin()) {
             return $this->returnPdfFile($book);
         }
 
-        // For free books, any logged-in user can read
         if (!$book->isPaidItem()) {
             return $this->returnPdfFile($book);
         }
 
-        // For paid books, check if user has purchased
         if (method_exists($book, 'userHasAccess') && $book->userHasAccess($user->id)) {
             return $this->returnPdfFile($book);
         }
@@ -485,7 +464,6 @@ class LibraryController extends Controller
     {
         $status = $request->status ?? 'want_to_read';
 
-        // Try to find the book
         $book = Book::find($bookId);
         if (!$book) {
             $book = BookshopBook::find($bookId);
@@ -547,8 +525,6 @@ class LibraryController extends Controller
 
     /**
      * Resolve a book by id from either the Book or BookshopBook table.
-     * Normalizes is_paid on BookshopBook records the same way the
-     * rest of this controller already expects.
      */
     private function resolveBook($bookId)
     {
@@ -565,8 +541,6 @@ class LibraryController extends Controller
 
     /**
      * Single source of truth for "has this user hit today's limit".
-     * Both download() and downloadRaw() call this so they can never
-     * disagree with each other again.
      */
     private function todaysDownloadCount($userId): int
     {
@@ -577,8 +551,6 @@ class LibraryController extends Controller
 
     /**
      * Step 1: called via AJAX by the "Download PDF" button.
-     * Validates the limit/access, logs the download, and hands back
-     * the URL the browser should navigate to for the actual file.
      */
     public function download($bookId)
     {
@@ -680,17 +652,7 @@ class LibraryController extends Controller
     }
 
     /**
-     * Step 2: the endpoint that actually streams the file to the browser.
-     *
-     * IMPORTANT: this used to have NO limit or paid-access check, which is
-     * why users could see "limit reached" from download() yet still pull
-     * files from this route directly (bookmarks, browser history, repeat
-     * clicks, direct requests). It now re-checks both, using the exact
-     * same counting logic as download(), so the two endpoints can't
-     * disagree again. We do NOT log a second download here for the normal
-     * flow (download() already logged it) — we only log if this route is
-     * hit on its own without a prior download() call having happened for
-     * this request cycle.
+     * Step 2: stream the file to the browser.
      */
     public function downloadRaw($bookId)
     {
@@ -700,8 +662,6 @@ class LibraryController extends Controller
             abort(403, 'Please login to download books.');
         }
 
-        // Re-enforce the limit here — this is the endpoint that hands out
-        // the actual file, so it cannot be the weak link in the chain.
         if ($this->todaysDownloadCount($user->id) >= self::DAILY_DOWNLOAD_LIMIT
             && !session()->has('download_limit_remaining')) {
             abort(429, 'You have reached the daily download limit of ' . self::DAILY_DOWNLOAD_LIMIT . ' books. Please try again tomorrow.');
