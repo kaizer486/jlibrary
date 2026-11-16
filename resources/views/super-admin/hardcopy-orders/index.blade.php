@@ -72,10 +72,20 @@
                 @endforeach
             </select>
         </div>
+        <div>
+            <label class="text-xs text-gray-500 uppercase mb-1 block">Payment</label>
+            <select name="payment_status" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="">All</option>
+                <option value="unpaid"             {{ request('payment_status')==='unpaid'             ? 'selected':'' }}>🔵 Unpaid</option>
+                <option value="seller_marked_paid" {{ request('payment_status')==='seller_marked_paid' ? 'selected':'' }}>🟡 Awaiting Confirmation</option>
+                <option value="buyer_confirmed"    {{ request('payment_status')==='buyer_confirmed'    ? 'selected':'' }}>🟢 Confirmed</option>
+                <option value="disputed"           {{ request('payment_status')==='disputed'           ? 'selected':'' }}>🔴 Disputed</option>
+            </select>
+        </div>
         <button class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
             <i class="ti ti-search"></i> Filter
         </button>
-        @if(request()->hasAny(['search','status','commission_status']))
+        @if(request()->hasAny(['search','status','commission_status','payment_status']))
             <a href="{{ route('super-admin.hardcopy-orders.index') }}"
                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
                 Clear
@@ -96,7 +106,8 @@
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Total</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Commission</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Payout</th>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Order Status</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Payment</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                         <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                     </tr>
@@ -148,7 +159,30 @@
                             <td class="px-4 py-3 text-sm text-blue-700">
                                 TSh {{ number_format($order->ownerPayout(), 0) }}
                             </td>
+
+                            <!-- ORDER STATUS -->
                             <td class="px-4 py-3 text-sm">{!! $order->status_badge !!}</td>
+
+                            <!-- PAYMENT STATUS (NEW) -->
+                            <td class="px-4 py-3 text-sm">
+                                {!! $order->payment_badge !!}
+                                @if($order->isSellerMarkedPaid() && $order->payment_received_at)
+                                    <p class="text-[10px] text-gray-400 mt-1">
+                                        {{ $order->payment_received_at->diffForHumans() }}
+                                    </p>
+                                @elseif($order->isBuyerConfirmed() && $order->payment_confirmed_by_buyer_at)
+                                    <p class="text-[10px] text-emerald-600 mt-1">
+                                        {{ $order->payment_confirmed_by_buyer_at->diffForHumans() }}
+                                    </p>
+                                @elseif($order->isPaymentDisputed() && $order->payment_dispute_reason)
+                                    <p class="text-[10px] text-red-600 mt-1 max-w-[140px] truncate"
+                                       title="{{ $order->payment_dispute_reason }}">
+                                        <i class="ti ti-alert-triangle text-[10px]"></i>
+                                        {{ Str::limit($order->payment_dispute_reason, 30) }}
+                                    </p>
+                                @endif
+                            </td>
+
                             <td class="px-4 py-3 text-xs text-gray-500">
                                 {{ $order->created_at->format('M d, Y') }}
                             </td>
@@ -161,7 +195,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-4 py-12 text-center text-gray-500">
+                            <td colspan="11" class="px-4 py-12 text-center text-gray-500">
                                 <i class="ti ti-package-off text-4xl text-gray-300 mb-2 block"></i>
                                 <p>No hardcopy orders found.</p>
                             </td>
