@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Author;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Models\Order;
+
 use App\Models\Payment;
 use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
@@ -149,5 +150,93 @@ class OrderController extends Controller
         }
 
         return back()->with('success', 'Order status updated to ' . ucfirst($request->status) . '.');
+    }
+    
+    // ==========================================
+    // PAYMENT CONFIRMATION — SELLER ACTIONS
+    // ==========================================
+
+    /**
+     * Seller marks an order as "payment received".
+     * Only allowed when the order is a contact-payment hardcopy order
+     * and hasn't been paid yet.
+     */
+    public function markPaid(Request $request, Order $order)
+    {
+        if ((int) $order->author_id !== (int) Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (!$order->canSellerMarkPaid()) {
+            return back()->with('error', 'This order cannot be marked as paid (already paid, cancelled, or not a contact-payment order).');
+        }
+
+        try {
+            $order->update([
+                'payment_status'      => 'seller_marked_paid',
+                'payment_received_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to mark order paid: ' . $e->getMessage());
+            return back()->with('error', 'Could not update the payment status. Please try again.');
+        }
+
+        // Notify the buyer to confirm
+        try {
+            NotificationHelper::send(
+                $order->user_id,
+                'payment_marked_received',
+                '💰 Payment Recorded for Order #' . $order->id,
+                'The seller has marked your payment of TSh ' . number_format($order->total, 2)
+                    . ' as received. Please confirm that you paid to complete the order.',
+                [
+                    'order_id' => $order->id,
+                    'amount'   => (float) $order->total,
+                    'link'     => route('library.order.show', $order->id),
+                ]
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Payment-marked notification failed: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment marked as received. The buyer has been notified to confirm.');
+    }
+
+    /**
+     * Seller un-marks a payment they marked by mistake.
+     * Only allowed if buyer hasn't confirmed yet.
+     */
+    public function unmarkPaid(Request $request, Order $order)
+    {
+        if ((int) $order->author_id !== (int) Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (!$order->canSellerUnmarkPaid()) {
+            return back()->with('error', 'Cannot unmark this payment. It has either already been confirmed by the buyer, or no payment was marked.');
+        }
+
+        $order->update([
+            'payment_status'      => 'unpaid',
+            'payment_received_at' => null,
+        ]);
+
+        // Notify the buyer that the seller reversed the claim
+        try {
+            NotificationHelper::send(
+                $order->user_id,
+                'payment_marked_reversed',
+                '↩️ Payment Mark Reversed for Order #' . $order->id,
+                'The seller has reversed the payment confirmation. If you have already paid, please contact the seller directly.',
+                [
+                    'order_id' => $order->id,
+                    'link'     => route('library.order.show', $order->id),
+                ]
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Payment-unmark notification failed: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment mark reversed. The order is now back to unpaid.');
     }
 }

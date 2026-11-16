@@ -77,6 +77,7 @@ class LibraryOrderController extends Controller
                     'total'            => $total,
                     'status'           => 'pending',
                     'payment_method'   => 'contact',
+                    'payment_status'   => 'unpaid',
                     'transaction_id'   => null,
                     'shipping_address' => $request->shipping_address,
                     'customer_phone'   => $request->customer_phone,
@@ -131,13 +132,11 @@ class LibraryOrderController extends Controller
     {
         $user = Auth::user();
 
-        // Hardcopy orders placed by this user
         $hardcopyOrders = Order::where('user_id', $user->id)
             ->with(['book', 'author', 'institution'])
             ->latest()
             ->paginate(10, ['*'], 'hardcopy_page');
 
-        // Softcopy purchases (completed Payments against a Book)
         $softcopyPurchases = \App\Models\Payment::where('user_id', $user->id)
             ->where('payable_type', 'App\\Models\\Book')
             ->where('status', 'completed')
@@ -145,7 +144,6 @@ class LibraryOrderController extends Controller
             ->latest()
             ->paginate(10, ['*'], 'softcopy_page');
 
-        // Stats
         $hardcopyCount = Order::where('user_id', $user->id)->count();
         $pendingCount  = Order::where('user_id', $user->id)->where('status', 'pending')->count();
         $softcopyCount = \App\Models\Payment::where('user_id', $user->id)
@@ -162,6 +160,156 @@ class LibraryOrderController extends Controller
         ));
     }
 
+    // ==========================================
+    // PAYMENT CONFIRMATION — BUYER ACTIONS
+    // ==========================================
+
+    /**
+     * Buyer confirms: "Yes, I did pay the seller."
+     */
+    public function confirmPayment(Request $request, Order $order)
+    {
+        if ((int) $order->user_id !== (int) Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (!$order->canBuyerRespond()) {
+            return back()->with('error', 'This order is not awaiting your confirmation.');
+        }
+
+        try {
+            $order->update([
+                'payment_status'                 => 'buyer_confirmed',
+                'payment_confirmed_by_buyer_at'  => now(),
+                'payment_dispute_reason'         => null,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to confirm payment: ' . $e->getMessage());
+            return back()->with('error', 'Could not confirm the payment. Please try again.');
+        }
+
+        // Notify the seller
+        try {
+            foreach ($this->getSellerRecipients($order) as $uid) {
+                NotificationHelper::send(
+                    $uid,
+                    'payment_confirmed_by_buyer',
+                    '✅ Payment Confirmed — Order #' . $order->id,
+                    'The buyer has confirmed paying TSh ' . number_format($order->total, 2)
+                        . '. This order is now fully settled.',
+                    [
+                        'order_id' => $order->id,
+                        'amount'   => (float) $order->total,
+                        'link'     => route('author.orders.show', $order->id),
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Buyer-confirm notification to seller failed: ' . $e->getMessage());
+        }
+
+        // Notify super-admins
+        try {
+            foreach (\App\Models\User::role('super_admin')->get() as $sa) {
+                NotificationHelper::send(
+                    $sa->id,
+                    'payment_settled',
+                    '💰 Payment Settled — Order #' . $order->id,
+                    'Buyer confirmed payment of TSh ' . number_format($order->total, 2)
+                        . ' for order #' . $order->id . '.',
+                    [
+                        'order_id' => $order->id,
+                        'amount'   => (float) $order->total,
+                        'link'     => route('super-admin.hardcopy-orders.show', $order->id),
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Payment-settled notification to super-admin failed: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Payment confirmed. The seller has been notified.');
+    }
+
+    /**
+     * Buyer disputes: "No, I did not pay (or did not receive the correct book)."
+     */
+    public function disputePayment(Request $request, Order $order)
+    {
+        if ((int) $order->user_id !== (int) Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (!$order->canBuyerRespond()) {
+            return back()->with('error', 'This order is not awaiting your confirmation.');
+        }
+
+        $request->validate([
+            'reason' => 'required|string|min:5|max:1000',
+        ]);
+
+        try {
+            $order->update([
+                'payment_status'         => 'disputed',
+                'payment_dispute_reason' => $request->reason,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to log dispute: ' . $e->getMessage());
+            return back()->with('error', 'Could not log the dispute. Please try again.');
+        }
+
+        // Notify the seller
+        try {
+            foreach ($this->getSellerRecipients($order) as $uid) {
+                NotificationHelper::send(
+                    $uid,
+                    'payment_disputed',
+                    '⚠️ Payment Disputed — Order #' . $order->id,
+                    'The buyer has disputed your payment claim of TSh ' . number_format($order->total, 2)
+                        . '. Reason: ' . $request->reason,
+                    [
+                        'order_id' => $order->id,
+                        'amount'   => (float) $order->total,
+                        'reason'   => $request->reason,
+                        'link'     => route('author.orders.show', $order->id),
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Dispute notification to seller failed: ' . $e->getMessage());
+        }
+
+        // Notify super-admins (urgent)
+        try {
+            foreach (\App\Models\User::role('super_admin')->get() as $sa) {
+                NotificationHelper::send(
+                    $sa->id,
+                    'payment_disputed',
+                    '🚨 Payment Dispute — Order #' . $order->id,
+                    'Buyer disputed payment of TSh ' . number_format($order->total, 2)
+                        . ' for order #' . $order->id . '. Reason: ' . $request->reason,
+                    [
+                        'order_id' => $order->id,
+                        'amount'   => (float) $order->total,
+                        'reason'   => $request->reason,
+                        'link'     => route('super-admin.hardcopy-orders.show', $order->id),
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Dispute notification to super-admin failed: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Dispute logged. The seller and super-admin have been notified.');
+    }
+
+    // ==========================================
+    // PRIVATE HELPERS
+    // ==========================================
+
+    /**
+     * Normalize AJAX vs non-AJAX response.
+     */
     protected function respond(Request $request, bool $ok, string $message, int $status = 200, array $extra = [])
     {
         if ($request->expectsJson() || $request->ajax()) {
@@ -174,6 +322,29 @@ class LibraryOrderController extends Controller
         return back()->with($ok ? 'success' : 'error', $message);
     }
 
+    /**
+     * Get the user IDs that should be notified as "the seller"
+     * (either the author, or all institution admins).
+     */
+    protected function getSellerRecipients(Order $order): array
+    {
+        if ($order->author_id) {
+            return [$order->author_id];
+        }
+
+        if ($order->institution_id) {
+            return \App\Models\User::where('institution_id', $order->institution_id)
+                ->where('is_institution_admin', true)
+                ->pluck('id')
+                ->toArray();
+        }
+
+        return [];
+    }
+
+    /**
+     * Notify the book owner + all super-admins when a new order is placed.
+     */
     protected function notifyOwner(Book $book, array $owner, Order $order, $buyer): void
     {
         $title = 'New Hardcopy Order #' . $order->id;
@@ -181,7 +352,7 @@ class LibraryOrderController extends Controller
                . '" (x' . $order->quantity . ') for TSh ' . number_format($order->total, 2)
                . '. Phone: ' . $order->customer_phone;
 
-        // ── Step 1: Notify the book OWNER (author OR institution admins) ──
+        // ── Step 1: Notify the book OWNER ──
         if ($owner['type'] === 'author') {
             NotificationHelper::send(
                 $owner['id'],
@@ -196,7 +367,6 @@ class LibraryOrderController extends Controller
                 ]
             );
         } else {
-            // Institution-owned book → notify every institution admin
             $admins = \App\Models\User::where('institution_id', $owner['id'])
                 ->where('is_institution_admin', true)
                 ->get();
@@ -217,11 +387,9 @@ class LibraryOrderController extends Controller
             }
         }
 
-        // ── Step 2: Notify every super-admin so they can negotiate commission ──
+        // ── Step 2: Notify super-admins so they can oversee / negotiate commission ──
         try {
-            $superAdmins = \App\Models\User::role('super_admin')->get();
-
-            foreach ($superAdmins as $sa) {
+            foreach (\App\Models\User::role('super_admin')->get() as $sa) {
                 NotificationHelper::send(
                     $sa->id,
                     'new_hardcopy_order',

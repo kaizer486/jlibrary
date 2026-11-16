@@ -401,17 +401,19 @@ Route::middleware(['auth'])->group(function () {
     });
 
     
-        // ---- Buyer orders list ----
+       // ---- Buyer orders list ----
     Route::get('/my-orders', [\App\Http\Controllers\LibraryOrderController::class, 'index'])
         ->name('library.orders.index');
 
-
-        // ---- Buyer order viewing   ← NEW
+    // ---- Buyer order viewing ----
     Route::get('/my-orders/{order}', [\App\Http\Controllers\LibraryOrderController::class, 'show'])
         ->whereNumber('order')->name('library.order.show');
 
-
-        
+    // ---- Buyer payment confirmation ----
+    Route::post('/my-orders/{order}/confirm-payment', [\App\Http\Controllers\LibraryOrderController::class, 'confirmPayment'])
+        ->whereNumber('order')->name('library.order.confirm-payment');
+    Route::post('/my-orders/{order}/dispute-payment', [\App\Http\Controllers\LibraryOrderController::class, 'disputePayment'])
+        ->whereNumber('order')->name('library.order.dispute-payment');  
 
     // ---- User Personal Library ----
     Route::prefix('user/library')->name('user.library.')->group(function () {
@@ -651,11 +653,17 @@ Route::middleware(['auth', 'author.seller'])->prefix('studio')->name('author.')-
     // Books
     Route::resource('books', AuthorBookController::class);
 
-        // Book Orders (hardcopy orders for the author's books)
+    // Book Orders (hardcopy orders for the author's books)
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Author\OrderController::class, 'index'])->name('index');
         Route::get('/{order}', [\App\Http\Controllers\Author\OrderController::class, 'show'])->name('show');
         Route::post('/{order}/status', [\App\Http\Controllers\Author\OrderController::class, 'updateStatus'])->name('update-status');
+
+        // Payment confirmation (seller-side)
+        Route::post('/{order}/mark-paid', [\App\Http\Controllers\Author\OrderController::class, 'markPaid'])
+            ->whereNumber('order')->name('mark-paid');
+        Route::post('/{order}/unmark-paid', [\App\Http\Controllers\Author\OrderController::class, 'unmarkPaid'])
+            ->whereNumber('order')->name('unmark-paid');
     });
 
     // Earnings
@@ -956,13 +964,15 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
         // ==========================================
     // HARDCOPY ORDERS (Super Admin oversight)
     // ==========================================
-    Route::prefix('hardcopy-orders')->name('hardcopy-orders.')->group(function () {
+      Route::prefix('hardcopy-orders')->name('hardcopy-orders.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'index'])
             ->name('index');
         Route::get('/{order}', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'show'])
             ->whereNumber('order')->name('show');
         Route::post('/{order}/commission', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'updateCommission'])
             ->whereNumber('order')->name('update-commission');
+        Route::delete('/{order}', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'destroy'])
+            ->whereNumber('order')->name('delete');
     });
 
     // Payments

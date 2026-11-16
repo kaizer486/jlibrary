@@ -79,7 +79,7 @@
     <div x-show="tab === 'hardcopy'" x-cloak class="space-y-4">
         @forelse($hardcopyOrders as $order)
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-                <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">
+                               <div class="p-5 flex flex-col md:flex-row md:items-center gap-4">
                     <!-- Book cover + info -->
                     <div class="flex items-center gap-4 flex-1 min-w-0">
                         <div class="w-16 h-20 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -92,9 +92,13 @@
                             @endif
                         </div>
                         <div class="min-w-0 flex-1">
-                            <div class="flex items-center gap-2 mb-1">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
                                 <span class="text-xs text-gray-400 font-medium">#{{ $order->id }}</span>
                                 {!! $order->status_badge !!}
+                                {{-- Payment badge — only for contact-payment (hardcopy) orders --}}
+                                @if($order->isContactPayment())
+                                    {!! $order->payment_badge !!}
+                                @endif
                             </div>
                             <p class="font-semibold text-gray-800 line-clamp-1">
                                 {{ $order->book->title ?? 'Book unavailable' }}
@@ -108,14 +112,31 @@
                                 <i class="ti ti-calendar"></i>
                                 Placed {{ $order->created_at->format('M d, Y') }}
                             </p>
+
+                            {{-- Action-needed banner --}}
+                            @if($order->canBuyerRespond())
+                                <div class="mt-2 inline-flex items-center gap-1.5 bg-yellow-50 border border-yellow-200 rounded-lg px-2.5 py-1 text-[11px] font-medium text-yellow-800">
+                                    <i class="ti ti-bell text-xs animate-pulse"></i>
+                                    Action needed: Please confirm if you paid
+                                </div>
+                            @elseif($order->isPaymentDisputed())
+                                <div class="mt-2 inline-flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1 text-[11px] font-medium text-red-700">
+                                    <i class="ti ti-alert-triangle text-xs"></i>
+                                    Dispute under review
+                                </div>
+                            @endif
                         </div>
                     </div>
 
                     <!-- Actions -->
                     <div class="flex items-center gap-2 md:flex-shrink-0">
                         <a href="{{ route('library.order.show', $order->id) }}"
-                           class="inline-flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                            <i class="ti ti-eye"></i> Track Order
+                           class="inline-flex items-center gap-1 {{ $order->canBuyerRespond() ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-orange-500 hover:bg-orange-600' }} text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                            @if($order->canBuyerRespond())
+                                <i class="ti ti-bell"></i> Confirm Payment
+                            @else
+                                <i class="ti ti-eye"></i> Track Order
+                            @endif
                         </a>
                     </div>
                 </div>

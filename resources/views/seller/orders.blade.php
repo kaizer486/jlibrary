@@ -53,6 +53,7 @@
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Commission</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Payout</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Payment</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                             <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                         </tr>
@@ -124,6 +125,7 @@
                                 </span>
                             </td>
 
+                            <!-- STATUS COLUMN -->
                             <td class="px-4 py-3">
                                 <span class="text-xs px-2.5 py-1 rounded-full 
                                     {{ $order->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 
@@ -137,19 +139,70 @@
                                     </p>
                                 @endif
                             </td>
+
+                            <!-- PAYMENT STATUS COLUMN -->
+                            <td class="px-4 py-3">
+                                {!! $order->payment_badge !!}
+                                @if($order->isSellerMarkedPaid() && $order->payment_received_at)
+                                    <p class="text-[10px] text-gray-400 mt-1">
+                                        {{ $order->payment_received_at->diffForHumans() }}
+                                    </p>
+                                @endif
+                                @if($order->isBuyerConfirmed() && $order->payment_confirmed_by_buyer_at)
+                                    <p class="text-[10px] text-emerald-600 mt-1">
+                                        Confirmed {{ $order->payment_confirmed_by_buyer_at->diffForHumans() }}
+                                    </p>
+                                @endif
+                                @if($order->isPaymentDisputed() && $order->payment_dispute_reason)
+                                    <p class="text-[10px] text-red-600 mt-1 max-w-[180px] truncate"
+                                       title="{{ $order->payment_dispute_reason }}">
+                                        <i class="ti ti-alert-triangle text-[10px]"></i>
+                                        {{ Str::limit($order->payment_dispute_reason, 40) }}
+                                    </p>
+                                @endif
+                            </td>
+
                             <td class="px-4 py-3 text-sm text-gray-500">
                                 {{ $order->created_at->format('M d, Y') }}
                             </td>
+
+                            <!-- ACTIONS COLUMN -->
                             <td class="px-4 py-3 text-right">
-                                <a href="{{ route('author.orders.show', $order->id) }}"
-                                   class="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800 font-medium">
-                                    View <i class="ti ti-chevron-right text-xs"></i>
-                                </a>
+                                <div class="inline-flex items-center gap-2 flex-wrap justify-end">
+                                    @if($order->canSellerMarkPaid())
+                                        <form method="POST"
+                                              action="{{ route('author.orders.mark-paid', $order->id) }}"
+                                              onsubmit="return confirm('Mark this order as PAID? The buyer will be notified to confirm.')"
+                                              class="inline">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg transition whitespace-nowrap">
+                                                <i class="ti ti-check"></i> Mark Paid
+                                            </button>
+                                        </form>
+                                    @elseif($order->canSellerUnmarkPaid())
+                                        <form method="POST"
+                                              action="{{ route('author.orders.unmark-paid', $order->id) }}"
+                                              onsubmit="return confirm('Un-mark this payment? The buyer will be notified.')"
+                                              class="inline">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="inline-flex items-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition whitespace-nowrap">
+                                                <i class="ti ti-arrow-back-up"></i> Unmark
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <a href="{{ route('author.orders.show', $order->id) }}"
+                                       class="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800 font-medium">
+                                        View <i class="ti ti-chevron-right text-xs"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="11" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="12" class="px-4 py-8 text-center text-gray-500">
                                 <i class="ti ti-truck-delivery text-4xl mb-2 block text-gray-300"></i>
                                 <p>No book orders yet.</p>
                             </td>

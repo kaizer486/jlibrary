@@ -137,7 +137,129 @@
             </div>
         </div>
     </div>
+    <!-- ========================================== -->
+    <!-- PAYMENT CONFIRMATION TIMELINE              -->
+    <!-- ========================================== -->
+    <div class="bg-white rounded-2xl shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                <i class="ti ti-coin text-purple-600"></i> Payment Confirmation
+            </h2>
+            {!! $order->payment_badge !!}
+        </div>
 
+        <!-- Current state summary -->
+        @if($order->isPaymentUnpaid())
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 mb-4">
+                <p class="font-semibold mb-1"><i class="ti ti-clock"></i> Waiting for payment</p>
+                <p class="text-xs">
+                    The buyer has not yet paid the seller. No payment has been marked.
+                </p>
+            </div>
+        @elseif($order->isSellerMarkedPaid())
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800 mb-4">
+                <p class="font-semibold mb-1"><i class="ti ti-clock"></i> Seller marked paid — awaiting buyer confirmation</p>
+                <p class="text-xs">
+                    The seller marked this payment as received on
+                    <strong>{{ $order->payment_received_at->format('M d, Y \a\t H:i') }}</strong>.
+                    The buyer has not yet confirmed.
+                </p>
+            </div>
+        @elseif($order->isBuyerConfirmed())
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800 mb-4">
+                <p class="font-semibold mb-1"><i class="ti ti-circle-check"></i> Payment fully settled</p>
+                <p class="text-xs">
+                    Both parties agreed. Buyer confirmed on
+                    <strong>{{ $order->payment_confirmed_by_buyer_at->format('M d, Y \a\t H:i') }}</strong>.
+                </p>
+            </div>
+        @elseif($order->isPaymentDisputed())
+            <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800 mb-4">
+                <p class="font-semibold mb-1"><i class="ti ti-alert-triangle"></i> Payment disputed — needs review</p>
+                <p class="text-xs mb-2">
+                    The buyer disputed the seller's payment claim. Review the reason below and contact both parties to resolve.
+                </p>
+                @if($order->payment_dispute_reason)
+                    <div class="bg-white/60 rounded-lg p-2">
+                        <p class="text-[10px] uppercase tracking-wide text-red-600 font-semibold mb-0.5">Buyer's reason</p>
+                        <p class="text-xs text-red-900">{{ $order->payment_dispute_reason }}</p>
+                    </div>
+                @endif
+            </div>
+        @endif
+
+        <!-- Timeline -->
+        <div class="space-y-3">
+            @foreach($order->payment_timeline as $step)
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0
+                                {{ $step['done'] ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400' }}">
+                        <i class="ti {{ $step['icon'] }}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0 pt-1">
+                        <p class="font-medium text-sm {{ $step['done'] ? 'text-gray-800' : 'text-gray-400' }}">
+                            {{ $step['label'] }}
+                        </p>
+                        @if($step['timestamp'])
+                            <p class="text-xs text-gray-500">
+                                {{ $step['timestamp']->format('M d, Y \a\t H:i') }}
+                                <span class="text-gray-400">· {{ $step['timestamp']->diffForHumans() }}</span>
+                            </p>
+                        @else
+                            <p class="text-xs text-gray-400">Pending</p>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <!-- Contact actions -->
+        @if($order->isSellerMarkedPaid() || $order->isPaymentDisputed())
+            <div class="mt-5 pt-5 border-t border-gray-100">
+                <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-2">
+                    <i class="ti ti-phone"></i> Follow up
+                </p>
+                <div class="grid sm:grid-cols-2 gap-2">
+                    @if($order->user && $order->user->email)
+                        <a href="mailto:{{ $order->user->email }}?subject=Order #{{ $order->id }} - Payment confirmation"
+                           class="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium px-3 py-2 rounded-lg transition">
+                            <i class="ti ti-mail"></i> Email Buyer
+                        </a>
+                    @endif
+                    @if($order->customer_phone)
+                        <a href="tel:{{ $order->customer_phone }}"
+                           class="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-medium px-3 py-2 rounded-lg transition">
+                            <i class="ti ti-phone"></i> Call Buyer ({{ $order->customer_phone }})
+                        </a>
+                    @endif
+                    @if($order->author && $order->author->email)
+                        <a href="mailto:{{ $order->author->email }}?subject=Order #{{ $order->id }} - Payment issue"
+                           class="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium px-3 py-2 rounded-lg transition">
+                            <i class="ti ti-mail"></i> Email Seller
+                        </a>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        <!-- Danger zone: Delete order (admin only) -->
+        <div class="mt-5 pt-5 border-t border-red-100">
+            <form method="POST"
+                  action="{{ route('super-admin.hardcopy-orders.delete', $order->id) }}"
+                  onsubmit="return confirm('DELETE order #{{ $order->id }} permanently?\n\nThis cannot be undone. The stock will be restored and both parties will be notified.')">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                        class="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 font-semibold px-4 py-2.5 rounded-xl transition text-sm">
+                    <i class="ti ti-trash"></i> Delete Order #{{ $order->id }}
+                </button>
+                <p class="text-[10px] text-red-600 text-center mt-2">
+                    <i class="ti ti-alert-triangle"></i>
+                    Restores stock. Buyer and seller will be notified.
+                </p>
+            </form>
+        </div>
+    </div>
     <!-- Commission form -->
     <div class="bg-white rounded-2xl shadow-sm p-6">
         <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">

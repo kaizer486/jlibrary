@@ -144,7 +144,198 @@
             </div>
         </div>
     </div>
+    <!-- ========================================== -->
+    <!-- PAYMENT CONFIRMATION                       -->
+    <!-- ========================================== -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+        <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="ti ti-coin text-orange-600"></i> Payment Status
+        </h2>
 
+        @if(session('success'))
+            <div class="mb-4 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800 flex items-center gap-2">
+                <i class="ti ti-circle-check"></i> {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800 flex items-center gap-2">
+                <i class="ti ti-alert-circle"></i> {{ session('error') }}
+            </div>
+        @endif
+
+        <!-- Current state badge -->
+        <div class="flex items-center gap-3 mb-4">
+            {!! $order->payment_badge !!}
+            @if($order->isBuyerConfirmed() && $order->payment_confirmed_by_buyer_at)
+                <span class="text-xs text-emerald-600">
+                    Confirmed {{ $order->payment_confirmed_by_buyer_at->diffForHumans() }}
+                </span>
+            @elseif($order->isSellerMarkedPaid() && $order->payment_received_at)
+                <span class="text-xs text-yellow-600">
+                    Seller marked {{ $order->payment_received_at->diffForHumans() }}
+                </span>
+            @endif
+        </div>
+
+        {{-- ============================================ --}}
+        {{-- SCENARIO 1: Seller marked paid — ask buyer --}}
+        {{-- ============================================ --}}
+        @if($order->canBuyerRespond())
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="ti ti-help-circle text-white text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-yellow-900 mb-1">
+                            Did you pay TSh {{ number_format($order->total, 2) }} to the seller?
+                        </p>
+                        <p class="text-xs text-yellow-800 mb-3">
+                            The seller has marked this payment as <strong>received</strong>.
+                            Please confirm on your side so the order can be fully settled.
+                            If you did not pay, please report it so we can investigate.
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <!-- YES -->
+                            <form method="POST"
+                                  action="{{ route('library.order.confirm-payment', $order->id) }}"
+                                  onsubmit="return confirm('Confirm that you paid TSh {{ number_format($order->total, 2) }} to the seller?')"
+                                  class="flex-1">
+                                @csrf
+                                <button type="submit"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl transition">
+                                    <i class="ti ti-circle-check"></i> Yes, I Paid
+                                </button>
+                            </form>
+
+                            <!-- NO -->
+                            <button type="button"
+                                    onclick="document.getElementById('disputeForm').classList.toggle('hidden')"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-white border-2 border-red-300 hover:bg-red-50 text-red-700 font-semibold px-4 py-2.5 rounded-xl transition">
+                                <i class="ti ti-alert-triangle"></i> No, I Didn't Pay
+                            </button>
+                        </div>
+
+                        <!-- Dispute form (hidden by default) -->
+                        <div id="disputeForm" class="hidden mt-3 pt-3 border-t border-yellow-300">
+                            <form method="POST"
+                                  action="{{ route('library.order.dispute-payment', $order->id) }}">
+                                @csrf
+                                <label class="block text-xs font-semibold text-red-800 mb-2">
+                                    Please tell us what happened <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="reason" rows="3" required minlength="5" maxlength="1000"
+                                          class="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
+                                          placeholder="e.g. I already paid but the amount wasn't what we agreed, or I didn't receive the correct book..."></textarea>
+                                @error('reason') <p class="text-red-600 text-xs mt-1">{{ $message }}</p> @enderror
+                                <div class="flex gap-2 mt-2">
+                                    <button type="submit"
+                                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition">
+                                        <i class="ti ti-send"></i> Report Dispute
+                                    </button>
+                                    <button type="button"
+                                            onclick="document.getElementById('disputeForm').classList.add('hidden')"
+                                            class="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                                        Cancel
+                                    </button>
+                                </div>
+                                <p class="text-[10px] text-red-600 mt-2">
+                                    <i class="ti ti-info-circle"></i>
+                                    Your dispute will be reviewed by the platform team. The seller will be notified.
+                                </p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        {{-- ============================================ --}}
+        {{-- SCENARIO 2: Payment fully confirmed        --}}
+        {{-- ============================================ --}}
+        @elseif($order->isBuyerConfirmed())
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                <div class="flex items-start gap-3">
+                    <i class="ti ti-circle-check text-emerald-500 text-2xl flex-shrink-0"></i>
+                    <div>
+                        <p class="font-semibold text-emerald-900 mb-1">Payment Confirmed ✅</p>
+                        <p class="text-xs text-emerald-800">
+                            Thank you for confirming your payment. This order is now fully settled.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        {{-- ============================================ --}}
+        {{-- SCENARIO 3: Disputed — awaiting review     --}}
+        {{-- ============================================ --}}
+        @elseif($order->isPaymentDisputed())
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div class="flex items-start gap-3">
+                    <i class="ti ti-alert-triangle text-red-500 text-2xl flex-shrink-0"></i>
+                    <div>
+                        <p class="font-semibold text-red-900 mb-1">Payment Disputed</p>
+                        <p class="text-xs text-red-800 mb-2">
+                            You reported an issue with this payment. The platform team has been notified and will contact you to resolve it.
+                        </p>
+                        @if($order->payment_dispute_reason)
+                            <div class="bg-white/60 rounded p-2 mt-2">
+                                <p class="text-[10px] uppercase tracking-wide text-red-600 font-semibold mb-0.5">Your reason</p>
+                                <p class="text-xs text-red-900">{{ $order->payment_dispute_reason }}</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+        {{-- ============================================ --}}
+        {{-- SCENARIO 4: Still unpaid                  --}}
+        {{-- ============================================ --}}
+        @elseif($order->isPaymentUnpaid())
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                <div class="flex items-start gap-3">
+                    <i class="ti ti-clock text-gray-500 text-2xl flex-shrink-0"></i>
+                    <div>
+                        <p class="font-semibold text-gray-900 mb-1">Awaiting Payment</p>
+                        <p class="text-xs text-gray-700">
+                            Please pay <strong>TSh {{ number_format($order->total, 2) }}</strong> to the seller directly
+                            (as agreed by phone). Once the seller receives the payment, they will mark it as paid here,
+                            and you'll be asked to confirm.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- Payment timeline -->
+        <div class="mt-5 pt-5 border-t border-gray-100">
+            <p class="text-xs uppercase tracking-wide text-gray-400 font-semibold mb-3">Payment Timeline</p>
+            <div class="space-y-3">
+                @foreach($order->payment_timeline as $step)
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                                    {{ $step['done'] ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400' }}">
+                            <i class="ti {{ $step['icon'] }} text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-sm {{ $step['done'] ? 'text-gray-800' : 'text-gray-400' }}">
+                                {{ $step['label'] }}
+                            </p>
+                            @if($step['timestamp'])
+                                <p class="text-xs text-gray-500">
+                                    {{ $step['timestamp']->format('M d, Y \a\t H:i') }}
+                                    <span class="text-gray-400">· {{ $step['timestamp']->diffForHumans() }}</span>
+                                </p>
+                            @else
+                                <p class="text-xs text-gray-400">Pending</p>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    
     <!-- Notes (extracted from the "Name: X | Notes: Y" format) -->
     @php
         $notes = $order->notes ?? '';

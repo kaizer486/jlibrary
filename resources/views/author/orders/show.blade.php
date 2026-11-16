@@ -18,11 +18,17 @@
             </a>
         </div>
 
-        <!-- Flash -->
+             <!-- Flash -->
         @if(session('success'))
             <div class="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
                 <i class="ti ti-circle-check text-2xl text-emerald-500"></i>
                 <p class="text-emerald-800 text-sm">{{ session('success') }}</p>
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+                <i class="ti ti-alert-circle text-2xl text-red-500"></i>
+                <p class="text-red-800 text-sm">{{ session('error') }}</p>
             </div>
         @endif
 
@@ -177,6 +183,133 @@
                             <span>{{ $order->shipping_address }}</span>
                         </p>
                     </div>
+                </div>
+            </div>
+        </div>
+
+                <!-- ========================================== -->
+        <!-- PAYMENT STATUS CARD                        -->
+        <!-- ========================================== -->
+        <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-6 mb-6">
+            <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="ti ti-coin text-orange-600"></i> Payment Status
+            </h2>
+
+            @if(session('success'))
+                <div class="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800 flex items-center gap-2">
+                    <i class="ti ti-circle-check"></i> {{ session('success') }}
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800 flex items-center gap-2">
+                    <i class="ti ti-alert-circle"></i> {{ session('error') }}
+                </div>
+            @endif
+
+            <!-- Current state + action buttons -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <div class="flex items-center gap-3">
+                    {!! $order->payment_badge !!}
+                    @if($order->isBuyerConfirmed() && $order->payment_confirmed_by_buyer_at)
+                        <span class="text-xs text-emerald-600">
+                            {{ $order->payment_confirmed_by_buyer_at->format('M d, Y \a\t H:i') }}
+                        </span>
+                    @elseif($order->isSellerMarkedPaid() && $order->payment_received_at)
+                        <span class="text-xs text-yellow-600">
+                            Marked {{ $order->payment_received_at->diffForHumans() }}
+                        </span>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-2">
+                    @if($order->canSellerMarkPaid())
+                        <form method="POST"
+                              action="{{ route('author.orders.mark-paid', $order->id) }}"
+                              onsubmit="return confirm('Mark this order as PAID?\n\nThe buyer will be notified to confirm.')">
+                            @csrf
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl transition">
+                                <i class="ti ti-check"></i> Mark as Paid
+                            </button>
+                        </form>
+                    @elseif($order->canSellerUnmarkPaid())
+                        <form method="POST"
+                              action="{{ route('author.orders.unmark-paid', $order->id) }}"
+                              onsubmit="return confirm('Un-mark this payment?\n\nThe buyer will be notified.')">
+                            @csrf
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-xl transition">
+                                <i class="ti ti-arrow-back-up"></i> Unmark Paid
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Status explanation -->
+            @if($order->isPaymentUnpaid())
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700">
+                    <p class="font-semibold mb-1"><i class="ti ti-info-circle"></i> Waiting for buyer payment</p>
+                    <p class="text-xs">
+                        Once you receive the money from the buyer, click <strong>Mark as Paid</strong> above.
+                        The buyer will then be asked to confirm on their side.
+                    </p>
+                </div>
+            @elseif($order->isSellerMarkedPaid())
+                <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800">
+                    <p class="font-semibold mb-1"><i class="ti ti-clock"></i> Awaiting buyer confirmation</p>
+                    <p class="text-xs">
+                        You've marked this payment as received. The buyer will confirm on their side.
+                        If you made a mistake, click <strong>Unmark Paid</strong>.
+                    </p>
+                </div>
+            @elseif($order->isBuyerConfirmed())
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800">
+                    <p class="font-semibold mb-1"><i class="ti ti-circle-check"></i> Payment fully settled</p>
+                    <p class="text-xs">
+                        The buyer confirmed the payment. This order's payment is now locked and cannot be un-marked.
+                    </p>
+                </div>
+            @elseif($order->isPaymentDisputed())
+                <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
+                    <p class="font-semibold mb-1"><i class="ti ti-alert-triangle"></i> Payment disputed by buyer</p>
+                    <p class="text-xs mb-2">
+                        The buyer has disputed your payment claim. This needs admin review before it can be resolved.
+                    </p>
+                    @if($order->payment_dispute_reason)
+                        <div class="bg-white/60 rounded-lg p-2 mt-2">
+                            <p class="text-[10px] uppercase tracking-wide text-red-600 font-semibold mb-0.5">Buyer's reason</p>
+                            <p class="text-xs">{{ $order->payment_dispute_reason }}</p>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            <!-- Payment timeline -->
+            <div class="mt-5 pt-5 border-t-2 border-slate-100">
+                <p class="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-3">Payment Timeline</p>
+                <div class="space-y-3">
+                    @foreach($order->payment_timeline as $step)
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                                        {{ $step['done'] ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400' }}">
+                                <i class="ti {{ $step['icon'] }} text-sm"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-sm {{ $step['done'] ? 'text-slate-800' : 'text-slate-400' }}">
+                                    {{ $step['label'] }}
+                                </p>
+                                @if($step['timestamp'])
+                                    <p class="text-xs text-slate-500">
+                                        {{ $step['timestamp']->format('M d, Y \a\t H:i') }}
+                                        <span class="text-slate-400">· {{ $step['timestamp']->diffForHumans() }}</span>
+                                    </p>
+                                @else
+                                    <p class="text-xs text-slate-400">Pending</p>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>

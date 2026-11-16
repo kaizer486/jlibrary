@@ -126,4 +126,66 @@ class HardcopyOrderController extends Controller
             'Commission updated. Owner payout: TSh ' . number_format($order->ownerPayout(), 2)
         );
     }
+    
+    /**
+     * Delete a hardcopy order (super-admin / admin intervention).
+     * Restores stock and notifies both parties.
+     */
+    public function destroy(Order $order)
+    {
+        abort_unless(in_array($order->book_type, ['hardcopy', 'both']), 404);
+
+        $orderId   = $order->id;
+        $orderTotal = (float) $order->total;
+        $buyerId   = $order->user_id;
+        $authorId  = $order->author_id;
+        $bookId    = $order->book_id;
+        $quantity  = (int) $order->quantity;
+
+        try {
+            DB::transaction(function () use ($order, $bookId, $quantity) {
+                // Restore stock on the book if it still exists
+                $book = \App\Models\Book::find($bookId);
+                if ($book) {
+                    $book->increment('stock_quantity', $quantity);
+                }
+
+                $order->delete();
+            });
+        } catch (\Throwable $e) {
+            \Log::error('Super-admin order delete failed: ' . $e->getMessage());
+            return back()->with('error', 'Could not delete the order. Please try again.');
+        }
+
+        // Notify buyer
+        try {
+            NotificationHelper::send(
+                $buyerId,
+                'order_deleted',
+                'Order #' . $orderId . ' Cancelled by Admin',
+                'Your hardcopy order #' . $orderId . ' (TSh ' . number_format($orderTotal, 2) . ') was removed by the platform team.',
+                ['order_id' => $orderId]
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Buyer delete notification failed: ' . $e->getMessage());
+        }
+
+        // Notify seller
+        if ($authorId) {
+            try {
+                NotificationHelper::send(
+                    $authorId,
+                    'order_deleted',
+                    'Order #' . $orderId . ' Cancelled by Admin',
+                    'Hardcopy order #' . $orderId . ' (TSh ' . number_format($orderTotal, 2) . ') was removed by the platform team. Stock has been restored.',
+                    ['order_id' => $orderId, 'link' => route('author.orders.index')]
+                );
+            } catch (\Throwable $e) {
+                \Log::warning('Seller delete notification failed: ' . $e->getMessage());
+            }
+        }
+
+        return redirect()->route('super-admin.hardcopy-orders.index')
+            ->with('success', 'Order #' . $orderId . ' deleted. Stock restored. Both parties notified.');
+    }
 }

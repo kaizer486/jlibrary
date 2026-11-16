@@ -33,10 +33,14 @@ class Order extends Model
         'transaction_id',
         'shipping_address',
         'customer_phone',
-             'notes',
+               'notes',
         'platform_commission',
         'commission_status',
         'commission_notes',
+        'payment_status',
+        'payment_received_at',
+        'payment_confirmed_by_buyer_at',
+        'payment_dispute_reason',
     ];
     protected $casts = [
         'institution_id' => 'integer',
@@ -46,7 +50,9 @@ class Order extends Model
         'quantity'       => 'integer',
         'price_per_unit' => 'decimal:2',
         'total'          => 'decimal:2',
-        'platform_commission' => 'decimal:2',
+     'platform_commission' => 'decimal:2',
+        'payment_received_at' => 'datetime',
+        'payment_confirmed_by_buyer_at' => 'datetime',
         'created_at'     => 'datetime',
         'updated_at'     => 'datetime',
     ];
@@ -253,5 +259,126 @@ class Order extends Model
             'collected'  => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Collected</span>',
             default      => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pending</span>',
         };
+    }
+    
+    // ==========================================
+    // PAYMENT CONFIRMATION HELPERS
+    // ==========================================
+
+    /**
+     * Is this an order where the buyer pays the seller directly
+     * (hardcopy / contact payment method)?
+     */
+    public function isContactPayment(): bool
+    {
+        return $this->payment_method === 'contact';
+    }
+
+    public function isPaymentUnpaid(): bool
+    {
+        return empty($this->payment_status) || $this->payment_status === 'unpaid';
+    }
+
+    public function isSellerMarkedPaid(): bool
+    {
+        return $this->payment_status === 'seller_marked_paid';
+    }
+
+    public function isBuyerConfirmed(): bool
+    {
+        return $this->payment_status === 'buyer_confirmed';
+    }
+
+    public function isPaymentDisputed(): bool
+    {
+        return $this->payment_status === 'disputed';
+    }
+
+    /**
+     * Fully settled = buyer confirmed the payment.
+     */
+    public function isPaymentSettled(): bool
+    {
+        return $this->isBuyerConfirmed();
+    }
+
+    /**
+     * Can the seller mark this order as paid?
+     * - Must be a contact-payment order
+     * - Must be currently unpaid
+     * - Order must not be cancelled
+     */
+    public function canSellerMarkPaid(): bool
+    {
+        return $this->isContactPayment()
+            && $this->isPaymentUnpaid()
+            && !in_array($this->status, ['cancelled'], true);
+    }
+
+    /**
+     * Can the seller un-mark paid?
+     * - Only if they marked it themselves
+     * - Only if buyer hasn't confirmed yet
+     * - Never if there's an active dispute (buyer already said no)
+     */
+    public function canSellerUnmarkPaid(): bool
+    {
+        return $this->isContactPayment()
+            && $this->isSellerMarkedPaid();
+    }
+
+    /**
+     * Can the buyer confirm or dispute?
+     * - Only when seller has marked paid
+     */
+    public function canBuyerRespond(): bool
+    {
+        return $this->isContactPayment()
+            && $this->isSellerMarkedPaid();
+    }
+
+    /**
+     * HTML badge for the payment status — matches the platform style.
+     */
+    public function getPaymentBadgeAttribute(): string
+    {
+        return match ($this->payment_status) {
+            'buyer_confirmed'    => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700"><i class="ti ti-circle-check text-xs"></i> Paid & Confirmed</span>',
+            'seller_marked_paid' => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700"><i class="ti ti-clock text-xs"></i> Awaiting Buyer Confirmation</span>',
+            'disputed'           => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><i class="ti ti-alert-triangle text-xs"></i> Payment Disputed</span>',
+            'unpaid', null, ''   => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600"><i class="ti ti-clock text-xs"></i> Unpaid</span>',
+            default              => '<span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">' . ucfirst((string) $this->payment_status) . '</span>',
+        };
+    }
+
+    /**
+     * Timeline data for super-admin / detail pages.
+     * Returns an array of steps with label, timestamp, done flag.
+     */
+    public function getPaymentTimelineAttribute(): array
+    {
+        return [
+            [
+                'label'     => 'Order Placed',
+                'timestamp' => $this->created_at,
+                'done'      => true,
+                'icon'      => 'ti-shopping-cart',
+                'color'     => 'text-slate-500',
+            ],
+            [
+                'label'     => 'Seller Marked Paid',
+                'timestamp' => $this->payment_received_at,
+                'done'      => !is_null($this->payment_received_at),
+                'icon'      => 'ti-cash',
+                'color'     => 'text-yellow-600',
+            ],
+            [
+                'label'     => $this->isPaymentDisputed() ? 'Buyer Disputed' : 'Buyer Confirmed',
+                'timestamp' => $this->payment_confirmed_by_buyer_at,
+                'done'      => !is_null($this->payment_confirmed_by_buyer_at) || $this->isPaymentDisputed(),
+                'icon'      => $this->isPaymentDisputed() ? 'ti-alert-triangle' : 'ti-circle-check',
+                'color'     => $this->isPaymentDisputed() ? 'text-red-600' : 'text-emerald-600',
+            ],
+        ];
     }
 }
