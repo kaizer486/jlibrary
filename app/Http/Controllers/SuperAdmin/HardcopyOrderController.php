@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\OrdersExport;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Helpers\NotificationHelper;
@@ -56,6 +58,18 @@ class HardcopyOrderController extends Controller
         return view('super-admin.hardcopy-orders.index', compact('orders', 'stats'));
     }
 
+        /**
+     * Export all hardcopy orders (platform-wide) to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $filename = 'all-hardcopy-orders-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        return Excel::download(
+            new OrdersExport(all: true, status: $request->get('status')),
+            $filename
+        );
+    }
     /**
      * Show one order with commission editing form.
      */

@@ -5,7 +5,7 @@
 
 <div class="container mx-auto px-4 py-8" x-data="{ tab: '{{ request('tab', 'hardcopy') }}' }">
 
-    <!-- Header -->
+      <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -14,10 +14,16 @@
             </h1>
             <p class="text-gray-600 text-sm mt-1">Track your hardcopy orders and view your softcopy purchases</p>
         </div>
-        <a href="{{ route('library.index') }}"
-           class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 transition text-sm">
-            <i class="ti ti-books"></i> Browse Library
-        </a>
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="{{ route('library.orders.export-excel') }}"
+               class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition text-sm font-medium">
+                <i class="ti ti-file-spreadsheet"></i> Export My Orders
+            </a>
+            <a href="{{ route('library.index') }}"
+               class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 transition text-sm">
+                <i class="ti ti-books"></i> Browse Library
+            </a>
+        </div>
     </div>
 
     <!-- Stats -->

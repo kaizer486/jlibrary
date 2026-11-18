@@ -5,17 +5,12 @@
 
 @section('content')
 
-<!-- ========================================== -->
-<!-- LIGHT BISQUE BACKGROUND                    -->
-<!-- ========================================== -->
 <div style="position: fixed; inset: 0; background: #e9e8e6; z-index: -10;"></div>
 
 <div class="relative z-10 min-h-screen py-8">
-    <div class="container mx-auto px-4 max-w-6xl">
-        
-        <!-- ========================================== -->
-        <!-- HEADER CARD                                 -->
-        <!-- ========================================== -->
+    <div class="container mx-auto px-4 max-w-7xl">
+
+        <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -31,96 +26,155 @@
             </a>
         </div>
 
-        <!-- ========================================== -->
-        <!-- BOOKS GRID                                 -->
-        <!-- ========================================== -->
-        @if($books->count() > 0)
-        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($books as $book)
-            <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 overflow-hidden hover:shadow-lg hover:border-orange-300/60 transition group">
-                <!-- Cover Image -->
-                <div class="relative h-48 bg-orange-50/60">
-                    @if($book->cover_image)
-                       <img src="{{ url('media/' . $book->cover_image) }}" alt="{{ $book->title }}" class="w-full h-full object-cover">
-                    @else
-                        <div class="w-full h-full flex items-center justify-center">
-                            <i class="ti ti-book text-6xl text-orange-400/40"></i>
-                        </div>
-                    @endif
-                    <!-- Status Badge -->
-                    <div class="absolute top-3 right-3">
-                        @if($book->status === 'approved')
-                            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500 text-white border border-emerald-400/30">✅ Approved</span>
-                        @elseif($book->status === 'pending')
-                            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-yellow-500 text-white border border-yellow-400/30">⏳ Pending</span>
-                        @else
-                            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500 text-white border border-red-400/30">❌ Rejected</span>
-                        @endif
-                    </div>
-                </div>
-                
-                <!-- Content -->
-                <div class="p-4">
-                    <h3 class="font-bold text-lg text-slate-800 mb-1 line-clamp-1">{{ $book->title }}</h3>
-                    <p class="text-sm text-slate-500 mb-2">by {{ $book->author }}</p>
-                    <p class="text-sm text-slate-600 line-clamp-2 mb-3">{{ Str::limit($book->description ?? 'No description', 80) }}</p>
-                    
-                    <!-- Stats -->
-                    <div class="flex items-center justify-between pt-3 border-t-2 border-slate-200/60">
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center gap-1 text-slate-500 text-xs">
-                                <i class="ti ti-download text-orange-500"></i>
-                                <span>{{ number_format($book->downloads ?? 0) }}</span>
-                            </div>
-                            <div class="flex items-center gap-1 text-slate-500 text-xs">
-                                <i class="ti ti-star text-yellow-400"></i>
-                                <span>{{ $book->averageRating() ?? 0 }}</span>
-                            </div>
-                            <div class="flex items-center gap-1 text-slate-500 text-xs">
-                                <i class="ti ti-wallet text-orange-500"></i>
-                                <span>{{ $book->is_paid ? 'TSh '.number_format($book->price, 2) : 'FREE' }}</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('author.books.show', $book) }}" class="text-blue-600 hover:text-blue-800 transition" title="View">
-                                <i class="ti ti-eye"></i>
-                            </a>
-                            <a href="{{ route('author.books.edit', $book) }}" class="text-orange-600 hover:text-orange-800 transition" title="Edit">
-                                <i class="ti ti-edit"></i>
-                            </a>
-                            <form method="POST" action="{{ route('author.books.destroy', $book) }}" class="inline" onsubmit="return confirm('Delete {{ addslashes($book->title) }} permanently?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-800 transition" title="Delete">
-                                    <i class="ti ti-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
+        <!-- Books Table -->
+        <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-slate-50 border-b-2 border-slate-200/60">
+                        <tr>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Book</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Category</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Price</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Stock</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Stats</th>
+                            <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
+                            <th class="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($books as $book)
+                            <tr class="hover:bg-slate-50 transition">
+                                <!-- Book -->
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-16 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
+                                            @if($book->cover_image)
+                                                <img src="{{ url('media/' . $book->cover_image) }}"
+                                                     alt="{{ $book->title }}"
+                                                     class="w-full h-full object-cover">
+                                            @else
+                                                <i class="ti ti-book text-orange-400 text-2xl"></i>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="font-semibold text-slate-800 line-clamp-1">{{ $book->title }}</p>
+                                            <p class="text-xs text-slate-500">by {{ $book->author }}</p>
+                                            <p class="text-[10px] text-slate-400 mt-0.5">ID: #{{ $book->id }}</p>
+                                        </div>
+                                    </div>
+                                </td>
 
-        <div class="mt-6">
-            {{ $books->links() }}
-        </div>
+                                <!-- Category -->
+                                <td class="px-4 py-3 text-sm text-slate-700">
+                                    {{ $book->category ?? '—' }}
+                                </td>
 
-        @else
-        <!-- ========================================== -->
-        <!-- EMPTY STATE CARD                           -->
-        <!-- ========================================== -->
-        <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-16 text-center">
-            <div class="w-24 h-24 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-500/20">
-                <i class="ti ti-books text-4xl text-white"></i>
+                                <!-- Price -->
+                                <td class="px-4 py-3 text-sm">
+                                    @if($book->offersSoftcopy() && $book->offersHardcopy())
+                                        <div class="space-y-0.5 text-xs">
+                                            <p class="text-blue-600 font-medium"> TSh {{ number_format($book->effectiveSoftcopyPrice(), 0) }}</p>
+                                            <p class="text-orange-600 font-medium"> TSh {{ number_format($book->effectiveHardcopyPrice(), 0) }}</p>
+                                        </div>
+                                    @elseif($book->offersHardcopy())
+                                        <span class="text-orange-600 font-semibold">
+                                             TSh {{ number_format($book->effectiveHardcopyPrice(), 2) }}
+                                        </span>
+                                    @elseif($book->offersSoftcopy())
+                                        @if($book->effectiveSoftcopyPrice() > 0)
+                                            <span class="text-blue-600 font-semibold">
+                                                 TSh {{ number_format($book->effectiveSoftcopyPrice(), 2) }}
+                                            </span>
+                                        @else
+                                            <span class="text-green-600 font-semibold">FREE</span>
+                                        @endif
+                                    @else
+                                        <span class="text-slate-400 text-xs">—</span>
+                                    @endif
+                                </td>
+
+                                <!-- Stock -->
+                                <td class="px-4 py-3 text-sm">
+                                    @if(in_array($book->book_type, ['hardcopy', 'both'], true))
+                                        @php $stock = (int) ($book->stock_quantity ?? 0); @endphp
+                                        <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full {{ $stock > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                                            @if($stock > 0)
+                                                <i class="ti ti-package text-[10px]"></i> {{ $stock }}
+                                            @else
+                                                <i class="ti ti-alert-triangle text-[10px]"></i> 0
+                                            @endif
+                                        </span>
+                                    @else
+                                        <span class="text-slate-400 text-xs">—</span>
+                                    @endif
+                                </td>
+
+                                <!-- Stats -->
+                                <td class="px-4 py-3 text-sm">
+                                    <div class="flex items-center gap-3 text-xs text-slate-500">
+                                        <span title="Downloads">
+                                            <i class="ti ti-download text-orange-500"></i> {{ number_format($book->downloads ?? 0) }}
+                                        </span>
+                                        <span title="Rating">
+                                            <i class="ti ti-star text-yellow-400"></i> {{ $book->averageRating() ?? 0 }}
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- Status -->
+                                <td class="px-4 py-3">
+                                    @if($book->status === 'approved')
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">✅ Approved</span>
+                                    @elseif($book->status === 'pending')
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">⏳ Pending</span>
+                                    @else
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">❌ Rejected</span>
+                                    @endif
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="px-4 py-3 text-right">
+                                    <div class="inline-flex items-center gap-2">
+                                        <a href="{{ route('author.books.show', $book) }}" class="text-blue-600 hover:text-blue-800 transition" title="View">
+                                            <i class="ti ti-eye"></i>
+                                        </a>
+                                        <a href="{{ route('author.books.edit', $book) }}" class="text-orange-600 hover:text-orange-800 transition" title="Edit">
+                                            <i class="ti ti-edit"></i>
+                                        </a>
+                                        <form method="POST" action="{{ route('author.books.destroy', $book) }}" class="inline" onsubmit="return confirm('Delete {{ addslashes($book->title) }} permanently?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-600 hover:text-red-800 transition" title="Delete">
+                                                <i class="ti ti-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-4 py-12 text-center text-slate-500">
+                                    <div class="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20">
+                                        <i class="ti ti-books text-3xl text-white"></i>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-slate-800 mb-1">No Books Yet</h3>
+                                    <p class="text-slate-500 mb-4 text-sm">Upload your first book to start earning royalties.</p>
+                                    <a href="{{ route('author.books.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white px-5 py-2.5 rounded-xl hover:shadow-lg transition font-medium">
+                                        <i class="ti ti-plus"></i> Upload Your First Book
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-            <h3 class="text-xl font-semibold text-slate-800 mb-2">No Books Yet</h3>
-            <p class="text-slate-500 mb-4">Upload your first book to start earning royalties.</p>
-            <a href="{{ route('author.books.create') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-orange-600/25 transition font-medium border-2 border-orange-400/30">
-                <i class="ti ti-plus"></i> Upload Your First Book
-            </a>
+
+            @if($books->hasPages())
+                <div class="px-4 py-3 border-t border-slate-100">
+                    {{ $books->links() }}
+                </div>
+            @endif
         </div>
-        @endif
 
     </div>
 </div>
@@ -133,40 +187,7 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    
-    .bg-emerald-500 {
-        background-color: #10b981;
-    }
-    .border-emerald-400\/30 {
-        border-color: rgba(52, 211, 153, 0.3);
-    }
-    .bg-yellow-500 {
-        background-color: #f59e0b;
-    }
-    .border-yellow-400\/30 {
-        border-color: rgba(251, 191, 36, 0.3);
-    }
-    .bg-red-500 {
-        background-color: #ef4444;
-    }
-    .border-red-400\/30 {
-        border-color: rgba(248, 113, 113, 0.3);
-    }
 </style>
 @endpush
 
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Optional: Add any JavaScript for the books index page
-        // For example, you could add a search/filter functionality
-    });
-</script>
-@endpush
 @endsection

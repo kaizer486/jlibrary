@@ -4,7 +4,6 @@
 
 @section('content')
 <div class="space-y-6">
-
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
@@ -16,6 +15,10 @@
                 Monitor all hardcopy orders · negotiate commission with owners
             </p>
         </div>
+        <a href="{{ route('super-admin.hardcopy-orders.export-excel', ['status' => request('status')]) }}"
+           class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap">
+            <i class="ti ti-file-spreadsheet"></i> Export All
+        </a>
     </div>
 
     <!-- Stats -->

@@ -8,6 +8,9 @@ use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;     
+use App\Exports\MyOrdersExport;
 
 class LibraryOrderController extends Controller
 {
@@ -109,6 +112,120 @@ class LibraryOrderController extends Controller
                 'total'        => (float) $order->total,
             ]
         );
+    }
+    /**
+     * Export the buyer's own order history to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $filename = 'my-orders-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        return Excel::download(new MyOrdersExport(), $filename);
+    }
+    /**
+     * Process a bulk checkout (multiple books at once).
+     */
+    public function storeBulk(Request $request)
+    {
+        $request->validate([
+            'customer_name'    => 'required|string|max:120',
+            'customer_phone'   => 'required|string|max:30',
+            'shipping_address' => 'required|string|max:500',
+            'notes'            => 'nullable|string|max:1000',
+            'items'            => 'required|json',
+        ]);
+
+        $items = json_decode($request->items, true);
+        if (empty($items) || !is_array($items)) {
+            return back()->with('error', 'Your cart is empty or invalid.');
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Please log in to place an order.');
+        }
+
+        $bulkId = 'BULK-' . strtoupper(Str::random(8));
+        $createdOrders = [];
+        $errors = [];
+
+        try {
+            DB::transaction(function () use ($items, $user, $request, $bulkId, &$createdOrders, &$errors) {
+                foreach ($items as $item) {
+                    $book = Book::find($item['id']);
+                    
+                    if (!$book || !$book->offersHardcopy()) {
+                        $errors[] = "Book ID {$item['id']} is no longer available.";
+                        continue;
+                    }
+
+                    $qty = (int) $item['qty'];
+                    if (!$book->hasStockFor($qty)) {
+                        $errors[] = "\"{$book->title}\" only has " . ($book->stock_quantity ?? 0) . " copies left.";
+                        continue;
+                    }
+
+                    $owner = $book->orderOwner();
+                    if (!$owner) {
+                        $errors[] = "\"{$book->title}\" has no owner to receive the order.";
+                        continue;
+                    }
+
+                    $unitPrice = $book->effectiveHardcopyPrice();
+                    $total     = round($unitPrice * $qty, 2);
+
+                    // Deduct stock
+                    $book->decrement('stock_quantity', $qty);
+
+                    $createdOrders[] = Order::create([
+                        'bulk_order_id'    => $bulkId,
+                        'institution_id'   => $owner['type'] === 'institution' ? $owner['id'] : null,
+                        'author_id'        => $owner['type'] === 'author' ? $owner['id'] : null,
+                        'user_id'          => $user->id,
+                        'book_id'          => $book->id,
+                        'book_type'        => 'hardcopy',
+                        'quantity'         => $qty,
+                        'price_per_unit'   => $unitPrice,
+                        'total'            => $total,
+                        'status'           => 'pending',
+                        'payment_method'   => 'contact',
+                        'payment_status'   => 'unpaid',
+                        'shipping_address' => $request->shipping_address,
+                        'customer_phone'   => $request->customer_phone,
+                        'notes'            => trim(
+                            'Name: ' . $request->customer_name
+                            . ($request->filled('notes') ? ' | Notes: ' . $request->notes : '')
+                        ),
+                    ]);
+                }
+
+                if (count($createdOrders) === 0) {
+                    throw new \Exception('No valid items to order.');
+                }
+            });
+        } catch (\Throwable $e) {
+            \Log::error('Bulk order failed: ' . $e->getMessage());
+            return back()->with('error', $e->getMessage() ?: 'Could not create the bulk order. Please try again.');
+        }
+
+        // Notify owners for each order
+        foreach ($createdOrders as $order) {
+            try {
+                $book = $order->book;
+                $owner = $book->orderOwner();
+                $this->notifyOwner($book, $owner, $order, $user);
+            } catch (\Throwable $e) {
+                \Log::warning('Bulk order notification failed: ' . $e->getMessage());
+            }
+        }
+
+        $successMsg = count($createdOrders) . ' order(s) placed successfully!';
+        if (!empty($errors)) {
+            $successMsg .= ' Note: ' . implode(' ', $errors);
+        }
+
+        return redirect()->route('library.orders.index')
+            ->with('success', $successMsg);
     }
 
     /**

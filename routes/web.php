@@ -405,6 +405,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/my-orders', [\App\Http\Controllers\LibraryOrderController::class, 'index'])
         ->name('library.orders.index');
 
+            // ---- Buyer orders export ----
+    Route::get('/my-orders/export/excel', [\App\Http\Controllers\LibraryOrderController::class, 'exportExcel'])
+        ->name('library.orders.export-excel');
+        
+    // ---- Bulk Ordering ----
+    Route::get('/bulk-checkout', function() {
+        return view('library.bulk-checkout');
+    })->name('library.bulk-checkout');
+    
+    Route::post('/bulk-checkout', [\App\Http\Controllers\LibraryOrderController::class, 'storeBulk'])
+        ->name('library.bulk-checkout.store');
+
     // ---- Buyer order viewing ----
     Route::get('/my-orders/{order}', [\App\Http\Controllers\LibraryOrderController::class, 'show'])
         ->whereNumber('order')->name('library.order.show');
@@ -650,12 +662,19 @@ Route::middleware(['auth', 'author.seller'])->prefix('studio')->name('author.')-
     // Dashboard
     Route::get('/dashboard', [AuthorDashboardController::class, 'index'])->name('dashboard');
 
+    
+
     // Books
     Route::resource('books', AuthorBookController::class);
 
-    // Book Orders (hardcopy orders for the author's books)
+     // Book Orders (hardcopy orders for the author's books)
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Author\OrderController::class, 'index'])->name('index');
+
+        // Export — MUST come before /{order} wildcard
+        Route::get('/export/excel', [\App\Http\Controllers\Author\OrderController::class, 'exportExcel'])
+            ->name('export-excel');
+
         Route::get('/{order}', [\App\Http\Controllers\Author\OrderController::class, 'show'])->name('show');
         Route::post('/{order}/status', [\App\Http\Controllers\Author\OrderController::class, 'updateStatus'])->name('update-status');
 
@@ -678,6 +697,8 @@ Route::middleware(['auth', 'author.seller'])->prefix('studio')->name('author.')-
 
     // Royalties
     Route::get('/royalties', [RoyaltyController::class, 'index'])->name('royalties.index');
+
+    
 });
 
 // Seller routes (shared with author)
@@ -964,9 +985,14 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
         // ==========================================
     // HARDCOPY ORDERS (Super Admin oversight)
     // ==========================================
-      Route::prefix('hardcopy-orders')->name('hardcopy-orders.')->group(function () {
+         Route::prefix('hardcopy-orders')->name('hardcopy-orders.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'index'])
             ->name('index');
+
+        // Export — MUST come before /{order}
+        Route::get('/export/excel', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'exportExcel'])
+            ->name('export-excel');
+
         Route::get('/{order}', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'show'])
             ->whereNumber('order')->name('show');
         Route::post('/{order}/commission', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'updateCommission'])

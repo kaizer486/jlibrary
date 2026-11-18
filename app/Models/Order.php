@@ -23,6 +23,7 @@ class Order extends Model
         'institution_id',
         'author_id',
         'user_id',
+        'bulk_order_id',
         'book_id',
         'book_type',
         'quantity',

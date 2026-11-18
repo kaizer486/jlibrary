@@ -40,6 +40,16 @@
     <!-- ========================================== -->
     <div x-show="tab === 'books'" x-cloak>
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+                <p class="text-sm font-medium text-gray-700">
+                    <i class="ti ti-truck-delivery text-orange-500"></i>
+                    Hardcopy Orders
+                </p>
+                <a href="{{ route('author.orders.export-excel', ['status' => request('status')]) }}"
+                   class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition whitespace-nowrap">
+                    <i class="ti ti-file-spreadsheet"></i> Export to Excel
+                </a>
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-gray-50">
@@ -61,7 +71,16 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse($bookOrders as $order)
                         <tr class="hover:bg-gray-50 align-top">
-                            <td class="px-4 py-3 font-medium text-gray-800">#{{ $order->id }}</td>
+                                                        <td class="px-4 py-3 font-medium text-gray-800">
+                                #{{ $order->id }}
+                                @if($order->bulk_order_id)
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center gap-1 text-[9px] font-semibold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                                            <i class="ti ti-link"></i> BULK
+                                        </span>
+                                    </div>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     <div class="w-8 h-10 bg-orange-100 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -73,8 +92,9 @@
                                             <i class="ti ti-book text-orange-500"></i>
                                         @endif
                                     </div>
-                                    <div class="min-w-0">
+                                                                     <div class="min-w-0">
                                         <p class="text-sm text-gray-800 line-clamp-1 font-medium">{{ $order->book->title ?? 'N/A' }}</p>
+                                        <p class="text-[10px] text-slate-400 font-mono">{{ $order->book->book_code ?? '' }}</p>
                                         <p class="text-xs text-orange-600">
                                             <i class="ti ti-package text-xs"></i> Hardcopy
                                         </p>

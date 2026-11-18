@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\MyOrdersExport;
+use Illuminate\Support\Str;
 use App\Models\Book;
 use App\Models\BookshopBook;
 use App\Models\UserBook;
@@ -235,6 +238,16 @@ class LibraryController extends Controller
         $institutions = Institution::where('status', 'approved')->get();
 
         return view('library.index', compact('books', 'categories', 'institutions'));
+    }
+
+    /**
+     * Export the buyer's own order history to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $filename = 'my-orders-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        return Excel::download(new MyOrdersExport(), $filename);
     }
 
     /**

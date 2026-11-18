@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Author;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Models\Order;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\OrdersExport;
 use App\Models\Payment;
 use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
@@ -152,6 +153,19 @@ class OrderController extends Controller
         return back()->with('success', 'Order status updated to ' . ucfirst($request->status) . '.');
     }
     
+    /**
+     * Export the seller's hardcopy orders to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $filename = 'my-orders-' . now()->format('Y-m-d-His') . '.xlsx';
+
+        return Excel::download(
+            new OrdersExport(all: false, status: $request->get('status')),
+            $filename
+        );
+    }
+
     // ==========================================
     // PAYMENT CONFIRMATION — SELLER ACTIONS
     // ==========================================
