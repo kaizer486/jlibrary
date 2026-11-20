@@ -7,14 +7,14 @@
 
     <!-- Back -->
     <a href="{{ route('super-admin.hardcopy-orders.index') }}"
-       class="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800">
+       class="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 font-medium">
         <i class="ti ti-arrow-left"></i> Back to Hardcopy Orders
     </a>
 
     <!-- Header -->
-    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
         <div class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 text-white">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                     <h1 class="text-xl font-bold flex items-center gap-2">
                         <i class="ti ti-package"></i> Order #{{ $order->id }}
@@ -23,7 +23,16 @@
                         Placed {{ $order->created_at->format('F d, Y \a\t H:i') }}
                     </p>
                 </div>
-                <div>{!! $order->status_badge !!}</div>
+                <div class="flex items-center gap-3">
+                    {!! $order->status_badge !!}
+                    
+                    {{-- ADDED: Invoice Download Button for Admin --}}
+                    <a href="{{ route('orders.invoice', $order->id) }}"
+                       class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/30 px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                       title="Download Invoice">
+                        <i class="ti ti-file-invoice"></i> Invoice
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -32,7 +41,7 @@
     <div class="grid md:grid-cols-2 gap-6">
 
         <!-- Order details -->
-        <div class="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
             <h2 class="font-semibold text-gray-800 flex items-center gap-2">
                 <i class="ti ti-receipt text-purple-600"></i> Order Details
             </h2>
@@ -40,7 +49,7 @@
             <div class="space-y-3 text-sm">
                 <div class="flex justify-between py-2 border-b border-gray-100">
                     <span class="text-gray-500">Book</span>
-                    <span class="font-medium text-right">{{ $order->book->title ?? 'N/A' }}</span>
+                    <span class="font-semibold text-right text-gray-800">{{ $order->book->title ?? 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between py-2 border-b border-gray-100">
                     <span class="text-gray-500">Quantity</span>
@@ -68,7 +77,7 @@
 
             @if($order->shipping_address)
                 <div class="pt-3 border-t border-gray-100">
-                    <p class="text-xs text-gray-400 uppercase mb-1">Delivery Location</p>
+                    <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Delivery Location</p>
                     <p class="text-sm text-gray-700">
                         <i class="ti ti-map-pin text-orange-500"></i> {{ $order->shipping_address }}
                     </p>
@@ -77,24 +86,24 @@
 
             @if($order->notes && preg_match('/\|\s*Notes:\s*(.+)$/', $order->notes, $m))
                 <div class="pt-3 border-t border-gray-100">
-                    <p class="text-xs text-gray-400 uppercase mb-1">Buyer's Notes</p>
-                    <p class="text-sm text-gray-700">{{ trim($m[1]) }}</p>
+                    <p class="text-xs text-gray-400 uppercase font-semibold mb-1">Buyer's Notes</p>
+                    <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded-lg">{{ trim($m[1]) }}</p>
                 </div>
             @endif
         </div>
 
         <!-- Owner + Buyer contact -->
-        <div class="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
             <h2 class="font-semibold text-gray-800 flex items-center gap-2">
                 <i class="ti ti-user-check text-purple-600"></i> Contacts
             </h2>
 
             <!-- Book Owner -->
-            <div class="bg-purple-50 rounded-xl p-4">
-                <p class="text-xs text-purple-600 uppercase mb-1 font-semibold">
+            <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                <p class="text-xs text-purple-600 uppercase mb-1 font-bold">
                     {{ $order->author_id ? 'Author (Book Owner)' : 'Institution (Book Owner)' }}
                 </p>
-                <p class="font-semibold text-gray-800 text-lg">{{ $order->owner_name }}</p>
+                <p class="font-bold text-gray-800 text-lg">{{ $order->owner_name }}</p>
 
                 @if($order->author && $order->author->email)
                     <a href="mailto:{{ $order->author->email }}"
@@ -112,9 +121,9 @@
             </div>
 
             <!-- Buyer -->
-            <div class="bg-blue-50 rounded-xl p-4">
-                <p class="text-xs text-blue-600 uppercase mb-1 font-semibold">Buyer</p>
-                <p class="font-semibold text-gray-800">{{ $order->user->full_name ?? 'Guest' }}</p>
+            <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                <p class="text-xs text-blue-600 uppercase mb-1 font-bold">Buyer</p>
+                <p class="font-bold text-gray-800">{{ $order->user->full_name ?? 'Guest' }}</p>
 
                 @if($order->user && $order->user->email)
                     <a href="mailto:{{ $order->user->email }}"
@@ -131,16 +140,17 @@
                 @endif
             </div>
 
-            <div class="bg-orange-50 rounded-xl p-3 text-xs text-orange-800 flex items-start gap-2">
+            <div class="bg-orange-50 rounded-xl p-3 text-xs text-orange-800 flex items-start gap-2 border border-orange-100">
                 <i class="ti ti-info-circle mt-0.5 flex-shrink-0"></i>
                 <span>Contact the owner to negotiate the platform commission for this order. Save the agreed amount below.</span>
             </div>
         </div>
     </div>
+    
     <!-- ========================================== -->
     <!-- PAYMENT CONFIRMATION TIMELINE              -->
     <!-- ========================================== -->
-    <div class="bg-white rounded-2xl shadow-sm p-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="font-semibold text-gray-800 flex items-center gap-2">
                 <i class="ti ti-coin text-purple-600"></i> Payment Confirmation
@@ -180,7 +190,7 @@
                     The buyer disputed the seller's payment claim. Review the reason below and contact both parties to resolve.
                 </p>
                 @if($order->payment_dispute_reason)
-                    <div class="bg-white/60 rounded-lg p-2">
+                    <div class="bg-white/60 rounded-lg p-2 border border-red-100">
                         <p class="text-[10px] uppercase tracking-wide text-red-600 font-semibold mb-0.5">Buyer's reason</p>
                         <p class="text-xs text-red-900">{{ $order->payment_dispute_reason }}</p>
                     </div>
@@ -193,7 +203,7 @@
             @foreach($order->payment_timeline as $step)
                 <div class="flex items-start gap-3">
                     <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0
-                                {{ $step['done'] ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-400' }}">
+                                {{ $step['done'] ? 'bg-emerald-500 text-white shadow-sm' : 'bg-gray-100 text-gray-400' }}">
                         <i class="ti {{ $step['icon'] }}"></i>
                     </div>
                     <div class="flex-1 min-w-0 pt-1">
@@ -201,12 +211,12 @@
                             {{ $step['label'] }}
                         </p>
                         @if($step['timestamp'])
-                            <p class="text-xs text-gray-500">
+                            <p class="text-xs text-gray-500 mt-0.5">
                                 {{ $step['timestamp']->format('M d, Y \a\t H:i') }}
                                 <span class="text-gray-400">· {{ $step['timestamp']->diffForHumans() }}</span>
                             </p>
                         @else
-                            <p class="text-xs text-gray-400">Pending</p>
+                            <p class="text-xs text-gray-400 mt-0.5">Pending</p>
                         @endif
                     </div>
                 </div>
@@ -222,19 +232,19 @@
                 <div class="grid sm:grid-cols-2 gap-2">
                     @if($order->user && $order->user->email)
                         <a href="mailto:{{ $order->user->email }}?subject=Order #{{ $order->id }} - Payment confirmation"
-                           class="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium px-3 py-2 rounded-lg transition">
+                           class="flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium px-3 py-2 rounded-lg transition">
                             <i class="ti ti-mail"></i> Email Buyer
                         </a>
                     @endif
                     @if($order->customer_phone)
                         <a href="tel:{{ $order->customer_phone }}"
-                           class="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-medium px-3 py-2 rounded-lg transition">
+                           class="flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-medium px-3 py-2 rounded-lg transition">
                             <i class="ti ti-phone"></i> Call Buyer ({{ $order->customer_phone }})
                         </a>
                     @endif
                     @if($order->author && $order->author->email)
                         <a href="mailto:{{ $order->author->email }}?subject=Order #{{ $order->id }} - Payment issue"
-                           class="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium px-3 py-2 rounded-lg transition">
+                           class="flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium px-3 py-2 rounded-lg transition">
                             <i class="ti ti-mail"></i> Email Seller
                         </a>
                     @endif
@@ -260,8 +270,9 @@
             </form>
         </div>
     </div>
+    
     <!-- Commission form -->
-    <div class="bg-white rounded-2xl shadow-sm p-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <i class="ti ti-coin text-purple-600"></i> Commission &amp; Payout
         </h2>
@@ -294,7 +305,7 @@
                            max="{{ $order->total }}"
                            value="{{ old('platform_commission', $order->platform_commission) }}"
                            placeholder="0.00" required
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
                     <p class="text-xs text-gray-400 mt-1">
                         Max: TSh {{ number_format($order->total, 2) }}
                     </p>
@@ -305,7 +316,7 @@
                         Commission Status <span class="text-red-500">*</span>
                     </label>
                     <select name="commission_status" required
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
                         <option value="pending"    {{ $order->commission_status === 'pending'    ? 'selected' : '' }}>Pending</option>
                         <option value="negotiated" {{ $order->commission_status === 'negotiated' ? 'selected' : '' }}>Negotiated</option>
                         <option value="collected"  {{ $order->commission_status === 'collected'  ? 'selected' : '' }}>Collected</option>
@@ -318,24 +329,24 @@
                     Negotiation Notes (internal)
                 </label>
                 <textarea name="commission_notes" rows="3"
-                          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
                           placeholder="e.g. Agreed on 15% commission over call on Nov 15, confirmed via WhatsApp">{{ old('commission_notes', $order->commission_notes) }}</textarea>
             </div>
 
             <!-- Preview -->
-            <div class="bg-gray-50 rounded-xl p-4 mb-4 grid grid-cols-3 gap-3 text-center">
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 grid grid-cols-3 gap-3 text-center">
                 <div>
-                    <p class="text-xs text-gray-500">Total</p>
+                    <p class="text-xs text-gray-500 mb-1">Total</p>
                     <p class="text-sm font-semibold text-gray-800">TSh {{ number_format($order->total, 0) }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-purple-600">Commission</p>
+                    <p class="text-xs text-purple-600 mb-1">Commission</p>
                     <p class="text-sm font-bold text-purple-700">
                         TSh {{ number_format($order->commissionAmount(), 0) }}
                     </p>
                 </div>
                 <div>
-                    <p class="text-xs text-emerald-600">Owner Payout</p>
+                    <p class="text-xs text-emerald-600 mb-1">Owner Payout</p>
                     <p class="text-sm font-bold text-emerald-700">
                         TSh {{ number_format($order->ownerPayout(), 0) }}
                     </p>
