@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;     
 use App\Exports\MyOrdersExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LibraryOrderController extends Controller
 {
@@ -122,6 +123,35 @@ class LibraryOrderController extends Controller
 
         return Excel::download(new MyOrdersExport(), $filename);
     }
+
+    public function downloadInvoice($id)
+{
+    // Load order with relationships
+    $order = \App\Models\Order::with(['book.uploader', 'user'])->findOrFail($id);
+    $user = auth()->user();
+
+    // 1. Check Roles
+    $isBuyer = ($order->user_id === $user->id);
+    $isSeller = ($order->book && $order->book->uploaded_by === $user->id);
+    $isAdmin = in_array($user->role, ['admin', 'super_admin']);
+
+    // 2. Buyer Restriction: Client said buyer can only download AFTER confirming payment
+    if ($isBuyer && !$isAdmin && !$isSeller) {
+        if (!$order->isBuyerConfirmed() && !$order->isSellerMarkedPaid()) {
+            abort(403, 'You can only download the invoice after confirming your payment.');
+        }
+    }
+
+    // 3. Restrict unauthorized users
+    if (!$isBuyer && !$isSeller && !$isAdmin) {
+        abort(403, 'Unauthorized access to this invoice.');
+    }
+
+    // 4. Generate and download PDF
+    $pdf = Pdf::loadView('invoices.order', compact('order'));
+    return $pdf->download('Invoice_Order_' . $order->id . '.pdf');
+}
+
     /**
      * Process a bulk checkout (multiple books at once).
      */

@@ -122,11 +122,18 @@
                                     </div>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                            {{-- Seq badge --}}
+                                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
+                                                {{ $orders->firstItem() + $loop->index }}
+                                            </span>
                                             <span class="text-xs text-slate-400 font-medium">#{{ $order->id }}</span>
                                             {!! $order->status_badge !!}
                                         </div>
                                         <p class="font-semibold text-slate-800 line-clamp-1">
                                             {{ $order->book->title ?? 'Book unavailable' }}
+                                        </p>
+                                        <p class="text-[10px] text-slate-400 font-mono">
+                                            {{ $order->book->book_code ?? '—' }}
                                         </p>
                                         <p class="text-xs text-slate-500 mt-0.5">
                                             {{ $order->user->full_name ?? 'Guest' }}
@@ -146,8 +153,16 @@
                                     <p class="font-bold text-orange-600 text-lg">TSh {{ number_format($order->total, 0) }}</p>
                                 </div>
 
-                                <!-- Actions -->
+                                                               <!-- Actions -->
                                 <div class="flex items-center gap-2 md:flex-shrink-0">
+                                    
+                                    {{-- ADDED: Download Invoice Button --}}
+                                    <a href="{{ route('orders.invoice', $order->id) }}"
+                                       class="inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 w-9 h-9 rounded-lg transition"
+                                       title="Download Invoice">
+                                        <i class="ti ti-file-invoice text-lg"></i>
+                                    </a>
+
                                     <a href="{{ route('author.orders.show', $order->id) }}"
                                        class="inline-flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                                         <i class="ti ti-eye"></i> View
@@ -186,6 +201,7 @@
                         <table class="w-full">
                             <thead class="bg-slate-50">
                                 <tr>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Seq</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Book</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Buyer</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Amount</th>
@@ -195,9 +211,15 @@
                             <tbody class="divide-y divide-slate-100">
                                 @foreach($softcopySales as $payment)
                                     <tr class="hover:bg-slate-50">
+                                        <td class="px-4 py-3 text-xs font-bold text-slate-400">
+                                            {{ $softcopySales->firstItem() + $loop->index }}
+                                        </td>
                                         <td class="px-4 py-3">
                                             <p class="text-sm text-slate-800 font-medium line-clamp-1">
                                                 {{ $payment->payable->title ?? 'Book unavailable' }}
+                                            </p>
+                                            <p class="text-[10px] text-slate-400 font-mono">
+                                                {{ $payment->payable->book_code ?? '—' }}
                                             </p>
                                         </td>
                                         <td class="px-4 py-3 text-sm text-slate-700">

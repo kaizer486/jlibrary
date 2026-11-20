@@ -12,13 +12,14 @@
 
         <!-- Back -->
         <div class="mb-6">
-            <a href="{{ route('author.orders.index') }}"
-               class="text-slate-600 hover:text-slate-800 flex items-center gap-2">
+            {{-- CHANGED ROUTE HERE --}}
+            <a href="{{ route('seller.orders') }}"
+               class="text-slate-600 hover:text-slate-800 flex items-center gap-2 font-medium">
                 <i class="ti ti-arrow-left"></i> Back to Orders
             </a>
         </div>
 
-             <!-- Flash -->
+        <!-- Flash -->
         @if(session('success'))
             <div class="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
                 <i class="ti ti-circle-check text-2xl text-emerald-500"></i>
@@ -44,8 +45,15 @@
                             Placed {{ $order->created_at->format('F d, Y \a\t H:i') }}
                         </p>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-3">
                         {!! $order->status_badge !!}
+                        
+                        {{-- Invoice Button directly on the header --}}
+                        <a href="{{ route('orders.invoice', $order->id) }}"
+                           class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/30 px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                           title="Download Invoice">
+                            <i class="ti ti-file-invoice"></i> Invoice
+                        </a>
                     </div>
                 </div>
             </div>
@@ -187,7 +195,7 @@
             </div>
         </div>
 
-                <!-- ========================================== -->
+        <!-- ========================================== -->
         <!-- PAYMENT STATUS CARD                        -->
         <!-- ========================================== -->
         <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-6 mb-6">
@@ -365,13 +373,16 @@
 
         <!-- Actions -->
         <div class="flex gap-3">
-            <a href="{{ route('author.orders.index') }}"
+            {{-- CHANGED ROUTE HERE --}}
+            <a href="{{ route('seller.orders') }}"
                class="flex-1 bg-white border-2 border-slate-200/80 text-slate-700 py-3 rounded-xl font-medium text-center hover:bg-slate-50 transition">
                 <i class="ti ti-arrow-left"></i> Back to Orders
             </a>
-            <a href="{{ route('seller.orders') }}"
-               class="flex-1 bg-gradient-to-r from-orange-600 to-amber-600 text-white py-3 rounded-xl font-semibold text-center hover:shadow-lg transition">
-                <i class="ti ti-list"></i> All Orders
+            
+            {{-- Invoice Button at the bottom --}}
+            <a href="{{ route('orders.invoice', $order->id) }}"
+               class="flex-1 bg-slate-800 text-white py-3 rounded-xl font-semibold text-center hover:bg-slate-900 transition">
+                <i class="ti ti-file-invoice"></i> Download Invoice
             </a>
         </div>
 

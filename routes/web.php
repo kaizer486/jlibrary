@@ -200,6 +200,12 @@ Route::get('/api/download-status', function() {
     ]);
 })->name('api.download.status');
 
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/orders/{id}/invoice', [\App\Http\Controllers\LibraryOrderController::class, 'downloadInvoice'])
+        ->name('orders.invoice');
+});
+
 // ==========================================
 // SECTION 2: PUBLIC ROUTES (No login required)
 // ==========================================

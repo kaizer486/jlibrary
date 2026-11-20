@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="space-y-6">
+
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
@@ -102,7 +103,8 @@
             <table class="w-full">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">#</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Seq</th>
+                        <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Order #</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Book</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Owner</th>
                         <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Buyer</th>
@@ -118,7 +120,24 @@
                 <tbody class="divide-y divide-gray-100">
                     @forelse($orders as $order)
                         <tr class="hover:bg-gray-50 align-top">
-                            <td class="px-4 py-3 text-sm font-medium text-gray-800">#{{ $order->id }}</td>
+                            {{-- Sequence number: 1-based per page, resets each page --}}
+                            <td class="px-4 py-3 text-xs font-bold text-gray-400">
+                                {{ $orders->firstItem() + $loop->index }}
+                            </td>
+
+                            {{-- Raw DB order ID --}}
+                            <td class="px-4 py-3 text-sm font-medium text-gray-800">
+                                #{{ $order->id }}
+                                @if($order->bulk_order_id)
+                                    <div class="mt-1">
+                                        <span class="inline-flex items-center gap-1 text-[9px] font-semibold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                                            <i class="ti ti-link"></i> BULK
+                                        </span>
+                                    </div>
+                                @endif
+                            </td>
+
+                            {{-- Book title + book code --}}
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
                                     <div class="w-8 h-10 bg-orange-100 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -131,26 +150,35 @@
                                         @endif
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="text-sm text-gray-800 font-medium line-clamp-1">{{ $order->book->title ?? 'N/A' }}</p>
+                                        <p class="text-sm text-gray-800 font-medium line-clamp-1">
+                                            {{ $order->book->title ?? 'N/A' }}
+                                        </p>
+                                        <p class="text-[10px] text-slate-400 font-mono">
+                                            {{ $order->book->book_code ?? '—' }}
+                                        </p>
                                         <p class="text-xs text-gray-500">× {{ $order->quantity }}</p>
                                     </div>
                                 </div>
                             </td>
+
                             <td class="px-4 py-3 text-sm">
                                 <p class="text-gray-800 font-medium">{{ $order->owner_name }}</p>
                                 <p class="text-xs text-gray-500">
                                     {{ $order->author_id ? 'Author' : 'Institution' }}
                                 </p>
                             </td>
+
                             <td class="px-4 py-3 text-sm">
                                 <p class="text-gray-800">{{ $order->user->full_name ?? 'Guest' }}</p>
                                 @if($order->customer_phone)
                                     <p class="text-xs text-gray-500">{{ $order->customer_phone }}</p>
                                 @endif
                             </td>
+
                             <td class="px-4 py-3 text-sm font-semibold text-emerald-600">
                                 TSh {{ number_format($order->total, 0) }}
                             </td>
+
                             <td class="px-4 py-3 text-sm">
                                 @if($order->hasCommission())
                                     <span class="font-semibold text-purple-700">TSh {{ number_format($order->platform_commission, 0) }}</span>
@@ -159,14 +187,13 @@
                                     <span class="text-gray-400 text-xs">Not set</span>
                                 @endif
                             </td>
+
                             <td class="px-4 py-3 text-sm text-blue-700">
                                 TSh {{ number_format($order->ownerPayout(), 0) }}
                             </td>
 
-                            <!-- ORDER STATUS -->
                             <td class="px-4 py-3 text-sm">{!! $order->status_badge !!}</td>
 
-                            <!-- PAYMENT STATUS (NEW) -->
                             <td class="px-4 py-3 text-sm">
                                 {!! $order->payment_badge !!}
                                 @if($order->isSellerMarkedPaid() && $order->payment_received_at)
@@ -189,6 +216,7 @@
                             <td class="px-4 py-3 text-xs text-gray-500">
                                 {{ $order->created_at->format('M d, Y') }}
                             </td>
+
                             <td class="px-4 py-3 text-right">
                                 <a href="{{ route('super-admin.hardcopy-orders.show', $order->id) }}"
                                    class="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800 font-medium">
@@ -198,7 +226,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="px-4 py-12 text-center text-gray-500">
+                            <td colspan="12" class="px-4 py-12 text-center text-gray-500">
                                 <i class="ti ti-package-off text-4xl text-gray-300 mb-2 block"></i>
                                 <p>No hardcopy orders found.</p>
                             </td>

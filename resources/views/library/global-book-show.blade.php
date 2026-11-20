@@ -7,6 +7,10 @@
     $offersSoft  = $book->offersSoftcopy();
     $offersHard  = $book->offersHardcopy();
     $stock       = (int) ($book->stock_quantity ?? 0);
+
+    // FIX: ensure numeric values reach the JS (never null/string)
+    $softPriceNum = (float) $softPrice;
+    $hardPriceNum = (float) $hardPrice;
 @endphp
 
 <div class="container mx-auto px-4 py-8">
@@ -41,7 +45,7 @@
                             <span class="ml-auto text-xs bg-jlibrary-100 text-jlibrary-700 px-2 py-0.5 rounded-full">PDF</span>
                         </div>
                         <div class="text-2xl font-bold text-jlibrary-600 mb-1">
-                            {{ $softPrice > 0 ? 'TSh ' . number_format($softPrice, 0) : 'FREE' }}
+                            {{ $softPriceNum > 0 ? 'TSh ' . number_format($softPriceNum, 0) : 'FREE' }}
                         </div>
                         <p class="text-xs text-gray-500 mb-3">Instant access • Download PDF • Lifetime</p>
 
@@ -80,10 +84,10 @@
                                     </div>
                                 @endif
                             @else
-                                <button onclick="showPurchaseModal({{ $book->id }}, {{ $softPrice }}, '{{ addslashes($book->title) }}')"
+                                <button onclick="showPurchaseModal({{ $book->id }}, {{ $softPriceNum }}, '{{ addslashes($book->title) }}')"
                                         class="block text-center bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition w-full text-sm">
                                     <i class="ti ti-shopping-cart"></i>
-                                    Buy Softcopy @if($softPrice > 0)(TSh {{ number_format($softPrice, 0) }})@endif
+                                    Buy Softcopy @if($softPriceNum > 0)(TSh {{ number_format($softPriceNum, 0) }})@endif
                                 </button>
                             @endif
                         @else
@@ -104,13 +108,14 @@
                             </span>
                         </div>
                         <div class="text-2xl font-bold text-orange-600 mb-1">
-                            TSh {{ number_format($hardPrice, 0) }}
+                            TSh {{ number_format($hardPriceNum, 0) }}
                         </div>
                         <p class="text-xs text-gray-500 mb-3">Physical book • Owner will contact you</p>
 
                         @auth
                             @if($stock > 0)
-                                <button onclick="openHardcopyOrder({{ $book->id }}, '{{ addslashes($book->title) }}', {{ $hardPrice }}, {{ $stock }})"
+                                {{-- FIX: cast price & stock to numeric literals, not raw strings/null --}}
+                                <button onclick="openHardcopyOrder({{ (int) $book->id }}, '{{ addslashes($book->title) }}', {{ $hardPriceNum }}, {{ $stock }})"
                                         class="block w-full text-center bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition text-sm">
                                     <i class="ti ti-shopping-cart"></i> Order Hardcopy
                                 </button>
@@ -400,6 +405,19 @@
 @push('scripts')
 <script>
 // ==========================================
+// CSRF HELPER (single source of truth)
+// ==========================================
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text ?? '';
+    return div.innerHTML;
+}
+
+// ==========================================
 // STAR RATING
 // ==========================================
 let selRating = 0;
@@ -455,7 +473,7 @@ function starClick(n) {
         fetch(this.action, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                'X-CSRF-TOKEN': getCsrfToken(),
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
@@ -531,7 +549,7 @@ function showToast(message) {
 // HELPFUL
 // ==========================================
 function toggleHelpful(reviewId, button) {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    const csrfToken = getCsrfToken();
     if (!csrfToken) {
         alert('Please refresh the page and try again.');
         return;
@@ -673,7 +691,7 @@ function updateDownloadIndicator(used, remaining, limit) {
 }
 
 // ==========================================
-// SOFTCopy PURCHASE FLOW (wallet OR PesaPal — unchanged from original)
+// SOFTCopy PURCHASE FLOW
 // ==========================================
 let currentBook = null;
 let successRedirectUrl = null;
@@ -799,7 +817,7 @@ function confirmPurchaseWithWallet() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'X-CSRF-TOKEN': getCsrfToken(),
             'Accept': 'application/json'
         }
     })
@@ -824,12 +842,20 @@ function closePurchaseModal() {
 }
 
 // ==========================================
-// HARDCOPY ORDER FLOW (no online payment — owner contacts buyer)
+// HARDCOPY ORDER FLOW — FIXED
 // ==========================================
 let hardcopyBook = null;
 
 function openHardcopyOrder(bookId, bookTitle, unitPrice, maxStock) {
-    hardcopyBook = { id: bookId, title: bookTitle, price: unitPrice, maxStock: maxStock };
+    // FIX: cast every arg so the total never becomes NaN/0 from a null value
+    hardcopyBook = {
+        id: Number(bookId),
+        title: String(bookTitle || ''),
+        price: Number(unitPrice) || 0,
+        maxStock: parseInt(maxStock, 10) || 1
+    };
+    console.log('[Hardcopy] openHardcopyOrder ->', hardcopyBook);
+
     const modal = document.getElementById('hardcopyModal');
     const content = document.getElementById('hardcopyModalContent');
     modal.classList.remove('hidden');
@@ -908,28 +934,42 @@ function openHardcopyOrder(bookId, bookTitle, unitPrice, maxStock) {
         </form>
     `;
 
-    document.getElementById('hardcopyQty').addEventListener('input', updateHardcopyTotal);
+    // FIX: attach both listeners + recalc once immediately
+    const qtyInput = document.getElementById('hardcopyQty');
+    if (qtyInput) {
+        qtyInput.addEventListener('input', updateHardcopyTotal);
+        qtyInput.addEventListener('change', updateHardcopyTotal);
+    }
+    updateHardcopyTotal();
 }
 
 function changeQty(delta) {
     const input = document.getElementById('hardcopyQty');
     if (!input) return;
+    const max = parseInt(input.max, 10) || 1;
     let val = parseInt(input.value || '1', 10);
-    val = Math.max(1, Math.min(parseInt(input.max, 10), val + delta));
+    if (isNaN(val)) val = 1;
+    val = Math.max(1, Math.min(max, val + delta));
     input.value = val;
     updateHardcopyTotal();
 }
 
 function updateHardcopyTotal() {
-    const qty = parseInt(document.getElementById('hardcopyQty')?.value || '1', 10);
-    const total = qty * (hardcopyBook?.price || 0);
+    const qtyInput = document.getElementById('hardcopyQty');
+    const qty = parseInt(qtyInput?.value || '1', 10) || 1;
+    const price = Number(hardcopyBook?.price) || 0;
+    const total = qty * price;
     const el = document.getElementById('hardcopyTotal');
-    if (el) el.textContent = 'TSh ' + Number(total).toLocaleString();
+    if (el) el.textContent = 'TSh ' + total.toLocaleString();
+    console.log('[Hardcopy] total recalc:', { qty, price, total });
 }
 
 function submitHardcopyOrder(event) {
     event.preventDefault();
-    if (!hardcopyBook) return;
+    if (!hardcopyBook) {
+        alert('Order data missing. Please close and reopen the form.');
+        return;
+    }
 
     const btn = document.getElementById('hardcopySubmitBtn');
     const errorDiv = document.getElementById('hardcopyError');
@@ -938,30 +978,54 @@ function submitHardcopyOrder(event) {
     btn.disabled = true;
     btn.innerHTML = '<i class="ti ti-loader-2 animate-spin"></i> Placing order...';
     errorDiv.classList.add('hidden');
+    errorDiv.textContent = '';
 
     const payload = {
         book_id:          hardcopyBook.id,
-        quantity:         parseInt(document.getElementById('hardcopyQty').value, 10),
+        quantity:         parseInt(document.getElementById('hardcopyQty').value, 10) || 1,
         customer_name:    document.getElementById('hardcopyName').value.trim(),
         customer_phone:   document.getElementById('hardcopyPhone').value.trim(),
         shipping_address: document.getElementById('hardcopyAddress').value.trim(),
         notes:            document.getElementById('hardcopyNotes').value.trim(),
     };
 
-    fetch('{{ route('library.order.store', $book->id) }}', {
+    const csrf = getCsrfToken();
+    if (!csrf) {
+        errorDiv.textContent = 'Security token missing. Please refresh the page.';
+        errorDiv.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = original;
+        return;
+    }
+
+    const url = '{{ route('library.order.store', $book->id) }}';
+    console.log('[Hardcopy] POST', url, payload);
+
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'X-CSRF-TOKEN': csrf,
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
+        credentials: 'same-origin',
         body: JSON.stringify(payload)
     })
     .then(async res => {
-        const data = await res.json().catch(() => ({}));
+        const text = await res.text();
+        console.log('[Hardcopy] response', res.status, text);
+        let data = {};
+        try { data = JSON.parse(text); }
+        catch (e) {
+            throw new Error('Server error (' + res.status + '): ' + text.substring(0, 200));
+        }
         if (!res.ok || !data.success) {
-            throw new Error(data.message || 'Could not place order.');
+            let msg = data.message || data.error || 'Could not place order.';
+            if (data.errors) {
+                msg = Object.values(data.errors).flat().join(' ');
+            }
+            throw new Error(msg);
         }
         return data;
     })
@@ -975,6 +1039,7 @@ function submitHardcopyOrder(event) {
         );
     })
     .catch(err => {
+        console.error('[Hardcopy] order error:', err);
         errorDiv.textContent = err.message || 'Something went wrong. Please try again.';
         errorDiv.classList.remove('hidden');
         btn.disabled = false;
@@ -1021,12 +1086,6 @@ function closeSuccessAndDownload() {
     else if (successRedirectUrl) window.location.href = successRedirectUrl;
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 // ==========================================
 // PESAPAL RETURN HANDLING
 // ==========================================
@@ -1041,7 +1100,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`/payment/pesapal/verify?order_tracking_id=${orderTrackingId}&book_id=${bookId}`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'X-CSRF-TOKEN': getCsrfToken(),
                     'Accept': 'application/json'
                 }
             })

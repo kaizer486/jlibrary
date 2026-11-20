@@ -19,10 +19,13 @@
             <p class="text-jlibrary-100 text-sm mt-1">Enter your delivery details for all items</p>
         </div>
 
-               <form action="{{ route('library.bulk-checkout.store') }}" method="POST" class="p-6" x-data="checkoutForm()" x-init="init()"
-              onsubmit="setTimeout(() => localStorage.removeItem('jlibrary_cart'), 100)"></form></form>
+        {{-- FIX 1: removed stray </form></form>, kept form open around ALL fields --}}
+        <form action="{{ route('library.bulk-checkout.store') }}" method="POST"
+              class="p-6" x-data="checkoutForm()" x-init="init()">
             @csrf
-            <input type="hidden" name="items" x-model="itemsJson">
+
+            {{-- FIX 2: :value instead of x-model on hidden input --}}
+            <input type="hidden" name="items" :value="itemsJson">
 
             <!-- Cart Summary -->
             <div class="mb-6">
@@ -45,11 +48,13 @@
                                 </p>
                             </div>
                             <div class="text-right">
-                                <p class="font-semibold text-slate-800 text-sm">TSh <span x-text="Number(item.qty * item.price).toLocaleString()"></span></p>
+                                <p class="font-semibold text-slate-800 text-sm">
+                                    TSh <span x-text="Number(Number(item.qty) * Number(item.price)).toLocaleString()"></span>
+                                </p>
                             </div>
                         </div>
                     </template>
-                    
+
                     <div class="border-t pt-3 flex justify-between items-center">
                         <span class="font-semibold text-slate-800">Total</span>
                         <span class="font-bold text-jlibrary-700 text-lg">TSh <span x-text="total().toLocaleString()"></span></span>
@@ -61,22 +66,22 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="customer_name" required value="{{ auth()->user()->full_name }}" 
+                    <input type="text" name="customer_name" required value="{{ auth()->user()->full_name }}"
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-jlibrary-500">
                 </div>
-                
+
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Phone Number <span class="text-red-500">*</span></label>
                     <input type="tel" name="customer_phone" required placeholder="0712 345 678"
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-jlibrary-500">
                 </div>
-                
+
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Delivery Address <span class="text-red-500">*</span></label>
                     <textarea name="shipping_address" rows="3" required placeholder="Street, city, region, landmark..."
                               class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-jlibrary-500"></textarea>
                 </div>
-                
+
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Notes (optional)</label>
                     <textarea name="notes" rows="2" placeholder="Any special delivery instructions..."
@@ -90,12 +95,23 @@
                 </div>
             @endif
 
+            @if($errors->any())
+                <div class="mt-4 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+                    <ul class="list-disc list-inside">
+                        @foreach($errors->all() as $err)
+                            <li>{{ $err }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="mt-8 pt-6 border-t flex gap-3">
-                <button type="submit" 
+                <button type="submit"
                         class="flex-1 bg-gradient-to-r from-jlibrary-600 to-purple-700 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition">
                     <i class="ti ti-check"></i> Place Order (TSh <span x-text="total().toLocaleString()"></span>)
                 </button>
-                <button type="button" onclick="localStorage.removeItem('jlibrary_cart'); window.location.href='{{ route('library.index', ['format'=>'hardcopy']) }}'"
+                <button type="button"
+                        onclick="localStorage.removeItem('jlibrary_cart'); window.location.href='{{ route('library.index', ['format'=>'hardcopy']) }}'"
                         class="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition">
                     Cancel
                 </button>
@@ -103,6 +119,13 @@
         </form>
     </div>
 </div>
+
+@if(session('success'))
+    {{-- FIX 5: clear cart only after confirmed success (server flash) --}}
+    <script>
+        localStorage.removeItem('jlibrary_cart');
+    </script>
+@endif
 
 <script>
 function checkoutForm() {
@@ -114,16 +137,26 @@ function checkoutForm() {
                 this.items = JSON.parse(localStorage.getItem('jlibrary_cart') || '[]');
                 if (this.items.length === 0) {
                     window.location.href = '{{ route('library.index', ['format'=>'hardcopy']) }}';
+                    return;
                 }
-            } catch(e) { this.items = []; }
-            
+            } catch(e) {
+                this.items = [];
+            }
+
+            // FIX 3: deep watch + immediate first sync
             this.$watch('items', () => {
                 this.itemsJson = JSON.stringify(this.items);
-            });
+            }, { deep: true });
+
             this.itemsJson = JSON.stringify(this.items);
         },
         total() {
-            return this.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            // FIX 4: defensive numeric coercion
+            return this.items.reduce((sum, i) => {
+                const qty = Number(i.qty) || 0;
+                const price = Number(i.price) || 0;
+                return sum + (qty * price);
+            }, 0);
         }
     }
 }
