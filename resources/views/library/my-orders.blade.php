@@ -154,15 +154,26 @@
                                 {{ $order->created_at->format('M d, Y') }}
                             </td>
 
-                            <td class="px-4 py-3 text-right">
-                                <a href="{{ route('library.order.show', $order->id) }}"
-                                   class="inline-flex items-center gap-1 {{ $order->canBuyerRespond() ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-orange-500 hover:bg-orange-600' }} text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap">
-                                    @if($order->canBuyerRespond())
-                                        <i class="ti ti-bell"></i> Confirm
-                                    @else
-                                        <i class="ti ti-eye"></i> Track
+                                                     <td class="px-4 py-3 text-right">
+                                <div class="inline-flex items-center gap-2 justify-end">
+                                    {{-- ADDED & COLORED: Invoice Download Button --}}
+                                    @if($order->isBuyerConfirmed() || $order->isSellerMarkedPaid())
+                                        <a href="{{ route('orders.invoice', $order->id) }}" 
+                                           class="inline-flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 w-8 h-8 rounded-lg transition shadow-sm" 
+                                           title="Download Invoice">
+                                            <i class="ti ti-file-invoice text-base"></i>
+                                        </a>
                                     @endif
-                                </a>
+
+                                    <a href="{{ route('library.order.show', $order->id) }}"
+                                       class="inline-flex items-center gap-1 {{ $order->canBuyerRespond() ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-orange-500 hover:bg-orange-600' }} text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap">
+                                        @if($order->canBuyerRespond())
+                                            <i class="ti ti-bell"></i> Confirm
+                                        @else
+                                            <i class="ti ti-eye"></i> Track
+                                        @endif
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         @empty
