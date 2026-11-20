@@ -170,7 +170,7 @@
     <div class="footer">
         <p style="margin-bottom: 5px;"><strong>Thank you for choosing JLibrary!</strong></p>
         <p>If you have any questions about this invoice, please contact us at info@jlibrary.co.tz or call +255 766408259.</p>
-        <p style="margin-top: 15px; font-size: 10px;">This is a computer-generated invoice and does not require a signature.</p>
+       
     </div>
 
 </body>
