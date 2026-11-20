@@ -1,7 +1,7 @@
 @extends('layouts.author')
 
-@section('title', 'Order #' . $order->id)
-@section('page-title', 'Order #' . $order->id)
+@section('title', 'Order ' . $order->id)
+@section('page-title', 'Order ' . $order->id)
 
 @section('content')
 
@@ -12,7 +12,6 @@
 
         <!-- Back -->
         <div class="mb-6">
-            {{-- CHANGED ROUTE HERE --}}
             <a href="{{ route('seller.orders') }}"
                class="text-slate-600 hover:text-slate-800 flex items-center gap-2 font-medium">
                 <i class="ti ti-arrow-left"></i> Back to Orders
@@ -34,12 +33,13 @@
         @endif
 
         <!-- Header card -->
-        <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 overflow-hidden mb-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden mb-6">
             <div class="bg-gradient-to-r from-orange-600 to-amber-600 px-6 py-4 border-b-2 border-orange-400/30">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
+                        {{-- Removed # from Order title --}}
                         <h1 class="text-xl font-bold text-white flex items-center gap-2">
-                            <i class="ti ti-package"></i> Order #{{ $order->id }}
+                            <i class="ti ti-package"></i> Order {{ $order->id }}
                         </h1>
                         <p class="text-orange-100 text-sm mt-1">
                             Placed {{ $order->created_at->format('F d, Y \a\t H:i') }}
@@ -48,11 +48,11 @@
                     <div class="flex items-center gap-3">
                         {!! $order->status_badge !!}
                         
-                        {{-- Invoice Button directly on the header --}}
+                        {{-- Decorated Invoice Button --}}
                         <a href="{{ route('orders.invoice', $order->id) }}"
-                           class="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/30 px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                           class="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/30 px-3 py-1.5 rounded-lg text-sm font-semibold transition shadow-sm"
                            title="Download Invoice">
-                            <i class="ti ti-file-invoice"></i> Invoice
+                            <i class="ti ti-file-invoice text-base"></i> Invoice
                         </a>
                     </div>
                 </div>
@@ -74,9 +74,9 @@
             <div class="p-6 grid md:grid-cols-2 gap-6">
                 <!-- Book -->
                 <div>
-                    <p class="text-xs text-slate-400 uppercase tracking-wide mb-2">Book</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-wide mb-2 font-semibold">Book</p>
                     <div class="flex gap-3">
-                        <div class="w-16 h-20 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div class="w-16 h-20 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
                             @if($order->book && $order->book->cover_image)
                                 <img src="{{ url('media/' . $order->book->cover_image) }}"
                                      class="w-full h-full object-cover"
@@ -97,7 +97,7 @@
 
                 <!-- Buyer -->
                 <div>
-                    <p class="text-xs text-slate-400 uppercase tracking-wide mb-2">Buyer</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-wide mb-2 font-semibold">Buyer</p>
                     <p class="font-semibold text-slate-800">{{ $order->user->full_name ?? 'Guest' }}</p>
                     @if($order->user && $order->user->email)
                         <p class="text-sm text-slate-500">{{ $order->user->email }}</p>
@@ -113,7 +113,7 @@
 
         <!-- Order summary + Delivery -->
         <div class="grid md:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
                 <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                     <i class="ti ti-receipt text-orange-600"></i> Order Summary
                 </h2>
@@ -169,23 +169,23 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
                 <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                     <i class="ti ti-truck-delivery text-orange-600"></i> Delivery Details
                 </h2>
                 <div class="space-y-3 text-sm">
                     <div class="py-2 border-b border-slate-100">
-                        <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">Full Name</p>
+                        <p class="text-xs text-slate-400 uppercase tracking-wide mb-1 font-semibold">Full Name</p>
                         <p class="font-medium">{{ $order->user->full_name ?? 'N/A' }}</p>
                     </div>
                     <div class="py-2 border-b border-slate-100">
-                        <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">Phone</p>
+                        <p class="text-xs text-slate-400 uppercase tracking-wide mb-1 font-semibold">Phone</p>
                         <p class="font-medium flex items-center gap-1">
                             <i class="ti ti-phone text-slate-400"></i> {{ $order->customer_phone }}
                         </p>
                     </div>
                     <div class="py-2">
-                        <p class="text-xs text-slate-400 uppercase tracking-wide mb-1">Delivery Location</p>
+                        <p class="text-xs text-slate-400 uppercase tracking-wide mb-1 font-semibold">Delivery Location</p>
                         <p class="font-medium flex items-start gap-1">
                             <i class="ti ti-map-pin text-slate-400 mt-0.5"></i>
                             <span>{{ $order->shipping_address }}</span>
@@ -198,7 +198,7 @@
         <!-- ========================================== -->
         <!-- PAYMENT STATUS CARD                        -->
         <!-- ========================================== -->
-        <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-6 mb-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
             <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <i class="ti ti-coin text-orange-600"></i> Payment Status
             </h2>
@@ -236,7 +236,7 @@
                               onsubmit="return confirm('Mark this order as PAID?\n\nThe buyer will be notified to confirm.')">
                             @csrf
                             <button type="submit"
-                                    class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl transition">
+                                    class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl transition shadow-sm hover:shadow-md">
                                 <i class="ti ti-check"></i> Mark as Paid
                             </button>
                         </form>
@@ -285,7 +285,7 @@
                         The buyer has disputed your payment claim. This needs admin review before it can be resolved.
                     </p>
                     @if($order->payment_dispute_reason)
-                        <div class="bg-white/60 rounded-lg p-2 mt-2">
+                        <div class="bg-white/60 rounded-lg p-2 mt-2 border border-red-100">
                             <p class="text-[10px] uppercase tracking-wide text-red-600 font-semibold mb-0.5">Buyer's reason</p>
                             <p class="text-xs">{{ $order->payment_dispute_reason }}</p>
                         </div>
@@ -300,7 +300,7 @@
                     @foreach($order->payment_timeline as $step)
                         <div class="flex items-start gap-3">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
-                                        {{ $step['done'] ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400' }}">
+                                        {{ $step['done'] ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400' }}">
                                 <i class="ti {{ $step['icon'] }} text-sm"></i>
                             </div>
                             <div class="flex-1 min-w-0">
@@ -308,12 +308,12 @@
                                     {{ $step['label'] }}
                                 </p>
                                 @if($step['timestamp'])
-                                    <p class="text-xs text-slate-500">
+                                    <p class="text-xs text-slate-500 mt-0.5">
                                         {{ $step['timestamp']->format('M d, Y \a\t H:i') }}
                                         <span class="text-slate-400">· {{ $step['timestamp']->diffForHumans() }}</span>
                                     </p>
                                 @else
-                                    <p class="text-xs text-slate-400">Pending</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">Pending</p>
                                 @endif
                             </div>
                         </div>
@@ -330,16 +330,16 @@
             }
         @endphp
         @if($userNotes)
-            <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
                 <h2 class="font-semibold text-slate-800 mb-2 flex items-center gap-2">
                     <i class="ti ti-notes text-orange-600"></i> Buyer's Notes
                 </h2>
-                <p class="text-slate-700 text-sm leading-relaxed">{{ $userNotes }}</p>
+                <p class="text-slate-700 text-sm leading-relaxed bg-gray-50 p-3 rounded-lg">{{ $userNotes }}</p>
             </div>
         @endif
 
         <!-- Update status -->
-        <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200/80 p-6 mb-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
             <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <i class="ti ti-adjustments text-orange-600"></i> Update Order Status
             </h2>
@@ -373,16 +373,15 @@
 
         <!-- Actions -->
         <div class="flex gap-3">
-            {{-- CHANGED ROUTE HERE --}}
             <a href="{{ route('seller.orders') }}"
-               class="flex-1 bg-white border-2 border-slate-200/80 text-slate-700 py-3 rounded-xl font-medium text-center hover:bg-slate-50 transition">
+               class="flex-1 bg-white border border-slate-200/80 text-slate-700 py-3 rounded-xl font-medium text-center hover:bg-slate-50 transition shadow-sm">
                 <i class="ti ti-arrow-left"></i> Back to Orders
             </a>
             
-            {{-- Invoice Button at the bottom --}}
+            {{-- Decorated Invoice Button at the bottom --}}
             <a href="{{ route('orders.invoice', $order->id) }}"
-               class="flex-1 bg-slate-800 text-white py-3 rounded-xl font-semibold text-center hover:bg-slate-900 transition">
-                <i class="ti ti-file-invoice"></i> Download Invoice
+               class="flex-1 bg-purple-600 text-white py-3 rounded-xl font-semibold text-center hover:bg-purple-700 transition shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+                <i class="ti ti-file-invoice text-lg"></i> Download Invoice
             </a>
         </div>
 

@@ -107,11 +107,12 @@
             @if($orders->count() > 0)
                 <div class="space-y-3">
                     @foreach($orders as $order)
-                        <div class="bg-white rounded-xl shadow-md border-2 border-slate-200/80 p-4 hover:shadow-lg hover:border-orange-300/60 transition">
-                            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 hover:shadow-md transition">
+                            <div class="flex flex-col md:flex-row md:items-center gap-5">
+                                
                                 <!-- Order info -->
-                                <div class="flex items-center gap-3 flex-1 min-w-0">
-                                    <div class="w-12 h-14 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                <div class="flex items-center gap-4 flex-1 min-w-0">
+                                    <div class="w-12 h-16 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-200">
                                         @if($order->book && $order->book->cover_image)
                                             <img src="{{ url('media/' . $order->book->cover_image) }}"
                                                  class="w-full h-full object-cover"
@@ -121,50 +122,46 @@
                                         @endif
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                            {{-- Seq badge --}}
+                                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                                            {{-- Sequence number only, no DB ID --}}
                                             <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
                                                 {{ $orders->firstItem() + $loop->index }}
                                             </span>
-                                            <span class="text-xs text-slate-400 font-medium">#{{ $order->id }}</span>
                                             {!! $order->status_badge !!}
                                         </div>
-                                        <p class="font-semibold text-slate-800 line-clamp-1">
+                                        <p class="font-bold text-slate-800 text-base truncate" title="{{ $order->book->title ?? 'Book unavailable' }}">
                                             {{ $order->book->title ?? 'Book unavailable' }}
                                         </p>
-                                        <p class="text-[10px] text-slate-400 font-mono">
+                                        <p class="text-[11px] text-slate-400 font-mono mb-1">
                                             {{ $order->book->book_code ?? '—' }}
                                         </p>
-                                        <p class="text-xs text-slate-500 mt-0.5">
+                                        <p class="text-sm text-slate-600">
                                             {{ $order->user->full_name ?? 'Guest' }}
-                                            <span class="mx-1">·</span>
-                                            <i class="ti ti-phone text-xs"></i> {{ $order->customer_phone }}
-                                        </p>
-                                        <p class="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                                            <i class="ti ti-map-pin text-xs"></i> {{ $order->shipping_address }}
+                                            <span class="mx-1 text-slate-300">·</span>
+                                            <i class="ti ti-phone text-slate-400"></i> {{ $order->customer_phone }}
                                         </p>
                                     </div>
                                 </div>
 
-                                <!-- Amount -->
+                                <!-- Total Amount -->
                                 <div class="text-left md:text-right md:flex-shrink-0 md:w-32">
-                                    <p class="text-xs text-slate-400">Qty × Price</p>
-                                    <p class="text-sm text-slate-700 font-medium">{{ $order->quantity }} × TSh {{ number_format($order->price_per_unit, 0) }}</p>
-                                    <p class="font-bold text-orange-600 text-lg">TSh {{ number_format($order->total, 0) }}</p>
+                                    <p class="text-sm font-bold text-emerald-600 text-lg">
+                                        TSh {{ number_format($order->total, 0) }}
+                                    </p>
                                 </div>
 
-                                                               <!-- Actions -->
-                                <div class="flex items-center gap-2 md:flex-shrink-0">
+                                <!-- Actions -->
+                                <div class="flex items-center gap-2 md:flex-shrink-0 mt-3 md:mt-0">
                                     
-                                    {{-- ADDED: Download Invoice Button --}}
+                                    {{-- DECORATED: Download Invoice Button --}}
                                     <a href="{{ route('orders.invoice', $order->id) }}"
-                                       class="inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 w-9 h-9 rounded-lg transition"
-                                       title="Download Invoice">
+                                       class="inline-flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 w-9 h-9 rounded-lg transition shadow-sm"
+                                       title="Download PDF Invoice">
                                         <i class="ti ti-file-invoice text-lg"></i>
                                     </a>
 
                                     <a href="{{ route('author.orders.show', $order->id) }}"
-                                       class="inline-flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                                       class="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-sm">
                                         <i class="ti ti-eye"></i> View
                                     </a>
                                 </div>
@@ -196,12 +193,12 @@
         <!-- ========================================== -->
         <div x-show="tab === 'softcopy'" x-cloak>
             @if($softcopySales->count() > 0)
-                <div class="bg-white rounded-xl shadow-md border-2 border-slate-200/80 overflow-hidden">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="w-full">
-                            <thead class="bg-slate-50">
+                            <thead class="bg-slate-50 border-b border-slate-200">
                                 <tr>
-                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Seq</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">#</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Book</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Buyer</th>
                                     <th class="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Amount</th>
@@ -211,21 +208,21 @@
                             <tbody class="divide-y divide-slate-100">
                                 @foreach($softcopySales as $payment)
                                     <tr class="hover:bg-slate-50">
-                                        <td class="px-4 py-3 text-xs font-bold text-slate-400">
+                                        <td class="px-4 py-3 text-sm font-bold text-slate-500">
                                             {{ $softcopySales->firstItem() + $loop->index }}
                                         </td>
                                         <td class="px-4 py-3">
-                                            <p class="text-sm text-slate-800 font-medium line-clamp-1">
+                                            <p class="text-sm text-slate-800 font-semibold line-clamp-1">
                                                 {{ $payment->payable->title ?? 'Book unavailable' }}
                                             </p>
                                             <p class="text-[10px] text-slate-400 font-mono">
                                                 {{ $payment->payable->book_code ?? '—' }}
                                             </p>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-slate-700">
+                                        <td class="px-4 py-3 text-sm text-slate-700 font-medium">
                                             {{ $payment->user->full_name ?? 'Guest' }}
                                         </td>
-                                        <td class="px-4 py-3 font-semibold text-purple-600">
+                                        <td class="px-4 py-3 font-bold text-emerald-600">
                                             TSh {{ number_format($payment->amount, 2) }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-slate-500">

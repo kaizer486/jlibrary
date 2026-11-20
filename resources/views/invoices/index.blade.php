@@ -1,69 +1,174 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>Invoice {{ $invoice_number }}</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .company-name { font-size: 24px; font-weight: bold; color: #6366f1; }
-        .invoice-title { font-size: 18px; color: #666; margin-top: 5px; }
-        .invoice-info { margin-bottom: 30px; }
-        .invoice-info table { width: 100%; }
-        .invoice-info td { padding: 5px; }
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        .items-table th, .items-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .items-table th { background-color: #f3f4f6; }
-        .total { text-align: right; font-size: 18px; font-weight: bold; }
-        .footer { text-align: center; margin-top: 50px; color: #999; font-size: 12px; }
+        @page { margin: 40px; }
+        body { 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            font-size: 13px; 
+            color: #334155; 
+            line-height: 1.6; 
+            margin: 0; 
+            padding: 0;
+        }
+        
+        /* Header */
+        .header-table { width: 100%; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
+        .header-table td { vertical-align: middle; }
+        .logo { max-height: 80px; width: auto; margin-bottom: 5px; }
+        .invoice-title { font-size: 32px; font-weight: 900; color: #7c3aed; letter-spacing: -0.5px; margin: 0; line-height: 1.1; }
+        
+        /* System Info */
+        .system-info { text-align: right; font-size: 12px; color: #475569; line-height: 1.8; }
+        .system-name { font-size: 16px; font-weight: 900; color: #1e293b; letter-spacing: 0.5px; }
+        .system-info span { display: block; }
+
+        /* Cards (Buyer & Details) */
+        .details-table { width: 100%; margin-bottom: 30px; }
+        .details-table td { width: 50%; vertical-align: top; padding: 0 10px; }
+        .details-table td:first-child { padding-left: 0; }
+        .details-table td:last-child { padding-right: 0; }
+        .info-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px 20px; min-height: 120px; }
+        .info-card h4 { margin: 0 0 10px 0; color: #7c3aed; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .info-card p { margin: 0 0 6px 0; color: #334155; }
+        .info-card strong { color: #0f172a; font-size: 14px; }
+        
+        /* Table */
+        .items-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+        .items-table th { background-color: #f8fafc; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .items-table td { padding: 15px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+        .items-table tr:last-child td { border-bottom: none; }
+        
+        /* Totals */
+        .totals-table { width: 100%; }
+        .totals-table td { padding: 10px 15px; }
+        .totals-table .label { text-align: right; color: #64748b; font-weight: 500; width: 80%; }
+        .totals-table .value { text-align: right; font-weight: bold; color: #0f172a; width: 20%; }
+        .grand-total .label { font-size: 16px; font-weight: 900; color: #0f172a; border-top: 2px solid #e2e8f0; padding-top: 15px; }
+        .grand-total .value { font-size: 18px; font-weight: 900; color: #7c3aed; border-top: 2px solid #e2e8f0; padding-top: 15px; }
+
+        /* Badges */
+        .status-text { font-weight: bold; color: #334155; font-size: 14px; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-success { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .badge-warning { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        
+        /* Footer */
+        .footer { text-align: center; color: #94a3b8; font-size: 11px; margin-top: 50px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
+        .footer strong { color: #475569; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="company-name">JLIBRARY</div>
-        <div class="invoice-title">PAYMENT INVOICE</div>
-    </div>
-    
-    <div class="invoice-info">
-        <table>
-            <tr>
-                <td width="50%">
-                    <strong>Invoice Number:</strong> {{ $invoice_number }}<br>
-                    <strong>Date:</strong> {{ $date->format('F d, Y H:i:s') }}<br>
-                    <strong>Status:</strong> <span style="color: green;">{{ ucfirst($status) }}</span>
-                </td>
-                <td width="50%">
-                    <strong>Bill To:</strong><br>
-                    {{ $user->full_name }}<br>
-                    {{ $user->email }}
-                </td>
-            </tr>
-        </table>
-    </div>
-    
+
+    <!-- HEADER SECTION -->
+    <table class="header-table">
+        <tr>
+            <!-- Left: Logo & Invoice Title -->
+            <td style="width: 50%;">
+                <img src="{{ public_path('images/logo.jpeg') }}" alt="JLibrary Logo" class="logo">
+                <h1 class="invoice-title">INVOICE</h1>
+                <div style="color: #64748b; font-size: 12px; margin-top: 10px;">
+                    Date: {{ $date->format('F d, Y H:i:s') }}
+                </div>
+            </td>
+            
+            <!-- Right: System Contact Info -->
+            <td style="width: 50%; text-align: right;">
+                <div class="system-info">
+                    <div class="system-name">JLibrary System</div>
+                    <span><strong>Phone:</strong> +255 766408259</span>
+                    <span><strong>Email:</strong> info@jlibrary.co.tz</span>
+                    <span><strong>Support:</strong> contact@jlibrary.co.tz</span>
+                    <span><strong>Web:</strong> www.jlibrary.co.tz</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- BUYER & INVOICE INFO CARDS -->
+    <table class="details-table">
+        <tr>
+            <!-- Bill To -->
+            <td>
+                <div class="info-card">
+                    <h4>Billed To</h4>
+                    <p><strong>{{ $user->full_name ?? 'Guest' }}</strong></p>
+                    <p>{{ $user->email }}</p>
+                    @if($user->mpesa_phone)
+                        <p><strong>Phone:</strong> {{ $user->mpesa_phone }}</p>
+                    @endif
+                </div>
+            </td>
+            
+            <!-- Invoice Details & Status -->
+            <td>
+                <div class="info-card">
+                    <h4>Invoice Details</h4>
+                    <p><strong>Invoice #:</strong> {{ $invoice_number }}</p>
+                    <p><strong>Method:</strong> {{ ucfirst($method) }}</p>
+                    
+                    <!-- PERFECTLY ALIGNED STATUS TABLE -->
+                    <table style="margin-top: 12px; border: none; padding: 0; width: 100%;">
+                        <tr>
+                            <td style="padding: 0; vertical-align: middle; width: 55px;">
+                                <span class="status-text">Status:</span>
+                            </td>
+                            <td style="padding: 0; vertical-align: middle;">
+                                @if(strtolower($status) === 'completed' || strtolower($status) === 'paid' || strtolower($status) === 'success')
+                                    <span class="badge badge-success">{{ strtoupper($status) }}</span>
+                                @else
+                                    <span class="badge badge-warning">{{ strtoupper($status) }}</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </table>
+
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ORDER ITEMS -->
     <table class="items-table">
         <thead>
             <tr>
-                <th>Description</th>
-                <th>Payment Method</th>
-                <th class="text-right">Amount</th>
+                <th style="width: 50%;">Item Description</th>
+                <th style="width: 25%;">Payment Method</th>
+                <th style="width: 25%; text-align: right;">Amount</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>{{ $item_name }} - {{ $type }}</td>
-                <td>{{ ucfirst($method) }}</td>
-                <td class="text-right">TSh {{ number_format($amount, 2) }}</td>
+                <td>
+                    <div style="font-size: 16px; font-weight: bold; color: #0f172a; margin-bottom: 4px;">
+                        {{ $item_name }}
+                    </div>
+                    <div style="font-size: 12px; color: #64748b;">
+                        Type: {{ ucfirst($type) }}
+                    </div>
+                </td>
+                <td style="font-weight: 500;">{{ ucfirst($method) }}</td>
+                <td style="text-align: right; font-weight: bold;">TSh {{ number_format($amount, 2) }}</td>
             </tr>
         </tbody>
     </table>
-    
-    <div class="total">
-        Total: TSh {{ number_format($amount, 2) }}
-    </div>
-    
+
+    <!-- TOTALS -->
+    <table class="totals-table">
+        <tr class="grand-total">
+            <td class="label">Grand Total:</td>
+            <td class="value">TSh {{ number_format($amount, 2) }}</td>
+        </tr>
+    </table>
+
+    <!-- FOOTER -->
     <div class="footer">
-        Thank you for using JLIBRARY!<br>
-        This is a system-generated invoice.
+        <p style="margin-bottom: 5px;"><strong>Thank you for choosing JLibrary!</strong></p>
+        <p>If you have any questions about this invoice, please contact us at info@jlibrary.co.tz or call +255 766408259.</p>
+       
     </div>
+
 </body>
 </html>

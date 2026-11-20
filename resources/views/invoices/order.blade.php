@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Invoice #{{ $order->id }}</title>
+    <title>Invoice</title>
     <style>
         @page { margin: 40px; }
         body { 
@@ -19,7 +19,6 @@
         .header-table td { vertical-align: middle; }
         .logo { max-height: 80px; width: auto; margin-bottom: 5px; }
         .invoice-title { font-size: 32px; font-weight: 900; color: #7c3aed; letter-spacing: -0.5px; margin: 0; line-height: 1.1; }
-        .invoice-id { font-size: 14px; font-weight: bold; color: #64748b; margin-top: 5px; }
         
         /* System Info */
         .system-info { text-align: right; font-size: 12px; color: #475569; line-height: 1.8; }
@@ -31,7 +30,7 @@
         .details-table td { width: 50%; vertical-align: top; padding: 0 10px; }
         .details-table td:first-child { padding-left: 0; }
         .details-table td:last-child { padding-right: 0; }
-        .info-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px 20px; }
+        .info-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px 20px; min-height: 120px; }
         .info-card h4 { margin: 0 0 10px 0; color: #7c3aed; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
         .info-card p { margin: 0 0 6px 0; color: #334155; }
         .info-card strong { color: #0f172a; font-size: 14px; }
@@ -51,9 +50,10 @@
         .grand-total .value { font-size: 18px; font-weight: 900; color: #7c3aed; border-top: 2px solid #e2e8f0; padding-top: 15px; }
 
         /* Badges */
-        .badge { display: inline-block; padding: 6px 12px; border-radius: 50px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-success { background-color: #d1fae5; color: #065f46; }
-        .badge-warning { background-color: #fef3c7; color: #92400e; }
+        .status-text { font-weight: bold; color: #334155; font-size: 14px; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-success { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .badge-warning { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
         
         /* Footer */
         .footer { text-align: center; color: #94a3b8; font-size: 11px; margin-top: 50px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
@@ -69,8 +69,7 @@
             <td style="width: 50%;">
                 <img src="{{ public_path('images/logo.jpeg') }}" alt="JLibrary Logo" class="logo">
                 <h1 class="invoice-title">INVOICE</h1>
-                <div class="invoice-id">Order #{{ $order->id }}</div>
-                <div style="color: #64748b; font-size: 12px; margin-top: 3px;">
+                <div style="color: #64748b; font-size: 12px; margin-top: 10px;">
                     Date: {{ $order->created_at->format('F d, Y') }}
                 </div>
             </td>
@@ -79,7 +78,6 @@
             <td style="width: 50%; text-align: right;">
                 <div class="system-info">
                     <div class="system-name">JLibrary System</div>
-                    <!-- FIXED PHONE FORMAT HERE -->
                     <span><strong>Phone:</strong> +255 766408259</span>
                     <span><strong>Email:</strong> info@jlibrary.co.tz</span>
                     <span><strong>Support:</strong> contact@jlibrary.co.tz</span>
@@ -108,14 +106,23 @@
                     <h4>Sold By (Seller)</h4>
                     <p><strong>{{ $order->book->uploader->full_name ?? 'JLibrary Seller' }}</strong></p>
                     <p><strong>Phone:</strong> {{ $order->book->uploader->phone ?? 'Via JLibrary' }}</p>
-                    <div style="margin-top: 10px;">
-                        <strong>Status:</strong> 
-                        @if($order->isBuyerConfirmed() || $order->isSellerMarkedPaid())
-                            <span class="badge badge-success">PAID</span>
-                        @else
-                            <span class="badge badge-warning">PENDING</span>
-                        @endif
-                    </div>
+                    
+                    <!-- FIXED ALIGNMENT: Using an invisible table forces perfect vertical alignment -->
+                    <table style="margin-top: 12px; border: none; padding: 0; width: 100%;">
+                        <tr>
+                            <td style="padding: 0; vertical-align: middle; width: 55px;">
+                                <span class="status-text">Status:</span>
+                            </td>
+                            <td style="padding: 0; vertical-align: middle;">
+                                @if($order->isBuyerConfirmed() || $order->isSellerMarkedPaid())
+                                    <span class="badge badge-success">PAID</span>
+                                @else
+                                    <span class="badge badge-warning">UNPAID</span>
+                                @endif
+                            </td>
+                        </tr>
+                    </table>
+
                 </div>
             </td>
         </tr>
@@ -134,7 +141,6 @@
         <tbody>
             <tr>
                 <td>
-                    <!-- HIGHLIGHTED BOOK NAME -->
                     <div style="font-size: 16px; font-weight: bold; color: #0f172a; margin-bottom: 4px;">
                         {{ $order->book->title ?? 'Book Title Unavailable' }}
                     </div>
@@ -164,7 +170,7 @@
     <div class="footer">
         <p style="margin-bottom: 5px;"><strong>Thank you for choosing JLibrary!</strong></p>
         <p>If you have any questions about this invoice, please contact us at info@jlibrary.co.tz or call +255 766408259.</p>
-       
+        <p style="margin-top: 15px; font-size: 10px;">This is a computer-generated invoice and does not require a signature.</p>
     </div>
 
 </body>

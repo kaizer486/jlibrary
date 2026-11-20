@@ -39,7 +39,7 @@
     <!-- TAB 1 — Book (Hardcopy) Orders             -->
     <!-- ========================================== -->
     <div x-show="tab === 'books'" x-cloak>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
                 <p class="text-sm font-medium text-gray-700">
                     <i class="ti ti-truck-delivery text-orange-500"></i>
@@ -52,13 +52,12 @@
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full whitespace-nowrap">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">#</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Book</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Buyer</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Delivery</th>
-                            {{-- Qty × Price Removed --}}
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Total</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Commission</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Payout</th>
@@ -70,7 +69,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($bookOrders as $order)
-                        <tr class="hover:bg-gray-50 align-middle">
+                        <tr class="hover:bg-gray-50 align-middle transition">
                             
                             <td class="px-4 py-3 text-sm font-bold text-gray-500">
                                 {{ $bookOrders->firstItem() + $loop->index }}
@@ -98,7 +97,7 @@
                             <td class="px-4 py-3">
                                 <p class="text-sm text-gray-800 font-medium">{{ $order->user->full_name ?? 'Guest' }}</p>
                                 @if($order->customer_phone)
-                                    <p class="text-xs text-gray-500 mt-0.5"><i class="ti ti-phone"></i> {{ $order->customer_phone }}</p>
+                                    <p class="text-[11px] text-gray-500 mt-0.5"><i class="ti ti-phone"></i> {{ $order->customer_phone }}</p>
                                 @endif
                             </td>
                             
@@ -113,8 +112,6 @@
                                 @endif
                             </td>
                             
-                            {{-- Qty × Price Data Cell Removed --}}
-                            
                             <td class="px-4 py-3 font-semibold text-emerald-600">
                                 TSh {{ number_format($order->total, 2) }}
                             </td>
@@ -124,8 +121,8 @@
                                     <p class="font-semibold text-slate-700">TSh {{ number_format($order->platform_commission, 0) }}</p>
                                     <p class="mt-0.5">{!! $order->commission_badge !!}</p>
                                 @else
-                                    <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                                        <i class="ti ti-clock text-xs"></i> Awaiting
+                                    <span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                        <i class="ti ti-clock"></i> Not set
                                     </span>
                                 @endif
                             </td>
@@ -135,7 +132,7 @@
                             </td>
 
                             <td class="px-4 py-3">
-                                <span class="text-xs px-2.5 py-1 rounded-full 
+                                <span class="text-[11px] px-2.5 py-1 rounded-full font-medium
                                     {{ $order->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 
                                        ($order->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
                                        ($order->status === 'processing' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700')) }}">
@@ -146,19 +143,29 @@
                                 @endif
                             </td>
 
+                            {{-- Cleaned up Payment Column --}}
                             <td class="px-4 py-3">
-                                {!! $order->payment_badge !!}
-                                @if($order->isSellerMarkedPaid() && $order->payment_received_at)
-                                    <p class="text-[10px] text-gray-400 mt-1">{{ $order->payment_received_at->diffForHumans() }}</p>
-                                @endif
-                                @if($order->isBuyerConfirmed() && $order->payment_confirmed_by_buyer_at)
-                                    <p class="text-[10px] text-emerald-600 mt-1">Confirmed {{ $order->payment_confirmed_by_buyer_at->diffForHumans() }}</p>
-                                @endif
-                                @if($order->isPaymentDisputed() && $order->payment_dispute_reason)
-                                    <p class="text-[10px] text-red-600 mt-1 max-w-[140px] truncate" title="{{ $order->payment_dispute_reason }}">
-                                        <i class="ti ti-alert-triangle"></i> {{ Str::limit($order->payment_dispute_reason, 30) }}
-                                    </p>
-                                @endif
+                                <div class="flex flex-col items-start gap-1">
+                                    @if($order->isBuyerConfirmed() || $order->isSellerMarkedPaid())
+                                        <span class="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
+                                            <i class="ti ti-circle-check text-sm"></i> PAID
+                                        </span>
+                                    @elseif($order->isPaymentDisputed())
+                                        <span class="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-semibold border border-red-200">
+                                            <i class="ti ti-alert-triangle text-sm"></i> DISPUTED
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-semibold border border-gray-200">
+                                            <i class="ti ti-clock text-sm"></i> UNPAID
+                                        </span>
+                                    @endif
+                                    
+                                    @if($order->isSellerMarkedPaid() && $order->payment_received_at)
+                                        <span class="text-[10px] text-gray-400 ml-1">{{ $order->payment_received_at->diffForHumans() }}</span>
+                                    @elseif($order->isBuyerConfirmed() && $order->payment_confirmed_by_buyer_at)
+                                        <span class="text-[10px] text-emerald-600 ml-1">Confirmed {{ $order->payment_confirmed_by_buyer_at->diffForHumans() }}</span>
+                                    @endif
+                                </div>
                             </td>
 
                             <td class="px-4 py-3 text-sm text-gray-500">
@@ -166,8 +173,16 @@
                             </td>
 
                             <td class="px-4 py-3 text-right">
-                                <div class="inline-flex items-center justify-end">
-                                    <a href="{{ route('author.orders.show', $order->id) }}" class="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800 font-medium">
+                                <div class="inline-flex items-center gap-2 justify-end">
+                                    {{-- ADDED & DECORATED: Download Invoice Button for Book Orders --}}
+                                    <a href="{{ route('orders.invoice', $order->id) }}"
+                                       class="inline-flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 w-8 h-8 rounded-lg transition shadow-sm"
+                                       title="Download PDF Invoice">
+                                        <i class="ti ti-file-invoice text-base"></i>
+                                    </a>
+
+                                    <a href="{{ route('author.orders.show', $order->id) }}" 
+                                       class="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-purple-700 font-medium transition ml-1">
                                         View <i class="ti ti-chevron-right text-xs"></i>
                                     </a>
                                 </div>
@@ -175,9 +190,10 @@
                         </tr>
                         @empty
                         <tr>
-                            {{-- Colspan reduced from 12 to 11 --}}
-                            <td colspan="11" class="px-4 py-8 text-center text-gray-500">
-                                <i class="ti ti-truck-delivery text-4xl mb-2 block text-gray-300"></i>
+                            <td colspan="11" class="px-4 py-12 text-center text-gray-500">
+                                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="ti ti-truck-delivery text-2xl text-gray-400"></i>
+                                </div>
                                 <p>No book orders yet.</p>
                             </td>
                         </tr>
@@ -198,10 +214,10 @@
     <!-- TAB 2 — Product (Marketplace) Orders       -->
     <!-- ========================================== -->
     <div x-show="tab === 'products'" x-cloak>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full whitespace-nowrap">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-gray-50 border-b border-gray-100">
                         <tr>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">#</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Product</th>
@@ -214,30 +230,29 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($orders as $order)
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 transition">
                             <td class="px-4 py-3 text-sm font-bold text-gray-500">{{ $orders->firstItem() + $loop->index }}</td>
                             <td class="px-4 py-3">{{ $order->listing->title ?? 'N/A' }}</td>
                             <td class="px-4 py-3">{{ $order->buyer->full_name ?? 'Guest' }}</td>
                             <td class="px-4 py-3 font-semibold text-emerald-600">TSh {{ number_format($order->amount, 2) }}</td>
                             <td class="px-4 py-3">
-                                <span class="text-xs px-2.5 py-1 rounded-full 
+                                <span class="text-[11px] px-2.5 py-1 rounded-full font-medium
                                     {{ $order->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 
                                        ($order->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">
                                     {{ ucfirst($order->status) }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-500">{{ $order->created_at->format('M d, Y') }}</td>
-                                                       <td class="px-4 py-3 text-right">
+                            <td class="px-4 py-3 text-right">
                                 <div class="inline-flex items-center gap-2 justify-end">
-                                    
-                                    {{-- ADDED: Download Invoice Button --}}
+                                    {{-- DECORATED: Download Invoice Button --}}
                                     <a href="{{ route('orders.invoice', $order->id) }}" 
-                                       class="inline-flex items-center justify-center border border-gray-200 text-gray-600 hover:bg-gray-50 w-8 h-8 rounded-lg transition" 
-                                       title="Download Invoice">
+                                       class="inline-flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 w-8 h-8 rounded-lg transition shadow-sm" 
+                                       title="Download PDF Invoice">
                                         <i class="ti ti-file-invoice text-base"></i>
                                     </a>
 
-                                    <a href="{{ route('author.orders.show', $order->id) }}" class="inline-flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800 font-medium">
+                                    <a href="{{ route('author.orders.show', $order->id) }}" class="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-purple-700 font-medium transition ml-1">
                                         View <i class="ti ti-chevron-right text-xs"></i>
                                     </a>
                                 </div>
@@ -245,8 +260,10 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                                <i class="ti ti-package-off text-4xl mb-2 block text-gray-300"></i>
+                            <td colspan="7" class="px-4 py-12 text-center text-gray-500">
+                                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <i class="ti ti-package-off text-2xl text-gray-400"></i>
+                                </div>
                                 <p>No product orders yet.</p>
                             </td>
                         </tr>
