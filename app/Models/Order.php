@@ -42,6 +42,12 @@ class Order extends Model
         'payment_received_at',
         'payment_confirmed_by_buyer_at',
         'payment_dispute_reason',
+         'platform_commission',
+    'commission_status', 
+    'commission_notes',
+    'commission_payment_method', 
+    'commission_transaction_id', 
+    'commission_paid_at',
     ];
     protected $casts = [
         'institution_id' => 'integer',

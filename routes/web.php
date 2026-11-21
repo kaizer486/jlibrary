@@ -689,7 +689,20 @@ Route::middleware(['auth', 'author.seller'])->prefix('studio')->name('author.')-
             ->whereNumber('order')->name('mark-paid');
         Route::post('/{order}/unmark-paid', [\App\Http\Controllers\Author\OrderController::class, 'unmarkPaid'])
             ->whereNumber('order')->name('unmark-paid');
+
+             Route::post('/{order}/pay-commission', [\App\Http\Controllers\Author\OrderController::class, 'payCommission'])
+            ->whereNumber('order')->name('pay-commission');
+
+             Route::get('/{order}/pay-commission', [\App\Http\Controllers\Author\OrderController::class, 'showCommissionPage'])
+            ->whereNumber('order')->name('commission-page');
     });
+    
+
+            // Commission Payment (Seller side)
+        Route::post('/{order}/pay-commission', [\App\Http\Controllers\SuperAdmin\HardcopyOrderController::class, 'submitCommissionPayment'])
+            ->whereNumber('order')->name('pay-commission');
+
+    
 
     // Earnings
     Route::get('/earnings', [EarningController::class, 'index'])->name('earnings');
@@ -950,6 +963,13 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
         return view('super-admin.institutions.subscription-override', compact('institution'));
     })->name('institutions.subscription-override');
 
+    // Commissions (Settings & Requests)
+    Route::prefix('commissions')->name('commissions.')->group(function () {
+        Route::get('/', [App\Http\Controllers\SuperAdmin\CommissionController::class, 'index'])->name('index');
+        Route::post('/update-setting', [App\Http\Controllers\SuperAdmin\CommissionController::class, 'updateSetting'])->name('update-setting');
+        Route::post('/{order}/verify', [App\Http\Controllers\SuperAdmin\CommissionController::class, 'verifyPayment'])->name('verify');
+        Route::delete('/{order}/delete-log', [App\Http\Controllers\SuperAdmin\CommissionController::class, 'deleteLog'])->name('delete-log');
+    });
     // Institution Requests
     Route::get('/institution-requests', [InstitutionRequestController::class, 'index'])->name('institution-requests.index');
     Route::get('/institution-requests/{id}', [InstitutionRequestController::class, 'show'])->name('institution-requests.show');

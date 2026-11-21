@@ -63,7 +63,7 @@
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Payout</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Payment</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
+                            {{-- Date Column Removed --}}
                             <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                         </tr>
                     </thead>
@@ -143,7 +143,7 @@
                                 @endif
                             </td>
 
-                            {{-- Cleaned up Payment Column --}}
+                            {{-- Payment Column --}}
                             <td class="px-4 py-3">
                                 <div class="flex flex-col items-start gap-1">
                                     @if($order->isBuyerConfirmed() || $order->isSellerMarkedPaid())
@@ -168,13 +168,11 @@
                                 </div>
                             </td>
 
-                            <td class="px-4 py-3 text-sm text-gray-500">
-                                {{ $order->created_at->format('M d, Y') }}
-                            </td>
+                            {{-- Date Cell Removed --}}
 
                             <td class="px-4 py-3 text-right">
                                 <div class="inline-flex items-center gap-2 justify-end">
-                                    {{-- ADDED & DECORATED: Download Invoice Button for Book Orders --}}
+                                    {{-- Invoice Button --}}
                                     <a href="{{ route('orders.invoice', $order->id) }}"
                                        class="inline-flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 w-8 h-8 rounded-lg transition shadow-sm"
                                        title="Download PDF Invoice">
@@ -190,7 +188,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="11" class="px-4 py-12 text-center text-gray-500">
+                            <td colspan="10" class="px-4 py-12 text-center text-gray-500">
                                 <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <i class="ti ti-truck-delivery text-2xl text-gray-400"></i>
                                 </div>
@@ -224,7 +222,7 @@
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Buyer</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Amount</th>
                             <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                            <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
+                            {{-- Date Column Removed --}}
                             <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                         </tr>
                     </thead>
@@ -242,10 +240,10 @@
                                     {{ ucfirst($order->status) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-500">{{ $order->created_at->format('M d, Y') }}</td>
+                            {{-- Date Cell Removed --}}
                             <td class="px-4 py-3 text-right">
                                 <div class="inline-flex items-center gap-2 justify-end">
-                                    {{-- DECORATED: Download Invoice Button --}}
+                                    {{-- Download Invoice Button --}}
                                     <a href="{{ route('orders.invoice', $order->id) }}" 
                                        class="inline-flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 w-8 h-8 rounded-lg transition shadow-sm" 
                                        title="Download PDF Invoice">
@@ -260,7 +258,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-12 text-center text-gray-500">
+                            <td colspan="6" class="px-4 py-12 text-center text-gray-500">
                                 <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <i class="ti ti-package-off text-2xl text-gray-400"></i>
                                 </div>

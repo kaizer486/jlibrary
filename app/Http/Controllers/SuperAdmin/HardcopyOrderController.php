@@ -58,6 +58,68 @@ class HardcopyOrderController extends Controller
         return view('super-admin.hardcopy-orders.index', compact('orders', 'stats'));
     }
 
+    /**
+     * Seller submits commission payment details.
+     */
+    public function submitCommissionPayment(Request $request, Order $order)
+    {
+        $request->validate([
+            'payment_method' => 'required|string',
+            'transaction_id' => 'required|string|max:100',
+        ]);
+
+        $order->update([
+            'commission_status'         => 'awaiting_verification',
+            'commission_payment_method' => $request->payment_method,
+            'commission_transaction_id' => $request->transaction_id,
+            'commission_paid_at'        => now(),
+        ]);
+
+        // TODO: Notify Super Admin (We will add this in the Notification step)
+
+        return back()->with('success', 'Payment details submitted! The Super Admin will verify your payment shortly.');
+    }
+
+    /**
+     * Super Admin approves or rejects the commission payment.
+     */
+    public function verifyCommissionPayment(Request $request, Order $order)
+    {
+        $request->validate([
+            'action' => 'required|in:approve,reject',
+            'admin_notes' => 'nullable|string|max:500',
+        ]);
+
+        if ($request->action === 'approve') {
+            $order->update([
+                'commission_status' => 'collected',
+                'commission_notes'  => $request->admin_notes ?? $order->commission_notes,
+            ]);
+            $message = 'Commission payment approved and marked as Collected.';
+        } else {
+            $order->update([
+                'commission_status'         => 'pending',
+                'commission_transaction_id' => null, // Clear the bad transaction ID
+                'commission_payment_method' => null,
+                'commission_paid_at'        => null,
+                'commission_notes'          => $request->admin_notes,
+            ]);
+            $message = 'Commission payment rejected. Seller must try again.';
+        }
+
+        return back()->with('success', $message);
+    }
+
+        public function commissionRequests()
+    {
+        $pendingOrders = Order::where('commission_status', 'awaiting_verification')
+            ->with(['book', 'author'])
+            ->latest('commission_paid_at')
+            ->paginate(20);
+
+        return view('super-admin.commissions.index', compact('pendingOrders'));
+    }
+
         /**
      * Export all hardcopy orders (platform-wide) to Excel.
      */

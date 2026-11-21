@@ -430,6 +430,17 @@
             @endif
         </a>
 
+               <!-- Commissions -->
+        <a href="{{ route('super-admin.commissions.index') }}" class="nav-item {{ request()->routeIs('super-admin.commissions.*') ? 'active' : '' }}">
+            <i class="ti ti-percentage text-orange-400 text-xl"></i>
+            <span>Commissions</span>
+            @php
+                $pendingCommissions = \App\Models\Order::where('commission_status', 'awaiting_verification')->count();
+            @endphp
+            @if($pendingCommissions > 0)
+                <span class="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $pendingCommissions }}</span>
+            @endif
+        </a>
         <!-- Quotes -->
         <a href="{{ route('super-admin.quotes.index') }}" class="nav-item {{ request()->routeIs('super-admin.quotes.*') ? 'active' : '' }}">
             <i class="ti ti-quote text-purple-400 text-xl"></i>

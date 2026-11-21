@@ -18,11 +18,6 @@ class OrderController extends Controller
     /**
      * List hardcopy orders for books uploaded by the authenticated author,
      * plus softcopy sales (via the `payments` morph).
-     *
-     * Two tabs share this view:
-     *   - hardcopy orders  → orders.author_id = me
-     *   - softcopy sales   → payments where payable_type = Book,
-     *                        payable_id IN my-book-ids, status = completed
      */
     public function index(Request $request)
     {
@@ -96,8 +91,6 @@ class OrderController extends Controller
 
     /**
      * Update the status of a hardcopy order.
-     * Same status vocabulary as institution/seller orders:
-     *   pending | processing | completed | cancelled
      */
     public function updateStatus(Request $request, Order $order)
     {
@@ -166,59 +159,8 @@ class OrderController extends Controller
         );
     }
 
-    // ==========================================
-    // PAYMENT CONFIRMATION — SELLER ACTIONS
-    // ==========================================
-
-    /**
-     * Seller marks an order as "payment received".
-     * Only allowed when the order is a contact-payment hardcopy order
-     * and hasn't been paid yet.
-     */
-    public function markPaid(Request $request, Order $order)
-    {
-        if ((int) $order->author_id !== (int) Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        if (!$order->canSellerMarkPaid()) {
-            return back()->with('error', 'This order cannot be marked as paid (already paid, cancelled, or not a contact-payment order).');
-        }
-
-        try {
-            $order->update([
-                'payment_status'      => 'seller_marked_paid',
-                'payment_received_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            \Log::error('Failed to mark order paid: ' . $e->getMessage());
-            return back()->with('error', 'Could not update the payment status. Please try again.');
-        }
-
-        // Notify the buyer to confirm
-        try {
-            NotificationHelper::send(
-                $order->user_id,
-                'payment_marked_received',
-                '💰 Payment Recorded for Order #' . $order->id,
-                'The seller has marked your payment of TSh ' . number_format($order->total, 2)
-                    . ' as received. Please confirm that you paid to complete the order.',
-                [
-                    'order_id' => $order->id,
-                    'amount'   => (float) $order->total,
-                    'link'     => route('library.order.show', $order->id),
-                ]
-            );
-        } catch (\Throwable $e) {
-            \Log::warning('Payment-marked notification failed: ' . $e->getMessage());
-        }
-
-        return back()->with('success', 'Payment marked as received. The buyer has been notified to confirm.');
-    }
-
     /**
      * Seller un-marks a payment they marked by mistake.
-     * Only allowed if buyer hasn't confirmed yet.
      */
     public function unmarkPaid(Request $request, Order $order)
     {
@@ -235,7 +177,6 @@ class OrderController extends Controller
             'payment_received_at' => null,
         ]);
 
-        // Notify the buyer that the seller reversed the claim
         try {
             NotificationHelper::send(
                 $order->user_id,
@@ -252,5 +193,95 @@ class OrderController extends Controller
         }
 
         return back()->with('success', 'Payment mark reversed. The order is now back to unpaid.');
+    }
+
+    /**
+     * Seller marks an order as "payment received".
+     */
+    public function markPaid(Request $request, Order $order)
+    {
+        if ((int) $order->author_id !== (int) Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (!$order->canSellerMarkPaid()) {
+            return back()->with('error', 'This order cannot be marked as paid (already paid, cancelled, or not a contact-payment order).');
+        }
+
+        // Auto-calculate commission if it's not set yet
+        $commissionPercentage = \App\Models\SiteSetting::where('key', 'platform_commission_percentage')->first()->value ?? 10;
+        $commissionAmount = ($order->total * $commissionPercentage) / 100;
+
+        $order->update([
+            'payment_status'      => 'seller_marked_paid',
+            'payment_received_at' => now(),
+            // Automatically set the commission so the seller can pay it
+            'platform_commission' => $order->platform_commission ?? $commissionAmount,
+            'commission_status'   => $order->commission_status ?? 'pending',
+        ]);
+
+        // Notify the buyer to confirm
+        try {
+            NotificationHelper::send(
+                $order->user_id,
+                'payment_marked_received',
+                '💰 Payment Recorded for Order #' . $order->id,
+                'The seller has marked your payment of TSh ' . number_format($order->total, 2)
+                    . ' as received. Please confirm that you paid to complete the order.',
+                ['order_id' => $order->id, 'amount' => (float) $order->total, 'link' => route('library.order.show', $order->id)]
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Payment-marked notification failed: ' . $e->getMessage());
+        }
+
+        // REDIRECT TO THE NEW COMMISSION PAGE INSTEAD OF BACK
+        return redirect()->route('author.orders.commission-page', $order->id)
+            ->with('success', 'Payment marked as received. Please pay the platform commission to finalize.');
+    }
+
+    /**
+     * Show the dedicated page for paying the commission.
+     */
+    public function showCommissionPage(Order $order)
+    {
+        if ((int) $order->author_id !== (int) Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // If they already paid/verified, send them back to the order
+        if ($order->commission_status === 'collected' || $order->commission_status === 'awaiting_verification') {
+            return redirect()->route('author.orders.show', $order->id);
+        }
+
+        return view('author.orders.pay-commission', compact('order'));
+    }
+
+    // ==========================================
+    // COMMISSION PAYMENT — SELLER ACTIONS
+    // ==========================================
+
+   /**
+     * Seller submits the commission payment reference.
+     */
+    public function payCommission(Request $request, Order $order)
+    {
+        if ((int) $order->author_id !== (int) Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'payment_method' => 'required|string',
+            'transaction_id' => 'required|string|max:255', // Increased to 255 for SMS texts
+        ]);
+
+        $order->update([
+            'commission_status'         => 'awaiting_verification',
+            'commission_payment_method' => $request->payment_method,
+            'commission_transaction_id' => $request->transaction_id,
+            'commission_paid_at'        => now(),
+        ]);
+
+        return redirect()->route('author.orders.show', $order->id)
+            ->with('success', 'Payment details submitted! awaiting verification.');
     }
 }

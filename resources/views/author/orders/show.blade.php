@@ -37,18 +37,16 @@
             <div class="bg-gradient-to-r from-orange-600 to-amber-600 px-6 py-4 border-b-2 border-orange-400/30">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                        {{-- Removed # from Order title --}}
                         <h1 class="text-xl font-bold text-white flex items-center gap-2">
-                            <i class="ti ti-package"></i> Order {{ $order->id }}
+                            <i class="ti ti-package"></i> {{ $order->book->book_code ?? 'Order ' . $order->id }}
                         </h1>
                         <p class="text-orange-100 text-sm mt-1">
-                            Placed {{ $order->created_at->format('F d, Y \a\t H:i') }}
+                            Placed {{ $order->created_at->timezone('Africa/Dar_es_Salaam')->format('F d, Y \a\t H:i') }}
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         {!! $order->status_badge !!}
                         
-                        {{-- Decorated Invoice Button --}}
                         <a href="{{ route('orders.invoice', $order->id) }}"
                            class="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/30 px-3 py-1.5 rounded-lg text-sm font-semibold transition shadow-sm"
                            title="Download Invoice">
@@ -195,6 +193,22 @@
             </div>
         </div>
 
+        <!-- Buyer's notes (Moved up for better flow) -->
+        @php
+            $userNotes = '';
+            if ($order->notes && preg_match('/\|\s*Notes:\s*(.+)$/', $order->notes, $m)) {
+                $userNotes = trim($m[1]);
+            }
+        @endphp
+        @if($userNotes)
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
+                <h2 class="font-semibold text-slate-800 mb-2 flex items-center gap-2">
+                    <i class="ti ti-notes text-orange-600"></i> Buyer's Notes
+                </h2>
+                <p class="text-slate-700 text-sm leading-relaxed bg-gray-50 p-3 rounded-lg border border-slate-100">{{ $userNotes }}</p>
+            </div>
+        @endif
+
         <!-- ========================================== -->
         <!-- PAYMENT STATUS CARD                        -->
         <!-- ========================================== -->
@@ -203,30 +217,10 @@
                 <i class="ti ti-coin text-orange-600"></i> Payment Status
             </h2>
 
-            @if(session('success'))
-                <div class="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800 flex items-center gap-2">
-                    <i class="ti ti-circle-check"></i> {{ session('success') }}
-                </div>
-            @endif
-            @if(session('error'))
-                <div class="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800 flex items-center gap-2">
-                    <i class="ti ti-alert-circle"></i> {{ session('error') }}
-                </div>
-            @endif
-
             <!-- Current state + action buttons -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div class="flex items-center gap-3">
                     {!! $order->payment_badge !!}
-                    @if($order->isBuyerConfirmed() && $order->payment_confirmed_by_buyer_at)
-                        <span class="text-xs text-emerald-600">
-                            {{ $order->payment_confirmed_by_buyer_at->format('M d, Y \a\t H:i') }}
-                        </span>
-                    @elseif($order->isSellerMarkedPaid() && $order->payment_received_at)
-                        <span class="text-xs text-yellow-600">
-                            Marked {{ $order->payment_received_at->diffForHumans() }}
-                        </span>
-                    @endif
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -236,7 +230,7 @@
                               onsubmit="return confirm('Mark this order as PAID?\n\nThe buyer will be notified to confirm.')">
                             @csrf
                             <button type="submit"
-                                    class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl transition shadow-sm hover:shadow-md">
+                                    class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-xl transition shadow-sm hover:shadow-md">
                                 <i class="ti ti-check"></i> Mark as Paid
                             </button>
                         </form>
@@ -294,22 +288,22 @@
             @endif
 
             <!-- Payment timeline -->
-            <div class="mt-5 pt-5 border-t-2 border-slate-100">
-                <p class="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-3">Payment Timeline</p>
-                <div class="space-y-3">
+            <div class="mt-6 pt-6 border-t-2 border-slate-100">
+                <p class="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-4">Payment Timeline</p>
+                <div class="space-y-4">
                     @foreach($order->payment_timeline as $step)
                         <div class="flex items-start gap-3">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
                                         {{ $step['done'] ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400' }}">
                                 <i class="ti {{ $step['icon'] }} text-sm"></i>
                             </div>
-                            <div class="flex-1 min-w-0">
+                            <div class="flex-1 min-w-0 pt-0.5">
                                 <p class="font-medium text-sm {{ $step['done'] ? 'text-slate-800' : 'text-slate-400' }}">
                                     {{ $step['label'] }}
                                 </p>
                                 @if($step['timestamp'])
                                     <p class="text-xs text-slate-500 mt-0.5">
-                                        {{ $step['timestamp']->format('M d, Y \a\t H:i') }}
+                                        {{ $step['timestamp']->timezone('Africa/Dar_es_Salaam')->format('M d, Y \a\t H:i') }}
                                         <span class="text-slate-400">· {{ $step['timestamp']->diffForHumans() }}</span>
                                     </p>
                                 @else
@@ -321,22 +315,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Buyer's notes -->
-        @php
-            $userNotes = '';
-            if ($order->notes && preg_match('/\|\s*Notes:\s*(.+)$/', $order->notes, $m)) {
-                $userNotes = trim($m[1]);
-            }
-        @endphp
-        @if($userNotes)
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
-                <h2 class="font-semibold text-slate-800 mb-2 flex items-center gap-2">
-                    <i class="ti ti-notes text-orange-600"></i> Buyer's Notes
-                </h2>
-                <p class="text-slate-700 text-sm leading-relaxed bg-gray-50 p-3 rounded-lg">{{ $userNotes }}</p>
-            </div>
-        @endif
 
         <!-- Update status -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
@@ -378,7 +356,6 @@
                 <i class="ti ti-arrow-left"></i> Back to Orders
             </a>
             
-            {{-- Decorated Invoice Button at the bottom --}}
             <a href="{{ route('orders.invoice', $order->id) }}"
                class="flex-1 bg-purple-600 text-white py-3 rounded-xl font-semibold text-center hover:bg-purple-700 transition shadow-sm hover:shadow-md flex items-center justify-center gap-2">
                 <i class="ti ti-file-invoice text-lg"></i> Download Invoice

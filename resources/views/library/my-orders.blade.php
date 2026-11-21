@@ -119,7 +119,10 @@
                                         <p class="text-sm text-gray-800 font-semibold truncate max-w-[200px]" title="{{ $order->book->title ?? 'N/A' }}">
                                             {{ $order->book->title ?? 'Book unavailable' }}
                                         </p>
-                                        <p class="text-[10px] text-slate-400 font-mono">{{ $order->book->book_code ?? '—' }}</p>
+                                        {{-- Only show code if it exists --}}
+                                        @if($order->book && $order->book->book_code)
+                                            <p class="text-[10px] text-slate-400 font-mono">{{ $order->book->book_code }}</p>
+                                        @endif
                                         <p class="text-[10px] text-orange-600 font-medium"><i class="ti ti-package"></i> Hardcopy</p>
                                     </div>
                                 </div>
@@ -151,12 +154,13 @@
                             </td>
 
                             <td class="px-4 py-3 text-sm text-gray-500">
-                                {{ $order->created_at->format('M d, Y') }}
+                                {{-- FIXED TIMEZONE FOR BUYER --}}
+                                {{ $order->created_at->timezone('Africa/Dar_es_Salaam')->format('M d, Y') }}
                             </td>
 
-                                                     <td class="px-4 py-3 text-right">
+                            <td class="px-4 py-3 text-right">
                                 <div class="inline-flex items-center gap-2 justify-end">
-                                    {{-- ADDED & COLORED: Invoice Download Button --}}
+                                    {{-- COLORED INVOICE BUTTON --}}
                                     @if($order->isBuyerConfirmed() || $order->isSellerMarkedPaid())
                                         <a href="{{ route('orders.invoice', $order->id) }}" 
                                            class="inline-flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200 w-8 h-8 rounded-lg transition shadow-sm" 
@@ -239,7 +243,10 @@
                                         <p class="text-sm text-gray-800 font-semibold truncate max-w-[200px]" title="{{ $payment->payable->title ?? 'N/A' }}">
                                             {{ $payment->payable->title ?? 'Book unavailable' }}
                                         </p>
-                                        <p class="text-[10px] text-slate-400 font-mono">{{ $payment->payable->book_code ?? '—' }}</p>
+                                        {{-- Only show code if it exists --}}
+                                        @if($payment->payable && $payment->payable->book_code)
+                                            <p class="text-[10px] text-slate-400 font-mono">{{ $payment->payable->book_code }}</p>
+                                        @endif
                                         <p class="text-[10px] text-purple-600 font-medium"><i class="ti ti-device-mobile"></i> Softcopy</p>
                                     </div>
                                 </div>
@@ -256,7 +263,8 @@
                             </td>
 
                             <td class="px-4 py-3 text-sm text-gray-500">
-                                {{ $payment->created_at->format('M d, Y') }}
+                                {{-- FIXED TIMEZONE FOR BUYER --}}
+                                {{ $payment->created_at->timezone('Africa/Dar_es_Salaam')->format('M d, Y') }}
                             </td>
 
                             <td class="px-4 py-3 text-right">
