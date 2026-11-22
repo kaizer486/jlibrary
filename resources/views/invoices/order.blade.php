@@ -105,7 +105,20 @@
                 <div class="info-card">
                     <h4>Sold By (Seller)</h4>
                     <p><strong>{{ $order->book->uploader->full_name ?? 'JLibrary Seller' }}</strong></p>
-                    <p><strong>Phone:</strong> {{ $order->book->uploader->phone ?? 'Via JLibrary' }}</p>
+                    
+                    <!-- SHOW ACTUAL SELLER PHONE OR EMAIL -->
+                    @php
+                        $sellerPhone = $order->book->uploader->mpesa_phone ?? $order->book->uploader->phone ?? null;
+                        $sellerEmail = $order->book->uploader->email ?? null;
+                    @endphp
+                    
+                    @if($sellerPhone)
+                        <p><strong>Phone:</strong> {{ $sellerPhone }}</p>
+                    @elseif($sellerEmail)
+                        <p><strong>Email:</strong> {{ $sellerEmail }}</p>
+                    @else
+                        <p><strong>Contact:</strong> Via JLibrary Support</p>
+                    @endif
                     
                     <!-- FIXED ALIGNMENT: Using an invisible table forces perfect vertical alignment -->
                     <table style="margin-top: 12px; border: none; padding: 0; width: 100%;">
@@ -144,9 +157,14 @@
                     <div style="font-size: 16px; font-weight: bold; color: #0f172a; margin-bottom: 4px;">
                         {{ $order->book->title ?? 'Book Title Unavailable' }}
                     </div>
-                    <div style="font-size: 12px; color: #64748b;">
-                        Code: {{ $order->book->book_code ?? '—' }}
-                    </div>
+                    
+                    {{-- HIDE CODE IF IT DOESN'T EXIST --}}
+                    @if($order->book && $order->book->book_code)
+                        <div style="font-size: 12px; color: #64748b;">
+                            Code: {{ $order->book->book_code }}
+                        </div>
+                    @endif
+                    
                     <div style="font-size: 12px; color: #64748b;">
                         Author: {{ $order->book->author ?? '—' }}
                     </div>
@@ -170,7 +188,6 @@
     <div class="footer">
         <p style="margin-bottom: 5px;"><strong>Thank you for choosing JLibrary!</strong></p>
         <p>If you have any questions about this invoice, please contact us at info@jlibrary.co.tz or call +255 766408259.</p>
-       
     </div>
 
 </body>

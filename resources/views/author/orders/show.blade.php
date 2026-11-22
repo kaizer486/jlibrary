@@ -193,7 +193,7 @@
             </div>
         </div>
 
-        <!-- Buyer's notes (Moved up for better flow) -->
+        <!-- Buyer's notes -->
         @php
             $userNotes = '';
             if ($order->notes && preg_match('/\|\s*Notes:\s*(.+)$/', $order->notes, $m)) {
@@ -214,7 +214,7 @@
         <!-- ========================================== -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
             <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <i class="ti ti-coin text-orange-600"></i> Payment Status
+                <i class="ti ti-coin text-orange-600"></i> Buyer Payment Status
             </h2>
 
             <!-- Current state + action buttons -->
@@ -227,7 +227,7 @@
                     @if($order->canSellerMarkPaid())
                         <form method="POST"
                               action="{{ route('author.orders.mark-paid', $order->id) }}"
-                              onsubmit="return confirm('Mark this order as PAID?\n\nThe buyer will be notified to confirm.')">
+                              onsubmit="return confirm('Mark this order as PAID?\n\nYou will be redirected to pay the platform commission next.')">
                             @csrf
                             <button type="submit"
                                     class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-xl transition shadow-sm hover:shadow-md">
@@ -315,6 +315,47 @@
                 </div>
             </div>
         </div>
+
+        <!-- ========================================== -->
+        <!-- NEW: PLATFORM COMMISSION CARD              -->
+        <!-- ========================================== -->
+        @if($order->isSellerMarkedPaid() || $order->isBuyerConfirmed())
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
+                <h2 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="ti ti-percentage text-orange-600"></i> Platform Commission
+                </h2>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                    <div>
+                        <p class="text-sm text-slate-500">Amount Due to Platform:</p>
+                        <p class="text-2xl font-bold text-slate-800">TSh {{ number_format($order->platform_commission, 2) }}</p>
+                    </div>
+                    <div>
+                        @if($order->commission_status === 'collected')
+                            <span class="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-semibold text-sm">
+                                <i class="ti ti-check"></i> Paid & Verified
+                            </span>
+                        @elseif($order->commission_status === 'awaiting_verification')
+                            <span class="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-lg font-semibold text-sm">
+                                <i class="ti ti-clock"></i> Awaiting Admin Verification
+                            </span>
+                        @else
+                            <a href="{{ route('author.orders.commission-page', $order->id) }}" 
+                               class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-semibold transition shadow-sm flex items-center gap-2">
+                                <i class="ti ti-wallet"></i> Pay Commission Now
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                @if($order->commission_status === 'awaiting_verification')
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-xs text-yellow-800">
+                        You submitted <strong>{{ strtoupper(str_replace('_', ' ', $order->commission_payment_method)) }}</strong> with Ref: <strong>{{ $order->commission_transaction_id }}</strong>. 
+                        The Super Admin is currently verifying this payment.
+                    </div>
+                @endif
+            </div>
+        @endif
 
         <!-- Update status -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 mb-6">
