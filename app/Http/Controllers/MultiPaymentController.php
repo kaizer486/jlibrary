@@ -70,7 +70,7 @@ class MultiPaymentController extends Controller
         // Submit order to PesaPal
         $result = $this->pesapalService->submitOrder($orderData);
 
-        if ($result['success']) {
+            if ($result['success']) {
             // Update payment with tracking ID
             $payment->transaction_id = $result['order_tracking_id'];
             $payment->save();
@@ -81,8 +81,22 @@ class MultiPaymentController extends Controller
                 'pending_pesapal_book_id' => $book->id,
             ]);
 
-            // Redirect to PesaPal payment page
-            return redirect($result['redirect_url']);
+            // ✅ Guard: PesaPal might return success without a redirect_url
+            if (!empty($result['redirect_url'])) {
+                return redirect()->away($result['redirect_url']);
+            }
+
+            // Fallback: mark the payment as failed and inform the user
+            \Log::error('PesaPal returned success but no redirect_url', [
+                'payment_id' => $payment->id,
+                'result' => $result,
+            ]);
+
+            $payment->status = 'failed';
+            $payment->save();
+
+            return redirect()->route('library.show', $book->id)
+                ->with('error', 'Could not redirect to PesaPal. Please try again or use another payment method.');
         }
 
         return redirect()->back()->with('error', $result['message'] ?? 'Failed to initiate PesaPal payment');
