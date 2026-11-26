@@ -310,10 +310,17 @@ protected static function boot()
 public static function generateUniqueSlug($title)
 {
     $slug = Str::slug($title);
+    
+    // If the title is empty after slugging (e.g., emojis only), fallback to a random string
+    if (empty($slug)) {
+        $slug = 'book-' . Str::random(6);
+    }
+
     $original = $slug;
     $count = 1;
 
-    while (static::where('slug', $slug)->exists()) {
+    // Use withTrashed() because the database UNIQUE constraint applies to soft-deleted rows too!
+    while (static::withTrashed()->where('slug', $slug)->exists()) {
         $slug = $original . '-' . $count;
         $count++;
     }
