@@ -105,16 +105,30 @@ protected function getOrRegisterBookIpnId(): ?string
 
             Log::info('Pesapal submit order', ['status' => $response->status(), 'body' => $response->json()]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                return [
-                    'success' => true,
-                    'order_tracking_id' => $data['order_tracking_id'] ?? null,
-                    'merchant_reference' => $data['merchant_reference'] ?? $orderData['id'],
-                    'redirect_url' => $data['redirect_url'] ?? null,
-                    'raw' => $data,
-                ];
-            }
+           if ($response->successful()) {
+    $data = $response->json();
+
+    // PesaPal returns HTTP 200 even on errors — check the body
+    if (!empty($data['error']) || ($data['status'] ?? '') === '500') {
+        $errorMsg = $data['error']['message'] ?? $data['message'] ?? 'Payment submission failed';
+        Log::error('Pesapal submit order error', ['status' => $response->status(), 'error' => $errorMsg, 'body' => $data]);
+        return ['success' => false, 'message' => $errorMsg];
+    }
+
+    // PesaPal requires a redirect_url — reject if missing
+    if (empty($data['redirect_url'])) {
+        Log::error('Pesapal submit order returned no redirect_url', ['body' => $data]);
+        return ['success' => false, 'message' => 'Payment gateway did not return a redirect URL. Please try again.'];
+    }
+
+    return [
+        'success' => true,
+        'order_tracking_id' => $data['order_tracking_id'] ?? null,
+        'merchant_reference' => $data['merchant_reference'] ?? $orderData['id'],
+        'redirect_url' => $data['redirect_url'],
+        'raw' => $data,
+    ];
+}
 
             $errorMsg = $response['error']['message'] ?? $response['message'] ?? 'Payment submission failed';
             Log::error('Pesapal submit order error', ['status' => $response->status(), 'error' => $errorMsg]);
@@ -176,13 +190,21 @@ public function buildBillingAddress($user): array
     $nameParts = explode(' ', trim($user->full_name ?? 'JLibrary User'), 2);
     $phone = $user->mpesa_phone ?? $user->tigopesa_phone ?? $user->halopesa_phone ?? null;
 
+    // Sanitize strings — PesaPal only allows alphanumeric, dash, underscore, dot, colon, @
+    $sanitize = function ($value, $fallback = '') {
+        if (empty($value)) return $fallback;
+        $clean = preg_replace('/[^A-Za-z0-9\-_\.:\@\s]/', '', $value);
+        $clean = trim($clean);
+        return $clean !== '' ? $clean : $fallback;
+    };
+
     return [
-        'email_address' => $user->email ?? 'noreply@jlibrary.co.tz',
+        'email_address' => $sanitize($user->email, 'noreply@jlibrary.co.tz'),
         'phone_number' => $this->formatPhoneNumber($phone),
         'country_code' => 'TZ',
-        'first_name' => $nameParts[0] ?? 'JLibrary',
-        'last_name' => $nameParts[1] ?? 'User',
-        'line_1' => 'N/A',
+        'first_name' => $sanitize($nameParts[0] ?? '', 'JLibrary'),
+        'last_name' => $sanitize($nameParts[1] ?? '', 'User'),
+        'line_1' => 'NA',   // ← fixed: no slash
         'city' => 'Dar es Salaam',
         'postal_code' => '00000',
     ];
