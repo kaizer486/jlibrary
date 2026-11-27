@@ -240,12 +240,18 @@
                                         @endif
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="text-sm text-gray-800 font-semibold truncate max-w-[200px]" title="{{ $payment->payable->title ?? 'N/A' }}">
-                                            {{ $payment->payable->title ?? 'Book unavailable' }}
-                                        </p>
-                                        {{-- Only show code if it exists --}}
-                                        @if($payment->payable && $payment->payable->book_code)
-                                            <p class="text-[10px] text-slate-400 font-mono">{{ $payment->payable->book_code }}</p>
+                                        @if($payment->payable)
+                                            <p class="text-sm text-gray-800 font-semibold truncate max-w-[200px]" title="{{ $payment->payable->title }}">
+                                                {{ $payment->payable->title }}
+                                            </p>
+                                            {{-- Only show code if it exists --}}
+                                            @if($payment->payable->book_code)
+                                                <p class="text-[10px] text-slate-400 font-mono">{{ $payment->payable->book_code }}</p>
+                                            @endif
+                                        @else
+                                            <p class="text-sm text-gray-500 font-semibold truncate max-w-[200px] italic">
+                                                <i class="ti ti-alert-circle"></i> Book deleted by owner
+                                            </p>
                                         @endif
                                         <p class="text-[10px] text-purple-600 font-medium"><i class="ti ti-device-mobile"></i> Softcopy</p>
                                     </div>
@@ -269,14 +275,22 @@
 
                             <td class="px-4 py-3 text-right">
                                 <div class="inline-flex items-center justify-end gap-2">
-                                    <a href="{{ route('library.read', $payment->payable->id) }}"
-                                       class="inline-flex items-center gap-1 bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap">
-                                        <i class="ti ti-book-open"></i> Read
-                                    </a>
-                                    <a href="{{ route('library.show', $payment->payable->id) }}"
-                                       class="inline-flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 w-8 h-8 rounded-lg transition">
-                                        <i class="ti ti-info-circle text-base"></i>
-                                    </a>
+                                    @if($payment->payable)
+                                        {{-- Book exists — show Read & Info buttons --}}
+                                        <a href="{{ route('library.read', $payment->payable->id) }}"
+                                           class="inline-flex items-center gap-1 bg-purple-500 hover:bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap">
+                                            <i class="ti ti-book-open"></i> Read
+                                        </a>
+                                        <a href="{{ route('library.show', $payment->payable->id) }}"
+                                           class="inline-flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 w-8 h-8 rounded-lg transition">
+                                            <i class="ti ti-info-circle text-base"></i>
+                                        </a>
+                                    @else
+                                        {{-- Book was deleted — show disabled state --}}
+                                        <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-400 px-3 py-1.5 rounded-lg text-xs font-medium cursor-not-allowed" title="This book has been removed from the platform">
+                                            <i class="ti ti-ban"></i> Unavailable
+                                        </span>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
